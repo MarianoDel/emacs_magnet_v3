@@ -1,5 +1,5 @@
 //----------------------------------------------------------
-// #### STRETCHER PROJECT - Custom Board ####
+// #### MAGNET PROJECT - Custom Board ####
 // ## Internal Test Functions Module
 // ##
 // ## @Author: Med
@@ -15,7 +15,8 @@
 #include "adc.h"
 #include "usart.h"
 #include "dma.h"
-#include "timer.h"
+#include "tim.h"
+#include "pwm.h"
 
 #include "comms_from_rasp.h"
 
@@ -32,13 +33,159 @@ extern volatile unsigned char usart3_have_data;
 // Globals ---------------------------------------------------------------------
 
 
-// Module Private Types & Macros -----------------------------------------------
-
-
 // Module Private Functions ----------------------------------------------------
+void TF_Led_1 (void);
+void TF_Led_2 (void);
+void TF_Buzzer (void);
 
+void TF_Tim5_Channel4_Pwm (void);
+
+void TF_Tim8_Channel1_Pwm (void);
+void TF_Tim8_Channel2_Pwm (void);
+
+void TF_Reset_Input (void);
+void TF_Usart1_Tx_Int (void);
+void TF_Usart1_Tx_Rx_Int (void);
+void TF_Usart2_Tx_Int (void);
+void TF_Usart2_Tx_Rx_Int (void);
+void TF_Adc_PB0_Usart2 (void);
+
+void TF_Usart3_Tx_Int (void);
+void TF_Usart3_Tx_Rx_Int (void);
+void TF_Spi1_Send_Single (void);
+void TF_Spi_Chip_Select (void);
+void TF_Spi1_Send_Single_Chip_Select (void);
+void TF_Spi1_Send_Receive_Usart2 (void);
+void TF_Timer1_Ch1_Pwm (void);    
+
+void TF_Usart3_Tx (void);
+void TF_Usart3Loop (void);
+void TF_Usart3TxRx (void);
+void TF_CommsWithRaspberry (void);
 
 // Module Functions ------------------------------------------------------------
+void TF_Hardware_Tests (void)
+{
+    // TF_Led_1 ();
+    // TF_Led_2 ();
+    // TF_Buzzer ();
+
+    // TF_Tim5_Channel4_Pwm ();
+    // TF_Tim8_Channel1_Pwm();
+    TF_Tim8_Channel2_Pwm();
+    
+    // TF_Reset_Input ();
+    // TF_Usart1_Tx_Int ();
+    // TF_Usart1_Tx_Rx_Int ();
+    // TF_Usart2_Tx_Int ();
+    // TF_Usart2_Tx_Rx_Int ();
+    // TF_Adc_PB0_Usart2 ();
+    
+}
+
+
+void TF_Led_1 (void)
+{
+    while (1)
+    {
+        if (LED1)
+            LED1_OFF;
+        else
+            LED1_ON;
+
+        Wait_ms(100);
+    }
+}
+
+
+void TF_Led_2 (void)
+{
+    while (1)
+    {
+        if (LED2)
+            LED2_OFF;
+        else
+            LED2_ON;
+
+        Wait_ms(100);
+    }
+}
+
+
+void TF_Buzzer (void)
+{
+    while (1)
+    {
+        BUZZER_ON;
+        LED1_ON;
+        Wait_ms(50);
+        BUZZER_OFF;
+        LED1_OFF;        
+        Wait_ms(1450);
+    }
+}
+
+
+void TF_Tim5_Channel4_Pwm (void)
+{
+    TIM5_Init();
+    
+    while (1)
+    {
+        HIGH_LEFT_PWM_CH4 (DUTY_50_PERCENT);
+        LOW_RIGHT_PWM_CH4 (DUTY_50_PERCENT);
+        LED1_ON;
+        Wait_ms(5000);
+
+        HIGH_LEFT_PWM_CH4 (DUTY_NONE);
+        LOW_RIGHT_PWM_CH4 (DUTY_NONE);
+        LED1_OFF;
+        Wait_ms(5000);
+        
+    }    
+}
+
+
+void TF_Tim8_Channel1_Pwm (void)
+{
+    TIM8_Init();
+    
+    while (1)
+    {
+        HIGH_LEFT_PWM_CH1 (DUTY_50_PERCENT);
+        LOW_RIGHT_PWM_CH1 (DUTY_50_PERCENT);
+        LED1_ON;
+        Wait_ms(5000);
+
+        HIGH_LEFT_PWM_CH1 (DUTY_NONE);
+        LOW_RIGHT_PWM_CH1 (DUTY_NONE);
+        LED1_OFF;
+        Wait_ms(5000);
+        
+    }    
+}
+
+
+void TF_Tim8_Channel2_Pwm (void)
+{
+    TIM8_Init();
+    
+    while (1)
+    {
+        HIGH_LEFT_PWM_CH2 (DUTY_50_PERCENT);
+        LOW_RIGHT_PWM_CH2 (DUTY_50_PERCENT);
+        LED1_ON;
+        Wait_ms(5000);
+
+        HIGH_LEFT_PWM_CH2 (DUTY_NONE);
+        LOW_RIGHT_PWM_CH2 (DUTY_NONE);
+        LED1_OFF;
+        Wait_ms(5000);
+        
+    }    
+}
+
+
 void TF_Voltages (void)
 {
     //--- Test ADC Multiple conversion Scanning Continuous Mode and DMA -------------------//

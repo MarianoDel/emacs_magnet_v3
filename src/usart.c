@@ -760,6 +760,7 @@ void UART5_IRQHandler (void)
     }
 }
 
+#ifdef USE_SYNC_PULSES
 void UpdateSyncPulses (void)
 {
     if (!timer_sync_xxx_ms)
@@ -775,5 +776,6 @@ void UpdateSyncPulses (void)
             timer_sync_xxx_ms = tim_sync;
     }
 }
+#endif
 
 //---- End of File ----//

@@ -16,17 +16,15 @@
 
 //----- Board Configuration -------------------//
 //--- Hardware ------------------//
-#define HARDWARE_VERSION_2_0
-// #define HARDWARE_VERSION_1_0        //esto seria una placa P1 en realidad
-// #define HARDWARE_VERSION_2_1        //esto seria una placa magneto chico
+#define HARDWARE_VERSION_3_0    // this board gets the better of stretcher and magnet 
+
+
 //--- Software ------------------//
-// #define SOFTWARE_VERSION_1_0        //habla contra rpi con programa magneto y traduce a micros potencia
-// #define SOFTWARE_VERSION_1_1    //programa ernesto manda pulso en OUT4 para mover camilla 21-10-2020
-#define SOFTWARE_VERSION_1_2    //it permits the auto up or auto dwn of the stretcher
+#define SOFTWARE_VERSION_1_0    // init version
+
 
 //-------- Type of Program (depending on software version) ----------------
-#define MAGNETO_NORMAL
-// #define MAGNETO_ESPECIAL_1CH
+
 
 //--- Serial Number / Device Id Bytes length ----------
 #define USE_DEVICE_ID_4BYTES
@@ -36,11 +34,8 @@
 
 
 //-------- Type of Program and Features ----------------
-#define USE_SYNC_PULSES    //manda sync ver abajo
-
 #define USE_NO_TREATMENT_DETECT    //cuando esta en tratamiento revisa si las potencias tambien
 
-#define USE_BUZZER_ON_OUT3
 
 //-------- Kind of Reports Sended ----------------
 
@@ -50,23 +45,18 @@
 // #define K_15V    0.00804    //con z 3.1V
 #define K_15V    0.00619    //con z 5.1V
 
-#ifdef USE_SYNC_PULSES
-#define SYNC_CHAR    '*'
-#define USE_SYNC_ALL_PLACES    //manda pulsos incluso en los Wait_ms()
-// #define USE_SYNC_ONLY_ON_TREATMENT    //pulsos solo en tratamiento
-#endif
 
-#ifdef USE_BUZZER_ON_OUT3
-#define USE_ONE_BIP_INIT
-#endif
-//-------- Hysteresis Conf ------------------------
-
-//-------- PWM Conf ------------------------
-
-//-------- Oscillator and Crystal selection (Freq in startup_clocksh) ---
+//-------- Oscillator and Crystal selection (Freq in startup_clocks.h) ---
 #define HSI_INTERNAL_RC
 // #define HSE_CRYSTAL_OSC
 
+#ifdef HSE_CRYSTAL_OSC
+#define CRYSTAL_8MHZ
+// #define CRYSTAL_12MHZ
+#endif
+
+#define SYSCLK_FREQ_72MHz
+// #define SYSCLK_FREQ_8MHz
 
 //-------- End Of Defines For Configuration ------
 
@@ -74,23 +64,11 @@
 
 
 //--- Hardware & Software Messages ------------------//
-#ifdef HARDWARE_VERSION_2_0
-#define HARD "Hardware Version: 2.0"
-#endif
-#ifdef HARDWARE_VERSION_2_1
-#define HARD "Hardware Version: 2.1"
-#endif
-#ifdef SOFTWARE_VERSION_2_2
-#define SOFT "Software Version: 2.2"
+#ifdef HARDWARE_VERSION_3_0
+#define HARD "Hardware Version: 3.0"
 #endif
 #ifdef SOFTWARE_VERSION_1_0
 #define SOFT "Software Version: 1.0"
-#endif
-#ifdef SOFTWARE_VERSION_1_1
-#define SOFT "Software Version: 1.1"
-#endif
-#ifdef SOFTWARE_VERSION_1_2
-#define SOFT "Software Version: 1.2"
 #endif
 //--- End of Hardware & Software Messages ------------------//
 
@@ -131,95 +109,76 @@ typedef enum {
 
 
 //--- Configuracion de leds ---//
-#ifdef HARDWARE_VERSION_2_0
-//--- PC0 ---//
-#define LED1    ((GPIOC->ODR & 0x0001) == 0)
+#ifdef HARDWARE_VERSION_3_0
+// PC0 
+#define LED1    ((GPIOC->ODR & 0x0001) != 0)
 #define LED1_ON    (GPIOC->BSRR = 0x00000001)
 #define LED1_OFF    (GPIOC->BSRR = 0x00010000)
 
-//--- PC1 ---//
-#define LED2    ((GPIOC->ODR & 0x0002) == 0)
+// PC1
+#define LED2    ((GPIOC->ODR & 0x0002) != 0)
 #define LED2_ON    (GPIOC->BSRR = 0x00000002)
 #define LED2_OFF    (GPIOC->BSRR = 0x00020000)
 
-//PA0, PA1 NC
+// PC2 NC
 
-//PA2
-//PA3    Usart2
+// PC3 Analog Channel 13 (Sense_12V)
 
-//PA4, PA5, PA6, PA7  NC
+// PA0 PA1 Alternative TIM5_CH1 TIM5_CH2
 
-//PC4    Analog Channel 14
-//PC5    Analog Channel 15
+// PA2 PA3 Alternative Usart2 Tx Rx
 
-//PB0, PB1, PB2 NC
+// PA4 Input
+#define PROT_CH4    ((GPIOA->IDR & 0x0010) != 0)
 
-//PB10
-//PB11    Usart3
+// PA5 Analog Channel 5 (IS_CH4)
+// PA6 Analog Channel 6 (IS_CH3)
 
-//PB12    NC
+// PA7 NC
 
-//--- PB13 ---//
-#define OUT5    ((GPIOB->ODR & 0x2000) != 0)
-#define OUT5_ON    (GPIOB->BSRR = 0x00002000)
-#define OUT5_OFF    (GPIOB->BSRR = 0x20000000)
+// PC4 Analog Channel 14 (Sense_200V)
+// PC5 Analog Channel 15 (Sense_15V)
 
-//--- PB14 ---//
-#define OUT4    ((GPIOB->ODR & 0x4000) != 0)
-#define OUT4_ON    (GPIOB->BSRR = 0x00004000)
-#define OUT4_OFF    (GPIOB->BSRR = 0x40000000)
+// PB0 Analog Channel 8 (IS_CH2)
+// PB1 Analog Channel 9 (IS_CH1)
 
-//--- PB15 ---//
-#define OUT1    ((GPIOB->ODR & 0x8000) != 0)
-#define OUT1_ON    (GPIOB->BSRR = 0x00008000)
-#define OUT1_OFF    (GPIOB->BSRR = 0x80000000)
+// PB2 Input
+#define PROT_CH3    ((GPIOB->IDR & 0x0004) != 0)
 
-//--- PC6 ---//
-#define OUT2    ((GPIOC->ODR & 0x0040) != 0)
-#define OUT2_ON    (GPIOC->BSRR = 0x00000040)
-#define OUT2_OFF    (GPIOC->BSRR = 0x00400000)
+// PB10 PB11 Alternative Usart3 Tx Rx
 
-//--- PC7 ---//
-#define OUT3    ((GPIOC->ODR & 0x0080) != 0)
-#define OUT3_ON    (GPIOC->BSRR = 0x00000080)
-#define OUT3_OFF    (GPIOC->BSRR = 0x00800000)
+// PB12 NC
 
-#ifdef USE_BUZZER_ON_OUT3
-#define BUZZER    OUT3
-#define BUZZER_ON    OUT3_ON
-#define BUZZER_OFF    OUT3_OFF
-#endif
+// PB13 Input
+#define PROT_CH2    ((GPIOB->IDR & 0x2000) != 0)
 
-//--- PC8 ---//
-#define IN2 ((GPIOC->IDR & 0x0100) != 0)
+// PB14 NC
 
-//--- PC9 ---//
-#define IN1 ((GPIOC->IDR & 0x0200) != 0)
+// PB15 Input
+#define PROT_CH1    ((GPIOB->IDR & 0x8000) != 0)
 
-//--- PA8 ---//
-#define IN0 ((GPIOA->IDR & 0x0100) == 0)
+// PC6 PC7 PC8 PC9 Alternative TIM8_CH1 TIM8_CH2 TIM8_CH3 TIM8_CH4
 
-//PA9
-//PA10    Usart1
+// PA8 
+#define BUZZER    ((GPIOA->ODR & 0x0100) != 0)
+#define BUZZER_ON    (GPIOA->BSRR = 0x00000100)
+#define BUZZER_OFF    (GPIOA->BSRR = 0x01000000)
 
-//PA11, PA12, PA13, PA14, PA15    NC
+// PA9 PA10 Alternative Usart1 Tx Rx
 
-//PC10
-//PC11    Uart4
+// PA11 PA12 PA13 PA14 PA15 NC
 
-//PC12
-//PD2    Uart5
+// PC10 PC11 Alternative Uart4 Tx Rx
 
-//PB3, PB4    NC
+// PC12 PD2 Alternative Uart5 Tx Rx
 
-//--- PB5 ---//
-#define SW_RX_TX    ((GPIOB->ODR & 0x0020) != 0)
-#define SW_RX_TX_ON    (GPIOB->BSRR = 0x00000020)
-#define SW_RX_TX_OFF    (GPIOB->BSRR = 0x00200000)
+// PB3 PB4 PB5 PB6 NC
 
-//PB6, PB7, PB8, PB9    NC
+// PB7 PB8 Alternative TIM4_CH2 TIM4_CH3
 
-#endif //HARDWARE_VERSION_2_0
+// PB9 NC
+
+#endif //HARDWARE_VERSION_3_0
 
 
 //ESTADOS DEL BUZZER

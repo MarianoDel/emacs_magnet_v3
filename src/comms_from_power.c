@@ -17,7 +17,7 @@
 #include "comms.h"
 #include "usart.h"
 #include "treatment.h"
-#include "timer.h"
+#include "tim.h"
 
 #include <string.h>
 #include <stdio.h>

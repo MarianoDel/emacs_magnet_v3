@@ -43,4 +43,14 @@ void PWM_TIM3_DUTY (unsigned short duty, unsigned short channel);
 void PWM_TIM4_CONFIG (unsigned short prescaler, unsigned short periodo, unsigned short duty1, unsigned short duty2, unsigned short duty3, unsigned short duty4, unsigned char channel_en);
 void PWM_TIM4_DUTY (unsigned short duty, unsigned short channel);
 
+
+#define HIGH_LEFT_PWM_CH4(X)    TIM5_Update_CH1(X)
+#define LOW_RIGHT_PWM_CH4(X)    TIM5_Update_CH2(X)
+
+#define HIGH_LEFT_PWM_CH1(X)    TIM8_Update_CH3(X)
+#define LOW_RIGHT_PWM_CH1(X)    TIM8_Update_CH4(X)
+
+#define HIGH_LEFT_PWM_CH2(X)    TIM8_Update_CH2(X)
+#define LOW_RIGHT_PWM_CH2(X)    TIM8_Update_CH1(X)
+
 #endif

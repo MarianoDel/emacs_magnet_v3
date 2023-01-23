@@ -97,8 +97,8 @@ void GpioInit (void)
         RCC_GPIOD_CLKEN;
 
     //--- GPIOA Low Side ------------------//
-    //PA0 NC
-    //PA1 NC
+    //PA0 Alternative TIM5_CH1
+    //PA1 Alternative TIM5_CH2
     //PA2 alternative Tx Usart2
     //PA3 alternative Rx Usart2
     //PA4 NC
@@ -106,12 +106,12 @@ void GpioInit (void)
     //PA6 NC
     //PA7 NC
     temp = GPIOA->CRL;
-    temp &= 0xFFFF00FF;
-    temp |= 0x00008A00;
+    temp &= 0xFFFF0000;
+    temp |= 0x00008AAA;
     GPIOA->CRL = temp;
 
     //--- GPIOA High Side ------------------//
-    //PA8 IN0
+    //PA8 BUZZER
     //PA9 alternative Tx Usart1
     //PA10 alternative Rx Usart1
     //PA11 NC
@@ -121,7 +121,7 @@ void GpioInit (void)
     //PA15 NC
     temp = GPIOA->CRH;
     temp &= 0xFFFFF000;
-    temp |= 0x000008A8;
+    temp |= 0x000008A2;
     GPIOA->CRH = temp;
 
     //--- GPIOA Pull-Up Pull-Dwn ------------------//
@@ -165,16 +165,16 @@ void GpioInit (void)
     //PC3 NC
     //PC4 Sense 200V ADC Channel 14
     //PC5 Sense 15V ADC Channel 15
-    //PC6 OUT2
-    //PC7 OUT3
+    //PC6 alternative TIM8_CH1
+    //PC7 alternative TIM8_CH2
     temp = GPIOC->CRL;
     temp &= 0x0000FF00;
-    temp |= 0x22000022;
+    temp |= 0xAA000022;
     GPIOC->CRL = temp;
 
     //--- GPIOC High Side -------------------//
-    //PC8 IN2
-    //PC9 IN1
+    //PC8 alternative TIM8_CH3
+    //PC9 alternative TIM8_CH4
     //PC10 alternative Tx Uart4
     //PC11 alternativo Rx Uart4
     //PC12 alternativo Tx Uart5
@@ -183,7 +183,7 @@ void GpioInit (void)
     //PC15 NC    oscillator
     temp = GPIOC->CRH;   
     temp &= 0xFFF00000;
-    temp |= 0x000A8A88;
+    temp |= 0x000A8AAA;
     GPIOC->CRH = temp;
 
     //--- GPIOD Low Side -------------------//

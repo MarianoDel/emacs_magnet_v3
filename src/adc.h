@@ -30,12 +30,11 @@
 
 #define ADC_START    (ADC1->CR2 |= ADC_CR2_SWSTART)
 
-#ifdef HARDWARE_VERSION_2_0
 #define Sense_200V     adc_ch[0]
 #define Sense_15V    adc_ch[1]
 #define ADC_CHANNEL_QUANTITY         2
 #define ADC_LAST_CHANNEL_QUANTITY    (ADC_CHANNEL_QUANTITY - 1)
-#endif
+
 
 //-- Exported Hardware Macros ---------------------
 #define RCC_ADC1_CLK (RCC->APB2ENR & 0x00000200)

@@ -21,11 +21,8 @@
 
 
 // Exported Functions ----------------------------------------------------------
-void TF_Voltages (void);
-void TF_Usart3_Tx (void);
-void TF_Usart3Loop (void);
-void TF_Usart3TxRx (void);
-void TF_CommsWithRaspberry (void);
+void TF_Hardware_Tests (void);
+
 
 #endif    /* _TEST_FUNTIONS_H_ */
 

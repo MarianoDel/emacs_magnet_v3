@@ -1,20 +1,20 @@
-//---------------------------------------------------------
-// #### PROJECT STRETCHER F103 - Custom Board ####
+//------------------------------------------------
+// #### PROJECT MAGNET V3 F103 - Custom Board ####
 // ##
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags
 // ## @TAGS:   Global
 // ## @CPU:    STM32F103
 // ##
-// #### MAIN.C ############################################
-//---------------------------------------------------------
+// #### MAIN.C ###################################
+//------------------------------------------------
 
-/* Includes ------------------------------------------------------------------*/
+// Includes --------------------------------------------------------------------
 #include "stm32f10x.h"
 #include "hard.h"
 
 #include "adc.h"
-#include "timer.h"
+#include "tim.h"
 #include "gpio.h"
 #include "usart.h"
 #include "dma.h"
@@ -28,6 +28,8 @@
 #include <stdio.h>
 #include <string.h>
 
+
+// Private Types Constants and Macros ------------------------------------------
 
 
 // Externals -------------------------------------------------------------------
@@ -77,509 +79,515 @@ void SysTickError (void);
 // Module Functions ------------------------------------------------------------
 int main (void)
 {
-    char buff [64];
-    treatment_t main_state = TREATMENT_STANDBY;
-    unsigned short bytes_readed = 0;
-    char s_to_senda [100];
-    char s_to_sendb [100];
-
     // Gpio Configuration.
     GpioInit();
-    OUT4_OFF;
-    OUT1_OFF;
+    BUZZER_OFF;
     
     // Systick Timer Activation
     if (SysTick_Config(72000))
         SysTickError();
 
-    // Peripherals Activation    
-    TIM7_Init();
+    // Hardware Tests
+    TF_Hardware_Tests ();
 
-    //-- DMA configuration.
-    DMAConfig();
-    DMA_ENABLE;
     
-    //Uso ADC con DMA
-    AdcConfig();
+//     char buff [64];
+//     treatment_t main_state = TREATMENT_STANDBY;
+//     unsigned short bytes_readed = 0;
+//     char s_to_senda [100];
+//     char s_to_sendb [100];
 
-    //usart1 para comunicacion con raspberry
-    Usart1Config();
-
-    //usart2 para comunicacion con micros
-    Usart2Config();
+//     OUT4_OFF;
+//     OUT1_OFF;
     
-    ChangeLed(LED_NO_BLINKING);
+//     // Peripherals Activation    
+//     TIM7_Init();
 
-    //-- Do some tests here, almost for hardware
-    // TF_Voltages();
-    // TF_Usart3_Tx();
-    // TF_Usart3TxRx();
-    // TF_Usart3Loop();
-    // TF_CommsWithRaspberry();
+//     //-- DMA configuration.
+//     DMAConfig();
+//     DMA_ENABLE;
     
-    //-- Welcome Messages --------------------
-    Usart1Send("\r\nGausstek Stretcher Board -- powered by: Kirno Technology\r\n");
-    Wait_ms(100);
+//     //Uso ADC con DMA
+//     AdcConfig();
 
-#ifdef HARD
-    Usart1Send(HARD);
-    Usart1Send("\r\n");
-    Wait_ms(100);    
-#else
-#error	"No Hardware defined in hard.h file"
-#endif
+//     //usart1 para comunicacion con raspberry
+//     Usart1Config();
 
-#ifdef SOFT
-    Usart1Send(SOFT);
-    Usart1Send("\r\n");
-    Wait_ms(100);    
-#else
-#error	"No Soft Version defined in hard.h file"
-#endif
+//     //usart2 para comunicacion con micros
+//     Usart2Config();
+    
+//     ChangeLed(LED_NO_BLINKING);
 
-    //limpio interfase serie
-    //limpio buffers serie
-    Wait_ms(3000);
-    Power_Send("chf\n");
-    ReadPowerBufferFlush();
+//     //-- Do some tests here, almost for hardware
+//     // TF_Voltages();
+//     // TF_Usart3_Tx();
+//     // TF_Usart3TxRx();
+//     // TF_Usart3Loop();
+//     // TF_CommsWithRaspberry();
+    
+//     //-- Welcome Messages --------------------
+//     Usart1Send("\r\nGausstek Stretcher Board -- powered by: Kirno Technology\r\n");
+//     Wait_ms(100);
 
-    Wait_ms(1000);
-    Power_Send("ch1 soft version\n");
-    Wait_ms(100);
-    if (power_have_data)
-    {
-        power_have_data = 0;
-        ReadPowerBuffer(buff, 64);
-        RPI_Send(buff);
-        RPI_Send("\r\n");
-    }
-    else
-        RPI_Send("no comms with ch1\r\n");
+// #ifdef HARD
+//     Usart1Send(HARD);
+//     Usart1Send("\r\n");
+//     Wait_ms(100);    
+// #else
+// #error	"No Hardware defined in hard.h file"
+// #endif
 
-    Wait_ms(1000);
-    Power_Send("ch2 soft version\n");
-    Wait_ms(100);
-    if (power_have_data)
-    {
-        power_have_data = 0;
-        ReadPowerBuffer(buff, 64);
-        RPI_Send(buff);
-        RPI_Send("\r\n");
-    }
-    else
-        RPI_Send("no comms with ch2\r\n");
+// #ifdef SOFT
+//     Usart1Send(SOFT);
+//     Usart1Send("\r\n");
+//     Wait_ms(100);    
+// #else
+// #error	"No Soft Version defined in hard.h file"
+// #endif
 
-    Wait_ms(1000);
-    Power_Send("ch3 soft version\n");
-    Wait_ms(100);
-    if (power_have_data)
-    {
-        power_have_data = 0;
-        ReadPowerBuffer(buff, 64);
-        RPI_Send(buff);
-        RPI_Send("\r\n");
-    }
-    else
-        RPI_Send("no comms with ch3\r\n");
+//     //limpio interfase serie
+//     //limpio buffers serie
+//     Wait_ms(3000);
+//     Power_Send("chf\n");
+//     ReadPowerBufferFlush();
+
+//     Wait_ms(1000);
+//     Power_Send("ch1 soft version\n");
+//     Wait_ms(100);
+//     if (power_have_data)
+//     {
+//         power_have_data = 0;
+//         ReadPowerBuffer(buff, 64);
+//         RPI_Send(buff);
+//         RPI_Send("\r\n");
+//     }
+//     else
+//         RPI_Send("no comms with ch1\r\n");
+
+//     Wait_ms(1000);
+//     Power_Send("ch2 soft version\n");
+//     Wait_ms(100);
+//     if (power_have_data)
+//     {
+//         power_have_data = 0;
+//         ReadPowerBuffer(buff, 64);
+//         RPI_Send(buff);
+//         RPI_Send("\r\n");
+//     }
+//     else
+//         RPI_Send("no comms with ch2\r\n");
+
+//     Wait_ms(1000);
+//     Power_Send("ch3 soft version\n");
+//     Wait_ms(100);
+//     if (power_have_data)
+//     {
+//         power_have_data = 0;
+//         ReadPowerBuffer(buff, 64);
+//         RPI_Send(buff);
+//         RPI_Send("\r\n");
+//     }
+//     else
+//         RPI_Send("no comms with ch3\r\n");
     
     
 
-    //---- Programa Principal ----------
-    ADC_START;
-    ChangeLed(LED_TREATMENT_STANDBY);
+//     //---- Programa Principal ----------
+//     ADC_START;
+//     ChangeLed(LED_TREATMENT_STANDBY);
 
-#ifdef USE_ONE_BIP_INIT
-    BuzzerCommands(BUZZER_SHORT_CMD, 2);
-#endif
+// #ifdef USE_ONE_BIP_INIT
+//     BuzzerCommands(BUZZER_SHORT_CMD, 2);
+// #endif
 
-#ifdef MAGNETO_ESPECIAL_1CH
-    unsigned char change_power = 0;
-    unsigned char change_power_end = 0;    
-    unsigned char power_output_stage = 1;
-#endif
-    while (1)
-    {
-        switch (main_state)
-        {
-        case TREATMENT_STANDBY:
+// #ifdef MAGNETO_ESPECIAL_1CH
+//     unsigned char change_power = 0;
+//     unsigned char change_power_end = 0;    
+//     unsigned char power_output_stage = 1;
+// #endif
+//     while (1)
+//     {
+//         switch (main_state)
+//         {
+//         case TREATMENT_STANDBY:
 
-            if (comms_messages_rpi & COMM_START_TREAT)
-            {
-                //me piden por el puerto que arranque el tratamiento
-                comms_messages_rpi &= ~COMM_START_TREAT;
-                if (TreatmentAssertParams() == resp_error)
-                {
-                    RPI_Send("ERROR\r\n");
-                }
-                else
-                {
-                    RPI_Send("OK\r\n");
-                    PowerSendConf();
-                    main_state = TREATMENT_STARTING;
-                }
-            }
-            RPI_Flush_Comms;
+//             if (comms_messages_rpi & COMM_START_TREAT)
+//             {
+//                 //me piden por el puerto que arranque el tratamiento
+//                 comms_messages_rpi &= ~COMM_START_TREAT;
+//                 if (TreatmentAssertParams() == resp_error)
+//                 {
+//                     RPI_Send("ERROR\r\n");
+//                 }
+//                 else
+//                 {
+//                     RPI_Send("OK\r\n");
+//                     PowerSendConf();
+//                     main_state = TREATMENT_STARTING;
+//                 }
+//             }
+//             RPI_Flush_Comms;
 
-#ifdef MAGNETO_ESPECIAL_1CH
-            switch (change_power)
-            {
-            case 0:
-                //cambiar potencia?
-                if (CheckS1() > SW_NO)
-                    change_power++;
+// #ifdef MAGNETO_ESPECIAL_1CH
+//             switch (change_power)
+//             {
+//             case 0:
+//                 //cambiar potencia?
+//                 if (CheckS1() > SW_NO)
+//                     change_power++;
 
-                break;
+//                 break;
 
-            case 1:
-                if (CheckS1() == SW_NO)
-                {
-                    if (power_output_stage < 3)
-                        power_output_stage++;
-                    else
-                        power_output_stage = 1;
+//             case 1:
+//                 if (CheckS1() == SW_NO)
+//                 {
+//                     if (power_output_stage < 3)
+//                         power_output_stage++;
+//                     else
+//                         power_output_stage = 1;
 
-                    BuzzerCommands(BUZZER_SHORT_CMD, power_output_stage);
-                    change_power = 0;
-                }
+//                     BuzzerCommands(BUZZER_SHORT_CMD, power_output_stage);
+//                     change_power = 0;
+//                 }
 
-                //empezar tratamiento?                
-                if (CheckS1() > SW_MIN)
-                {
-                    TreatmentSetSignalType (SINUSOIDAL_SIGNAL);
-                    TreatmentSetFrequency (7, 0);
-                    TreatmentSetChannelsFlag(ENABLE_CH1_FLAG);
-                    TreatmentSetChannelsFlag(DISABLE_CH2_FLAG);
-                    TreatmentSetChannelsFlag(DISABLE_CH3_FLAG);
-                    TreatmentSetTimeinMinutes(30);
-                    if (power_output_stage == 1)
-                        TreatmentSetPower (33);
-                    else if (power_output_stage == 2)
-                        TreatmentSetPower (66);
-                    else
-                        TreatmentSetPower (100);
+//                 //empezar tratamiento?                
+//                 if (CheckS1() > SW_MIN)
+//                 {
+//                     TreatmentSetSignalType (SINUSOIDAL_SIGNAL);
+//                     TreatmentSetFrequency (7, 0);
+//                     TreatmentSetChannelsFlag(ENABLE_CH1_FLAG);
+//                     TreatmentSetChannelsFlag(DISABLE_CH2_FLAG);
+//                     TreatmentSetChannelsFlag(DISABLE_CH3_FLAG);
+//                     TreatmentSetTimeinMinutes(30);
+//                     if (power_output_stage == 1)
+//                         TreatmentSetPower (33);
+//                     else if (power_output_stage == 2)
+//                         TreatmentSetPower (66);
+//                     else
+//                         TreatmentSetPower (100);
 
-                    change_power++;
-                    BuzzerCommands(BUZZER_SHORT_CMD, 1);
-                }
-                break;
+//                     change_power++;
+//                     BuzzerCommands(BUZZER_SHORT_CMD, 1);
+//                 }
+//                 break;
 
-            case 2:
-                if (CheckS1() == SW_NO)
-                {
-                    if (TreatmentAssertParams() == resp_error)
-                        RPI_Send("ERROR\r\n");
-                    else
-                    {
-                        RPI_Send("OK\r\n");
-                        PowerSendConf();
-                        main_state = TREATMENT_STARTING;
-                    }
+//             case 2:
+//                 if (CheckS1() == SW_NO)
+//                 {
+//                     if (TreatmentAssertParams() == resp_error)
+//                         RPI_Send("ERROR\r\n");
+//                     else
+//                     {
+//                         RPI_Send("OK\r\n");
+//                         PowerSendConf();
+//                         main_state = TREATMENT_STARTING;
+//                     }
                     
-                    change_power = 0;
-                }
-                break;
+//                     change_power = 0;
+//                 }
+//                 break;
 
-            default:
-                change_power = 0;
-                break;
-            }
-#endif
-            break;
+//             default:
+//                 change_power = 0;
+//                 break;
+//             }
+// #endif
+//             break;
 
-        case TREATMENT_STARTING:
-            secs_end_treatment = TreatmentGetTime();
-            secs_in_treatment = 1;    //con 1 arranca el timer
-            secs_elapsed_up_to_now = 0;
-            PowerCommunicationStackReset();
+//         case TREATMENT_STARTING:
+//             secs_end_treatment = TreatmentGetTime();
+//             secs_in_treatment = 1;    //con 1 arranca el timer
+//             secs_elapsed_up_to_now = 0;
+//             PowerCommunicationStackReset();
 
-            // sprintf (buff, "treat start, ch1: 0x%04x, ch2: 0x%04x, ch3: 0x%04x\r\n",
-            //          comms_messages_1,
-            //          comms_messages_2,
-            //          comms_messages_3);
+//             // sprintf (buff, "treat start, ch1: 0x%04x, ch2: 0x%04x, ch3: 0x%04x\r\n",
+//             //          comms_messages_1,
+//             //          comms_messages_2,
+//             //          comms_messages_3);
                     
-            // RPI_Send(buff);
+//             // RPI_Send(buff);
 
-            PowerSendStart();
-            main_state = TREATMENT_RUNNING;
-            ChangeLed(LED_TREATMENT_GENERATING);
-#ifdef USE_BUZZER_ON_OUT3
-            BuzzerCommands(BUZZER_HALF_CMD, 1);
-#endif
-            OUT5_ON;
+//             PowerSendStart();
+//             main_state = TREATMENT_RUNNING;
+//             ChangeLed(LED_TREATMENT_GENERATING);
+// #ifdef USE_BUZZER_ON_OUT3
+//             BuzzerCommands(BUZZER_HALF_CMD, 1);
+// #endif
+//             OUT5_ON;
 
-            //OUT4 pulse to up the stretcher
-            if (TreatmentGetUpDwn() == UPDWN_AUTO)
-                comms_messages_rpi |= COMM_STRETCHER_UP;
+//             //OUT4 pulse to up the stretcher
+//             if (TreatmentGetUpDwn() == UPDWN_AUTO)
+//                 comms_messages_rpi |= COMM_STRETCHER_UP;
             
-            OUT2_ON;
-            break;
+//             OUT2_ON;
+//             break;
 
-        case TREATMENT_RUNNING:
-            PowerCommunicationStack();    //me comunico con las potencias para conocer el estado
+//         case TREATMENT_RUNNING:
+//             PowerCommunicationStack();    //me comunico con las potencias para conocer el estado
 
-            if (comms_messages_rpi & COMM_PAUSE_TREAT)
-            {
-                comms_messages_rpi &= ~COMM_PAUSE_TREAT;
-                RPI_Send("OK\r\n");
-                PowerSendStop();
-                main_state = TREATMENT_PAUSED;
-                ChangeLed(LED_TREATMENT_PAUSED);
-                secs_elapsed_up_to_now = secs_in_treatment;
-            }
+//             if (comms_messages_rpi & COMM_PAUSE_TREAT)
+//             {
+//                 comms_messages_rpi &= ~COMM_PAUSE_TREAT;
+//                 RPI_Send("OK\r\n");
+//                 PowerSendStop();
+//                 main_state = TREATMENT_PAUSED;
+//                 ChangeLed(LED_TREATMENT_PAUSED);
+//                 secs_elapsed_up_to_now = secs_in_treatment;
+//             }
 
-            if (comms_messages_rpi & COMM_STOP_TREAT)
-            {
-                comms_messages_rpi &= ~COMM_STOP_TREAT;
+//             if (comms_messages_rpi & COMM_STOP_TREAT)
+//             {
+//                 comms_messages_rpi &= ~COMM_STOP_TREAT;
 
-                //termine el tratamiento por stop, o finish_ok,
-                RPI_Send("OK\r\n");
-                PowerSendStop();
-                main_state = TREATMENT_STOPPING;
-            }
+//                 //termine el tratamiento por stop, o finish_ok,
+//                 RPI_Send("OK\r\n");
+//                 PowerSendStop();
+//                 main_state = TREATMENT_STOPPING;
+//             }
 
-            //me mandaron start???
-            if (comms_messages_rpi & COMM_START_TREAT)
-            {
-                comms_messages_rpi &= ~COMM_START_TREAT;
-                RPI_Send("ERROR\r\n");
-            }
+//             //me mandaron start???
+//             if (comms_messages_rpi & COMM_START_TREAT)
+//             {
+//                 comms_messages_rpi &= ~COMM_START_TREAT;
+//                 RPI_Send("ERROR\r\n");
+//             }
 
-            if (secs_in_treatment >= secs_end_treatment)
-            {
-                //termine el tratamiento
-                PowerSendStop();
-                RPI_Send("ended ok\r\n");
-#ifdef USE_BUZZER_ON_OUT3
-                BuzzerCommands(BUZZER_SHORT_CMD, 3);
-#endif                
-                main_state = TREATMENT_STOPPING;
-            }
+//             if (secs_in_treatment >= secs_end_treatment)
+//             {
+//                 //termine el tratamiento
+//                 PowerSendStop();
+//                 RPI_Send("ended ok\r\n");
+// #ifdef USE_BUZZER_ON_OUT3
+//                 BuzzerCommands(BUZZER_SHORT_CMD, 3);
+// #endif                
+//                 main_state = TREATMENT_STOPPING;
+//             }
 
-            //reviso si hay algun canal con error
-            if ((comms_messages_1 & COMM_POWER_ERROR_MASK) ||
-                (comms_messages_2 & COMM_POWER_ERROR_MASK) ||
-                (comms_messages_3 & COMM_POWER_ERROR_MASK))
-            {
-                PowerSendStop();
+//             //reviso si hay algun canal con error
+//             if ((comms_messages_1 & COMM_POWER_ERROR_MASK) ||
+//                 (comms_messages_2 & COMM_POWER_ERROR_MASK) ||
+//                 (comms_messages_3 & COMM_POWER_ERROR_MASK))
+//             {
+//                 PowerSendStop();
 
-                LED1_ON;
-                secs_in_treatment = 0;    //con 0 freno el timer
-                sprintf (buff, "treat err, ch1: 0x%04x, ch2: 0x%04x, ch3: 0x%04x\r\n",
-                         comms_messages_1,
-                         comms_messages_2,
-                         comms_messages_3);
+//                 LED1_ON;
+//                 secs_in_treatment = 0;    //con 0 freno el timer
+//                 sprintf (buff, "treat err, ch1: 0x%04x, ch2: 0x%04x, ch3: 0x%04x\r\n",
+//                          comms_messages_1,
+//                          comms_messages_2,
+//                          comms_messages_3);
                     
-                RPI_Send(buff);
+//                 RPI_Send(buff);
 
-                if (comms_messages_1 & COMM_POWER_ERROR_MASK)
-                    Raspberry_Report_Errors(CH1, &comms_messages_1);
+//                 if (comms_messages_1 & COMM_POWER_ERROR_MASK)
+//                     Raspberry_Report_Errors(CH1, &comms_messages_1);
 
-                if (comms_messages_2 & COMM_POWER_ERROR_MASK)
-                    Raspberry_Report_Errors(CH2, &comms_messages_2);
+//                 if (comms_messages_2 & COMM_POWER_ERROR_MASK)
+//                     Raspberry_Report_Errors(CH2, &comms_messages_2);
 
-                if (comms_messages_3 & COMM_POWER_ERROR_MASK)
-                    Raspberry_Report_Errors(CH3, &comms_messages_3);
+//                 if (comms_messages_3 & COMM_POWER_ERROR_MASK)
+//                     Raspberry_Report_Errors(CH3, &comms_messages_3);
 
-#ifdef USE_BUZZER_ON_OUT3
-                BuzzerCommands(BUZZER_LONG_CMD, 1);
-#endif                                
-                LED1_OFF;
-                main_state = TREATMENT_WITH_ERRORS;
-            }
-            RPI_Flush_Comms;
+// #ifdef USE_BUZZER_ON_OUT3
+//                 BuzzerCommands(BUZZER_LONG_CMD, 1);
+// #endif                                
+//                 LED1_OFF;
+//                 main_state = TREATMENT_WITH_ERRORS;
+//             }
+//             RPI_Flush_Comms;
 
-#ifdef MAGNETO_ESPECIAL_1CH
-            //tengo que terminar??
-            switch (change_power_end)
-            {
-            case 0:
-                if (CheckS1() > SW_MIN)
-                {
-                    //termine el tratamiento
-                    PowerSendStop();
-                    RPI_Send("ended ok\r\n");
-                    BuzzerCommands(BUZZER_SHORT_CMD, 3);
-                    change_power_end++;
-                }
-                break;
+// #ifdef MAGNETO_ESPECIAL_1CH
+//             //tengo que terminar??
+//             switch (change_power_end)
+//             {
+//             case 0:
+//                 if (CheckS1() > SW_MIN)
+//                 {
+//                     //termine el tratamiento
+//                     PowerSendStop();
+//                     RPI_Send("ended ok\r\n");
+//                     BuzzerCommands(BUZZER_SHORT_CMD, 3);
+//                     change_power_end++;
+//                 }
+//                 break;
                 
-            case 1:
-                if (CheckS1() == SW_NO)
-                {
-                    change_power_end = 0;
-                    main_state = TREATMENT_STOPPING;
-                }
-                break;
+//             case 1:
+//                 if (CheckS1() == SW_NO)
+//                 {
+//                     change_power_end = 0;
+//                     main_state = TREATMENT_STOPPING;
+//                 }
+//                 break;
                 
-            default:
-                change_power_end = 0;
-                break;
-            }
-#endif
-            break;
+//             default:
+//                 change_power_end = 0;
+//                 break;
+//             }
+// #endif
+//             break;
 
-        case TREATMENT_PAUSED:
-            // un segundo pause, me hace arrancar nuevamente
-            if (comms_messages_rpi & COMM_PAUSE_TREAT)
-            {
-                comms_messages_rpi &= ~COMM_PAUSE_TREAT;
-                secs_in_treatment = secs_elapsed_up_to_now;
-                RPI_Send("OK\r\n");
-                PowerSendStart();
-                main_state = TREATMENT_RUNNING;
-                ChangeLed(LED_TREATMENT_GENERATING);
-            }
+//         case TREATMENT_PAUSED:
+//             // un segundo pause, me hace arrancar nuevamente
+//             if (comms_messages_rpi & COMM_PAUSE_TREAT)
+//             {
+//                 comms_messages_rpi &= ~COMM_PAUSE_TREAT;
+//                 secs_in_treatment = secs_elapsed_up_to_now;
+//                 RPI_Send("OK\r\n");
+//                 PowerSendStart();
+//                 main_state = TREATMENT_RUNNING;
+//                 ChangeLed(LED_TREATMENT_GENERATING);
+//             }
 
-            if (comms_messages_rpi & COMM_STOP_TREAT)
-            {
-                //estaba en pausa y me mandaron stop
-                comms_messages_rpi &= ~COMM_STOP_TREAT;
-                RPI_Send("OK\r\n");
-                PowerSendStop();
-                main_state = TREATMENT_STOPPING;
-            }
-            RPI_Flush_Comms;
-            break;
+//             if (comms_messages_rpi & COMM_STOP_TREAT)
+//             {
+//                 //estaba en pausa y me mandaron stop
+//                 comms_messages_rpi &= ~COMM_STOP_TREAT;
+//                 RPI_Send("OK\r\n");
+//                 PowerSendStop();
+//                 main_state = TREATMENT_STOPPING;
+//             }
+//             RPI_Flush_Comms;
+//             break;
                 
-        case TREATMENT_STOPPING:
-            secs_in_treatment = 0;    //con 0 freno el timer
-            sprintf (buff, "treat end, ch1: 0x%04x, ch2: 0x%04x, ch3: 0x%04x\r\n",
-                     comms_messages_1,
-                     comms_messages_2,
-                     comms_messages_3);
+//         case TREATMENT_STOPPING:
+//             secs_in_treatment = 0;    //con 0 freno el timer
+//             sprintf (buff, "treat end, ch1: 0x%04x, ch2: 0x%04x, ch3: 0x%04x\r\n",
+//                      comms_messages_1,
+//                      comms_messages_2,
+//                      comms_messages_3);
                     
-            RPI_Send(buff);
-            main_state = TREATMENT_STANDBY;
-            ChangeLed(LED_TREATMENT_STANDBY);
-            OUT5_OFF;
+//             RPI_Send(buff);
+//             main_state = TREATMENT_STANDBY;
+//             ChangeLed(LED_TREATMENT_STANDBY);
+//             OUT5_OFF;
 
-            //OUT4 pulse to down the stretcher
-            if (TreatmentGetUpDwn() == UPDWN_AUTO)
-                comms_messages_rpi |= COMM_STRETCHER_UP;
+//             //OUT4 pulse to down the stretcher
+//             if (TreatmentGetUpDwn() == UPDWN_AUTO)
+//                 comms_messages_rpi |= COMM_STRETCHER_UP;
             
-            OUT2_OFF;
-            break;
+//             OUT2_OFF;
+//             break;
 
-        case TREATMENT_WITH_ERRORS:
-            Wait_ms(1000);
-            Power_Send("chf flush errors\n");
-            RPI_Send("STOP\r\n");
-            Wait_ms(1000);
-            RPI_Send("STOP\r\n");
-            Wait_ms(1000);
-            RPI_Send("Flushing errors\r\n");
+//         case TREATMENT_WITH_ERRORS:
+//             Wait_ms(1000);
+//             Power_Send("chf flush errors\n");
+//             RPI_Send("STOP\r\n");
+//             Wait_ms(1000);
+//             RPI_Send("STOP\r\n");
+//             Wait_ms(1000);
+//             RPI_Send("Flushing errors\r\n");
 
-            Power_Send("chf flush errors\n");
-            comms_messages_1 &= ~COMM_POWER_ERROR_MASK;
-            comms_messages_2 &= ~COMM_POWER_ERROR_MASK;
-            comms_messages_3 &= ~COMM_POWER_ERROR_MASK;            
+//             Power_Send("chf flush errors\n");
+//             comms_messages_1 &= ~COMM_POWER_ERROR_MASK;
+//             comms_messages_2 &= ~COMM_POWER_ERROR_MASK;
+//             comms_messages_3 &= ~COMM_POWER_ERROR_MASK;            
             
-            Wait_ms(1000);
-            main_state = TREATMENT_STANDBY;
-            ChangeLed(LED_TREATMENT_STANDBY);
-            OUT5_OFF;
+//             Wait_ms(1000);
+//             main_state = TREATMENT_STANDBY;
+//             ChangeLed(LED_TREATMENT_STANDBY);
+//             OUT5_OFF;
             
-            //OUT4 pulse to down the stretcher
-            if (TreatmentGetUpDwn() == UPDWN_AUTO)
-                comms_messages_rpi |= COMM_STRETCHER_UP;
+//             //OUT4 pulse to down the stretcher
+//             if (TreatmentGetUpDwn() == UPDWN_AUTO)
+//                 comms_messages_rpi |= COMM_STRETCHER_UP;
             
-            OUT2_OFF;
-            break;
+//             OUT2_OFF;
+//             break;
 
-        case MAIN_IN_BRIDGE_MODE:
-            if (power_have_data)
-            {
-                power_have_data = 0;
-                bytes_readed = ReadPowerBuffer(s_to_sendb, sizeof(s_to_sendb));
+//         case MAIN_IN_BRIDGE_MODE:
+//             if (power_have_data)
+//             {
+//                 power_have_data = 0;
+//                 bytes_readed = ReadPowerBuffer(s_to_sendb, sizeof(s_to_sendb));
 
-                if ((bytes_readed + 2) < sizeof(s_to_sendb))
-                {
-                    *(s_to_sendb + bytes_readed) = '\r';
-                    *(s_to_sendb + bytes_readed + 1) = '\n';                    
-                    *(s_to_sendb + bytes_readed + 2) = '\0';
-                    RPI_Send(s_to_sendb);
-                }
-            }
+//                 if ((bytes_readed + 2) < sizeof(s_to_sendb))
+//                 {
+//                     *(s_to_sendb + bytes_readed) = '\r';
+//                     *(s_to_sendb + bytes_readed + 1) = '\n';                    
+//                     *(s_to_sendb + bytes_readed + 2) = '\0';
+//                     RPI_Send(s_to_sendb);
+//                 }
+//             }
 
-            if (rpi_have_data)
-            {
-                rpi_have_data = 0;
-                bytes_readed = ReadRPIBuffer(s_to_senda, sizeof(s_to_senda));
+//             if (rpi_have_data)
+//             {
+//                 rpi_have_data = 0;
+//                 bytes_readed = ReadRPIBuffer(s_to_senda, sizeof(s_to_senda));
                     
-                if (strncmp(s_to_senda, "goto normal mode", sizeof("goto normal mode") - 1) == 0)
-                {
-                    RPI_Send((char *)"Going to Normal Mode...\r\n");
-                    main_state = TREATMENT_STANDBY;
-                    ChangeLed(LED_TREATMENT_STANDBY);
-                }
-                else if ((bytes_readed + 1) < sizeof(s_to_senda))
-                {
-                    *(s_to_senda + bytes_readed - 1) = '\n';
-                    *(s_to_senda + bytes_readed) = '\0';
-                    Power_Send(s_to_senda);
-                }
+//                 if (strncmp(s_to_senda, "goto normal mode", sizeof("goto normal mode") - 1) == 0)
+//                 {
+//                     RPI_Send((char *)"Going to Normal Mode...\r\n");
+//                     main_state = TREATMENT_STANDBY;
+//                     ChangeLed(LED_TREATMENT_STANDBY);
+//                 }
+//                 else if ((bytes_readed + 1) < sizeof(s_to_senda))
+//                 {
+//                     *(s_to_senda + bytes_readed - 1) = '\n';
+//                     *(s_to_senda + bytes_readed) = '\0';
+//                     Power_Send(s_to_senda);
+//                 }
 
-                if (LED1)
-                    LED1_OFF;
-                else
-                    LED1_ON;
-            }
-            break;
+//                 if (LED1)
+//                     LED1_OFF;
+//                 else
+//                     LED1_ON;
+//             }
+//             break;
                 
-        default:
-            main_state = TREATMENT_STANDBY;
-            break;
-        }            
+//         default:
+//             main_state = TREATMENT_STANDBY;
+//             break;
+//         }            
 
 
-        if (main_state != MAIN_IN_BRIDGE_MODE)
-        {
-            //reviso comunicacion con raspberry
-            UpdateRaspberryMessages();
+//         if (main_state != MAIN_IN_BRIDGE_MODE)
+//         {
+//             //reviso comunicacion con raspberry
+//             UpdateRaspberryMessages();
 
-            //reviso comunicacion con potencias
-            UpdatePowerMessages();
+//             //reviso comunicacion con potencias
+//             UpdatePowerMessages();
 
-            // en cualquier momento me pueden pedir mover la camilla
-            if (comms_messages_rpi & COMM_STRETCHER_UP)
-            {
-                comms_messages_rpi &= ~COMM_STRETCHER_UP;
-                timer_out4 = TIMER_OUT4_IN_ON;
-                OUT4_ON;
-                OUT1_ON;
-            }
+//             // en cualquier momento me pueden pedir mover la camilla
+//             if (comms_messages_rpi & COMM_STRETCHER_UP)
+//             {
+//                 comms_messages_rpi &= ~COMM_STRETCHER_UP;
+//                 timer_out4 = TIMER_OUT4_IN_ON;
+//                 OUT4_ON;
+//                 OUT1_ON;
+//             }
 
-            //reviso si tengo que ir al modo bridge
-            if (comms_messages_rpi & COMM_GOTO_BRIDGE)
-            {
-                comms_messages_rpi &= ~COMM_GOTO_BRIDGE;
-                main_state = MAIN_IN_BRIDGE_MODE;
-                ChangeLed(LED_TREATMENT_BRIDGE_MODE);
-            }
-        }
+//             //reviso si tengo que ir al modo bridge
+//             if (comms_messages_rpi & COMM_GOTO_BRIDGE)
+//             {
+//                 comms_messages_rpi &= ~COMM_GOTO_BRIDGE;
+//                 main_state = MAIN_IN_BRIDGE_MODE;
+//                 ChangeLed(LED_TREATMENT_BRIDGE_MODE);
+//             }
+//         }
 
-        if (sequence_ready)
-            sequence_ready_reset;
+//         if (sequence_ready)
+//             sequence_ready_reset;
 
-        UpdateLed();
-        UpdateBuzzer();
+//         UpdateLed();
+//         UpdateBuzzer();
 
-        TreatmentUpdateMainState(main_state);
+//         TreatmentUpdateMainState(main_state);
 
-#ifdef MAGNETO_ESPECIAL_1CH
-        UpdateSwitches();
-#endif
+// #ifdef MAGNETO_ESPECIAL_1CH
+//         UpdateSwitches();
+// #endif
         
         
-#ifdef USE_SYNC_ALL_PLACES        
-        UpdateSyncPulses();
-#elif defined USE_SYNC_ONLY_ON_TREATMENT
-        if (main_state == TREATMENT_RUNNING)
-            UpdateSyncPulses();
-#else
-#pragma message "NO SYNC SELECTED"
-#endif
-    }
+// #ifdef USE_SYNC_ALL_PLACES        
+//         UpdateSyncPulses();
+// #elif defined USE_SYNC_ONLY_ON_TREATMENT
+//         if (main_state == TREATMENT_RUNNING)
+//             UpdateSyncPulses();
+// #else
+// #pragma message "NO SYNC SELECTED"
+// #endif
+    // }
 
 //---- Fin Programa Pricipal ----------
 }
@@ -591,38 +599,38 @@ void TimingDelay_Decrement(void)
     if (wait_ms_var)
         wait_ms_var--;
 
-    if (comms_timeout)
-        comms_timeout--;
+    // if (comms_timeout)
+    //     comms_timeout--;
 
-    if (secs_in_treatment)
-    {
-        if (millis < 1000)
-            millis++;
-        else
-        {
-            secs_in_treatment++;
-            millis = 0;
-        }
-    }
+    // if (secs_in_treatment)
+    // {
+    //     if (millis < 1000)
+    //         millis++;
+    //     else
+    //     {
+    //         secs_in_treatment++;
+    //         millis = 0;
+    //     }
+    // }
 
-    if (timer_out4)
-        timer_out4--;
-    else
-    {
-        OUT4_OFF;
-        OUT1_OFF;
-    }
+    // if (timer_out4)
+    //     timer_out4--;
+    // else
+    // {
+    //     OUT4_OFF;
+    //     OUT1_OFF;
+    // }
     
-    // if (timer_standby)
-    //     timer_standby--;
+    // // if (timer_standby)
+    // //     timer_standby--;
 
-    // if (timer_filters)
-    //     timer_filters--;
+    // // if (timer_filters)
+    // //     timer_filters--;
     
 
-    // if (timer_led_pwm < 0xFFFF)
-    //     timer_led_pwm ++;
-    HARD_Timers_Update();
+    // // if (timer_led_pwm < 0xFFFF)
+    // //     timer_led_pwm ++;
+    // HARD_Timers_Update();
 }
 
 
