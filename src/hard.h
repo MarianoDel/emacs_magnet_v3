@@ -97,16 +97,6 @@ enum bool
 	TRUE = !FALSE
 };
 
-#ifdef MAGNETO_ESPECIAL_1CH
-typedef enum {
-    SW_NO = 0,
-    SW_MIN,
-    SW_HALF,
-    SW_FULL
-    
-} resp_sw_t;
-#endif
-
 
 //--- Configuracion de leds ---//
 #ifdef HARDWARE_VERSION_3_0
@@ -252,10 +242,5 @@ void BuzzerCommands(unsigned char , unsigned char );
 void HARD_Timers_Update (void);
 void HARD_L1_ON (void);
 void HARD_L1_OFF (void);
-
-#ifdef MAGNETO_ESPECIAL_1CH
-resp_sw_t CheckS1 (void);
-void UpdateSwitches (void);
-#endif
 
 #endif

@@ -68,9 +68,9 @@ void Update_TIM3_CH2 (unsigned short);
 void Update_TIM3_CH3 (unsigned short);
 void Update_TIM3_CH4 (unsigned short);
 
-void TIM_4_Init (void);
-void TIM_4_Delay_us (unsigned short);
-void Update_TIM4_CH1 (unsigned short a);
+void TIM4_Init (void);
+void TIM4_Update_CH2 (unsigned short a);
+void TIM4_Update_CH3 (unsigned short a);
 
 #ifdef STM32F10X_HD
 // Timer 5 Functions

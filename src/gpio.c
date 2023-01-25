@@ -101,13 +101,13 @@ void GpioInit (void)
     //PA1 Alternative TIM5_CH2
     //PA2 alternative Tx Usart2
     //PA3 alternative Rx Usart2
-    //PA4 NC
+    //PA4 PROT_CH4 input
     //PA5 NC
     //PA6 NC
     //PA7 NC
     temp = GPIOA->CRL;
-    temp &= 0xFFFF0000;
-    temp |= 0x00008AAA;
+    temp &= 0xFFF00000;
+    temp |= 0x00048AAA;
     GPIOA->CRL = temp;
 
     //--- GPIOA High Side ------------------//
@@ -133,29 +133,29 @@ void GpioInit (void)
     //--- GPIOB Low Side -------------------//
     //PB0 NC
     //PB1 NC
-    //PB2 NC
+    //PB2 PROT_CH3 input
     //PB3 NC
     //PB4 NC
     //PB5 SW_RX_TX    RS485
     //PB6 
-    //PB7 
+    //PB7 alternative TIM4_CH2
     temp = GPIOB->CRL;
-    temp &= 0xFF0FFFFF;
-    temp |= 0x00200000;
+    temp &= 0x0F0FF0FF;
+    temp |= 0xA0200400;
     GPIOB->CRL = temp;
 
     //--- GPIOB High Side -------------------//
-    //PB8 NC
+    //PB8 alternative TIM4_CH3
     //PB9 NC
     //PB10 alternative Tx Usart3
     //PB11 alternative Rx Usart3
     //PB12 NC
-    //PB13 OUT5
+    //PB13 PROT_CH2 input
     //PB14 OUT4
-    //PB15 OUT1  
+    //PB15 PROT_CH1 input
     temp = GPIOB->CRH;
-    temp &= 0x000F00FF;
-    temp |= 0x22208A00;
+    temp &= 0x000F00F0;
+    temp |= 0x42408A0A;
     GPIOB->CRH = temp;    
     
     //--- GPIOC Low Side -------------------//

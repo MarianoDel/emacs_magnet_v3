@@ -12,6 +12,7 @@
 // Includes --------------------------------------------------------------------
 #include "test_functions.h"
 #include "hard.h"
+#include "stm32f10x.h"
 #include "adc.h"
 #include "usart.h"
 #include "dma.h"
@@ -38,11 +39,17 @@ void TF_Led_1 (void);
 void TF_Led_2 (void);
 void TF_Buzzer (void);
 
-void TF_Tim5_Channel4_Pwm (void);
-
 void TF_Tim8_Channel1_Pwm (void);
 void TF_Tim8_Channel2_Pwm (void);
+void TF_Tim4_Channel3_Pwm (void);
+void TF_Tim5_Channel4_Pwm (void);
 
+void TF_PROT_Input_Ch1_Ch2 (void);
+void TF_PROT_Input_Ch3_Ch4 (void);
+
+void TF_Usart1_Tx (void);
+void TF_Usart1_Tx_String (void);
+    
 void TF_Reset_Input (void);
 void TF_Usart1_Tx_Int (void);
 void TF_Usart1_Tx_Rx_Int (void);
@@ -72,7 +79,14 @@ void TF_Hardware_Tests (void)
 
     // TF_Tim5_Channel4_Pwm ();
     // TF_Tim8_Channel1_Pwm();
-    TF_Tim8_Channel2_Pwm();
+    // TF_Tim8_Channel2_Pwm();
+    // TF_Tim4_Channel3_Pwm();
+    
+    // TF_PROT_Input_Ch1_Ch2 ();
+    // TF_PROT_Input_Ch3_Ch4 ();
+
+    // TF_Usart1_Tx ();
+    TF_Usart1_Tx_String ();
     
     // TF_Reset_Input ();
     // TF_Usart1_Tx_Int ();
@@ -186,22 +200,112 @@ void TF_Tim8_Channel2_Pwm (void)
 }
 
 
-void TF_Voltages (void)
+void TF_Tim4_Channel3_Pwm (void)
 {
-    //--- Test ADC Multiple conversion Scanning Continuous Mode and DMA -------------------//
+    TIM4_Init();
+    
+    while (1)
+    {
+        HIGH_LEFT_PWM_CH3 (DUTY_50_PERCENT);
+        LOW_RIGHT_PWM_CH3 (DUTY_50_PERCENT);
+        LED1_ON;
+        Wait_ms(5000);
+
+        HIGH_LEFT_PWM_CH3 (DUTY_NONE);
+        LOW_RIGHT_PWM_CH3 (DUTY_NONE);
+        LED1_OFF;
+        Wait_ms(5000);
+        
+    }    
+}
+
+
+void TF_PROT_Input_Ch1_Ch2 (void)
+{
+    
+    while (1)
+    {
+        if (PROT_CH1)
+            LED1_ON;
+        else
+            LED1_OFF;
+
+        if (PROT_CH2)
+            LED2_ON;
+        else
+            LED2_OFF;
+    }    
+}
+
+
+void TF_PROT_Input_Ch3_Ch4 (void)
+{
+    
+    while (1)
+    {
+        if (PROT_CH3)
+            LED1_ON;
+        else
+            LED1_OFF;
+
+        if (PROT_CH4)
+            LED2_ON;
+        else
+            LED2_OFF;
+    }    
+}
+
+
+void TF_Usart1_Tx (void)
+{
+    Usart1Config();
+    
+    while (1)
+    {
+        unsigned char snd = 'M';
+        Usart1SendUnsigned(&snd, 1);
+        Wait_ms(100);
+    }
+}
+
+
+void TF_Usart1_Tx_String (void)
+{
+    Usart1Config();
+    
+    while (1)
+    {
+        Usart1Send("Mariano\n");
+        Wait_ms(2000);
+    }
+}
+
+
+void TF_Voltages_Sense (void)
+{
     char buff [100] = { 0 };
     unsigned int seq_cnt = 0;
+
+    //-- Test ADC Multiple conversion Scanning Continuous Mode and DMA 
+    //-- DMA configuration.
+    DMAConfig();
+    DMA_ENABLE;
+    
+    //Uso ADC con DMA
+    AdcConfig();
     ADC_START;
+    
     while (1)
     {
         if (!wait_ms_var)
         {
-            sprintf(buff, "High supply: %d, Low supply: %d, seq: %d\n",
+            sprintf(buff, "High supply: %d, Low supply: %d, Twelve: %d seq: %d\n",
                     Sense_200V,
                     Sense_15V,
+                    Sense_12V,
                     seq_cnt);
             
-            RPI_Send(buff);
+            RpiSend(buff);
             wait_ms_var = 1000;
             seq_cnt = 0;
         }
@@ -239,7 +343,7 @@ void TF_Usart3Loop (void)
         {
             usart3_have_data = 0;
             LED1_ON;
-            ReadUsart3Buffer((unsigned char *)local_buff, 64);
+            Usart3ReadBuffer((unsigned char *)local_buff, 64);
             Wait_ms(1000);
             i = strlen(local_buff);
             if (i < 62)
@@ -269,7 +373,7 @@ void TF_Usart3TxRx (void)
         {
             usart3_have_data = 0;
             LED1_ON;
-            ReadUsart3Buffer((unsigned char *)local_buff, 64);
+            Usart3ReadBuffer((unsigned char *)local_buff, 64);
             if (strcmp((const char *) "HOLA!!!", local_buff) == 0)
                 LED2_ON;
             else

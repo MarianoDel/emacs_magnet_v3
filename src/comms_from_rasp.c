@@ -25,8 +25,9 @@
 
 
 
+#define SIZEOF_RXDATA    128
+
 // Externals -------------------------------------------------------------------
-extern volatile unsigned char rpi_have_data;
 extern unsigned short comms_messages_rpi;
 extern volatile unsigned short adc_ch [];
 
@@ -52,11 +53,11 @@ static void SendStatus (void);
 // Module Functions ------------------------------------------------------------
 void UpdateRaspberryMessages (void)
 {
-    if (rpi_have_data)
+    if (RpiHaveData())
     {
-        rpi_have_data = 0;
+        RpiHaveDataReset();
         HARD_L1_ON();
-        ReadRPIBuffer(local_rasp_buff, SIZEOF_RXDATA);
+        RpiReadBuffer(local_rasp_buff, SIZEOF_RXDATA);
         Raspberry_Messages(local_rasp_buff);
         HARD_L1_OFF();
     }
@@ -77,19 +78,19 @@ static void Raspberry_Messages (char * msg)
     if (!strncmp(msg, (const char *)"signal triangular", (sizeof("signal triangular") - 1)))
     {
         TreatmentSetSignalType(TRIANGULAR_SIGNAL);
-        RPI_Send(s_ok);
+        RpiSend(s_ok);
     }
 
     else if (!strncmp(msg, (const char *)"signal square", (sizeof("signal square") - 1)))
     {
         TreatmentSetSignalType(SQUARE_SIGNAL);
-        RPI_Send(s_ok);
+        RpiSend(s_ok);
     }
 
     else if (!strncmp(msg, (const char *)"signal sinusoidal", (sizeof("signal sinusoidal") - 1)))
     {
         TreatmentSetSignalType(SINUSOIDAL_SIGNAL);
-        RPI_Send(s_ok);
+        RpiSend(s_ok);
     }
 
     else if (!strncmp(msg, (const char *)"power", (sizeof("power") - 1)))
@@ -115,9 +116,9 @@ static void Raspberry_Messages (char * msg)
         }
             
         if (resp == resp_ok)
-            RPI_Send(s_ok);
+            RpiSend(s_ok);
         else
-            RPI_Send(s_nok);
+            RpiSend(s_nok);
     }
 
     //-- Frequency Setting
@@ -130,7 +131,7 @@ static void Raspberry_Messages (char * msg)
         //lo que viene es E.DD o EE.DD, siempre 2 posiciones decimales
         decimales = StringIsANumber(msg, &new_freq_int);
         // sprintf(to_send, "dec: %d freq: %d\n", decimales, new_freq_int);
-        // RPI_Send(to_send);
+        // RpiSend(to_send);
 
         if ((decimales) && (decimales < 3))
         {
@@ -146,9 +147,9 @@ static void Raspberry_Messages (char * msg)
         }
 
         if (resp == resp_ok)
-            RPI_Send(s_ok);
+            RpiSend(s_ok);
         else
-            RPI_Send(s_nok);
+            RpiSend(s_nok);
     }
 
     else if (!strncmp(msg, (const char *)"enable channel ", (sizeof("enable channel ") - 1)))
@@ -156,23 +157,23 @@ static void Raspberry_Messages (char * msg)
         if (*(msg + 15) == '1')
         {
             TreatmentSetChannelsFlag(ENABLE_CH1_FLAG);
-            RPI_Send(s_ok);
+            RpiSend(s_ok);
         }
 
         else if (*(msg + 15) == '2')
         {
             TreatmentSetChannelsFlag(ENABLE_CH2_FLAG);
-            RPI_Send(s_ok);
+            RpiSend(s_ok);
         }
 
         else if (*(msg + 15) == '3')
         {
             TreatmentSetChannelsFlag(ENABLE_CH3_FLAG);
-            RPI_Send(s_ok);
+            RpiSend(s_ok);
         }
 
         else
-            RPI_Send(s_nok);
+            RpiSend(s_nok);
 
         
     }
@@ -182,30 +183,30 @@ static void Raspberry_Messages (char * msg)
         if (*(msg + 16) == '1')
         {
             TreatmentSetChannelsFlag(DISABLE_CH1_FLAG);
-            RPI_Send(s_ok);
+            RpiSend(s_ok);
         }
 
         else if (*(msg + 16) == '2')
         {
             TreatmentSetChannelsFlag(DISABLE_CH2_FLAG);
-            RPI_Send(s_ok);
+            RpiSend(s_ok);
         }
 
         else if (*(msg + 16) == '3')
         {
             TreatmentSetChannelsFlag(DISABLE_CH3_FLAG);
-            RPI_Send(s_ok);
+            RpiSend(s_ok);
         }
 
         else
-            RPI_Send(s_nok);
+            RpiSend(s_nok);
             
     }
 
     else if (!strncmp(msg, (const char *)"stretcher up", (sizeof("stretcher up") - 1)))
     {
         comms_messages_rpi |= COMM_STRETCHER_UP;
-        RPI_Send(s_ok);        
+        RpiSend(s_ok);        
     }
 
     else if (!strncmp(msg,
@@ -213,7 +214,7 @@ static void Raspberry_Messages (char * msg)
                       (sizeof("stretcher autoup on") - 1)))
     {
         TreatmentSetUpDwn(UPDWN_AUTO);
-        RPI_Send(s_ok);        
+        RpiSend(s_ok);        
     }
 
     else if (!strncmp(msg,
@@ -221,13 +222,13 @@ static void Raspberry_Messages (char * msg)
                       (sizeof("stretcher autoup off") - 1)))
     {
         TreatmentSetUpDwn(UPDWN_MANUAL);
-        RPI_Send(s_ok);        
+        RpiSend(s_ok);        
     }
     
     else if (!strncmp(msg, "goto bridge mode", sizeof("goto bridge mode") - 1))
     {
         comms_messages_rpi |= COMM_GOTO_BRIDGE;
-        RPI_Send((char *)"Going to Bridge Mode...\r\n");
+        RpiSend((char *)"Going to Bridge Mode...\r\n");
     }
 
     else if (!strncmp(msg, "voltage", sizeof("voltage") - 1))
@@ -243,7 +244,7 @@ static void Raspberry_Messages (char * msg)
         fcalc = fcalc * 10;
         volt_dec = (short) fcalc;
         sprintf(to_send, "High Supply: %3d.%01dV\r\n", volt_int, volt_dec);
-        RPI_Send(to_send);
+        RpiSend(to_send);
 
         fcalc = Sense_15V;
         fcalc = fcalc * K_15V;
@@ -252,17 +253,17 @@ static void Raspberry_Messages (char * msg)
         fcalc = fcalc * 10;
         volt_dec = (short) fcalc;        
         sprintf(to_send, "Low Supply: %3d.%01dV\r\n", volt_int, volt_dec);
-        RPI_Send(to_send);
+        RpiSend(to_send);
         
         // sprintf(to_send, "High supply: %d, Low supply: %d\r\n", Sense_200V, Sense_15V);                
-        // RPI_Send(to_send);
+        // RpiSend(to_send);
     }
     
     else if (!strncmp(msg, "hard_soft", sizeof("hard_soft") - 1))
     {
         char to_send [80];
         sprintf(to_send, "%s\r\n%s\r\n", HARD, SOFT);
-        RPI_Send(to_send);
+        RpiSend(to_send);
     }
 
 
@@ -278,7 +279,7 @@ static void Raspberry_Messages (char * msg)
         if (decimales == 1)
         {
             BuzzerCommands(BUZZER_SHORT_CMD, (unsigned char) bips_qtty);
-            RPI_Send(s_ok);
+            RpiSend(s_ok);
         }
         else
             resp = resp_error;
@@ -295,10 +296,10 @@ static void Raspberry_Messages (char * msg)
         if (decimales == 1)
         {
             BuzzerCommands(BUZZER_HALF_CMD, (unsigned char) bips_qtty);
-            RPI_Send(s_ok);
+            RpiSend(s_ok);
         }
         else
-            RPI_Send(s_nok);
+            RpiSend(s_nok);
 
     }
 
@@ -318,7 +319,7 @@ static void Raspberry_Messages (char * msg)
 
     else if (!strncmp(msg, (const char *)"keepalive,", (sizeof("keepalive,") - 1)))
     {
-        RPI_Send(s_ok);
+        RpiSend(s_ok);
     }
 
     else if (!strncmp(msg, (const char *)"duration,", (sizeof("duration,") - 1)))
@@ -333,14 +334,14 @@ static void Raspberry_Messages (char * msg)
         {
             if (TreatmentSetTimeinMinutes(new_time) == resp_ok)
             {
-                RPI_Send(s_ok);
+                RpiSend(s_ok);
                 comms_messages_rpi |= COMM_CONF_CHANGE;
             }
             else
-                RPI_Send(s_nok);
+                RpiSend(s_nok);
         }
         else
-            RPI_Send(s_nok);
+            RpiSend(s_nok);
     }
 
     else if (!strncmp((const char *)msg, (const char *)"serial num", (sizeof("serial num") - 1)))
@@ -355,7 +356,7 @@ static void Raspberry_Messages (char * msg)
         device_id ^= *((unsigned int*)(0x1FFFF7E8 + 8));
         sprintf(to_send, "Device Id: 0x%08x\r\n", device_id);
             
-        RPI_Send(to_send);
+        RpiSend(to_send);
 #endif
 #ifdef USE_DEVICE_ID_12BYTES
         sprintf(to_send, "Device Id: 0x%04x%04x%08x%08x\r\n",
@@ -364,7 +365,7 @@ static void Raspberry_Messages (char * msg)
                 *((unsigned int*)(0x1FFFF7E8 + 4)),
                 *((unsigned int*)(0x1FFFF7E8 + 8)));
         
-        RPI_Send(to_send);
+        RpiSend(to_send);
 #endif
     }
     
@@ -377,21 +378,21 @@ static void Raspberry_Messages (char * msg)
         {
         case '1':
             // UART_CH1_Send("get_temp\r\n");
-            RPI_Send(s_ok);
+            RpiSend(s_ok);
             break;
 
         case '2':
             // UART_CH2_Send("get_temp\r\n");
-            RPI_Send(s_ok);
+            RpiSend(s_ok);
             break;
 
         case '3':
             // UART_CH3_Send("get_temp\r\n");
-            RPI_Send(s_ok);
+            RpiSend(s_ok);
             break;
 
         default:
-            RPI_Send(s_nok);
+            RpiSend(s_nok);
             break;
         }
     }
@@ -419,7 +420,7 @@ static void Raspberry_Messages (char * msg)
         SendStatus();
     
     else
-        RPI_Send(s_nok);
+        RpiSend(s_nok);
 
 
 //     //--- end ---//
@@ -440,13 +441,13 @@ void Raspberry_Report_Errors (unsigned char ch, unsigned short * errors)
     if (*errors & COMM_ERROR_NO_COMM)
     {
         if (ch == CH1)
-            RPI_Send("ERROR(0x11)\r\n");
+            RpiSend("ERROR(0x11)\r\n");
 
         if (ch == CH2)
-            RPI_Send("ERROR(0x12)\r\n");
+            RpiSend("ERROR(0x12)\r\n");
 
         if (ch == CH3)
-            RPI_Send("ERROR(0x13)\r\n");
+            RpiSend("ERROR(0x13)\r\n");
 
         *errors &= ~COMM_ERROR_NO_COMM;
     }
@@ -454,13 +455,13 @@ void Raspberry_Report_Errors (unsigned char ch, unsigned short * errors)
     if (*errors & COMM_ERROR_NO_CURRENT)
     {
         if (ch == CH1)
-            RPI_Send("ERROR(0x21)\r\n");
+            RpiSend("ERROR(0x21)\r\n");
 
         if (ch == CH2)
-            RPI_Send("ERROR(0x22)\r\n");
+            RpiSend("ERROR(0x22)\r\n");
 
         if (ch == CH3)
-            RPI_Send("ERROR(0x23)\r\n");
+            RpiSend("ERROR(0x23)\r\n");
 
         *errors &= ~COMM_ERROR_NO_CURRENT;
     }
@@ -468,13 +469,13 @@ void Raspberry_Report_Errors (unsigned char ch, unsigned short * errors)
     if (*errors & COMM_ERROR_OVERTEMP)
     {
         if (ch == CH1)
-            RPI_Send("ERROR(0x41)\r\n");
+            RpiSend("ERROR(0x41)\r\n");
 
         if (ch == CH2)
-            RPI_Send("ERROR(0x42)\r\n");
+            RpiSend("ERROR(0x42)\r\n");
 
         if (ch == CH3)
-            RPI_Send("ERROR(0x43)\r\n");
+            RpiSend("ERROR(0x43)\r\n");
 
         *errors &= ~COMM_ERROR_OVERTEMP;
     }
@@ -482,13 +483,13 @@ void Raspberry_Report_Errors (unsigned char ch, unsigned short * errors)
     if (*errors & COMM_ERROR_OVERCURRENT)
     {
         if (ch == CH1)
-            RPI_Send("ERROR(0x51)\r\n");
+            RpiSend("ERROR(0x51)\r\n");
 
         if (ch == CH2)
-            RPI_Send("ERROR(0x52)\r\n");
+            RpiSend("ERROR(0x52)\r\n");
 
         if (ch == CH3)
-            RPI_Send("ERROR(0x53)\r\n");
+            RpiSend("ERROR(0x53)\r\n");
 
         *errors &= ~COMM_ERROR_OVERCURRENT;
     }
@@ -496,13 +497,13 @@ void Raspberry_Report_Errors (unsigned char ch, unsigned short * errors)
     if (*errors & COMM_ERROR_SOFT_OVERCURRENT)
     {
         if (ch == CH1)
-            RPI_Send("ERROR(0x61)\r\n");
+            RpiSend("ERROR(0x61)\r\n");
 
         if (ch == CH2)
-            RPI_Send("ERROR(0x62)\r\n");
+            RpiSend("ERROR(0x62)\r\n");
 
         if (ch == CH3)
-            RPI_Send("ERROR(0x63)\r\n");
+            RpiSend("ERROR(0x63)\r\n");
 
         *errors &= ~COMM_ERROR_SOFT_OVERCURRENT;
     }
@@ -510,13 +511,13 @@ void Raspberry_Report_Errors (unsigned char ch, unsigned short * errors)
     if (*errors & COMM_ERROR_NO_TREATMENT)
     {
         if (ch == CH1)
-            RPI_Send("ERROR(0x71)\r\n");
+            RpiSend("ERROR(0x71)\r\n");
 
         if (ch == CH2)
-            RPI_Send("ERROR(0x72)\r\n");
+            RpiSend("ERROR(0x72)\r\n");
 
         if (ch == CH3)
-            RPI_Send("ERROR(0x73)\r\n");
+            RpiSend("ERROR(0x73)\r\n");
 
         *errors &= ~COMM_ERROR_NO_TREATMENT;
     }
@@ -526,7 +527,7 @@ static void SendAllConf (void)
 {
     char b [128];
     TreatmentGetAllConf(b);
-    RPI_Send(b);
+    RpiSend(b);
 }
 
 static void SendStatus (void)
@@ -536,7 +537,7 @@ static void SendStatus (void)
     
     st = TreatmentGetMainState();
     sprintf(b, "Main State: %d\r\n", st);
-    RPI_Send(b);
+    RpiSend(b);
 }
 
 

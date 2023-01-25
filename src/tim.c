@@ -267,7 +267,7 @@ void TIM3_IRQHandler (void)	//1 ms
 }
 
 
-void TIM_4_Init(void)
+void TIM4_Init(void)
 {
     //---- Clk ----//
     if (!RCC_TIM4_CLK)
@@ -277,22 +277,28 @@ void TIM_4_Init(void)
     TIM4->CR1 = 0x00;
     TIM4->CR2 = 0x00;
     
-    TIM4->CCMR1 = 0x0060;    //CH1 output PWM mode 2 (channel active TIM4->CNT < TIM4->CCR1)
-    TIM4->CCER |= TIM_CCER_CC1E;
+    TIM4->CCMR1 = 0x6000;    //CH2 output PWM mode 2 (channel active CNT < CCR1)
+    TIM4->CCMR2 = 0x0060;    //CH3 output PWM mode 2 (channel active CNT < CCR1)
     
-    TIM4->ARR = 1023;    //1023 pwm points freq = 48MHz / 1024 = 46.8KHz
-    TIM4->PSC = 0;
-
-    TIM4->EGR = TIM_EGR_UG; //update registers
+    TIM4->CCER |= TIM_CCER_CC3E | TIM_CCER_CC2E;
+    
+    TIM4->ARR = DUTY_100_PERCENT;    //1000 pwm points freq-> 72MHz / 10 = 7.2KHz
+    TIM4->PSC = 9;
 
     // Enable timer ver UDIS
     TIM4->CR1 |= TIM_CR1_CEN;
 }
 
-void TIM_4_Delay_us (unsigned short a)
+
+void TIM4_Update_CH2 (unsigned short a)
 {
-    TIM4->CNT = 0;
-    while (a > TIM4->CNT);
+    TIM4->CCR2 = a;
+}
+
+
+void TIM4_Update_CH3 (unsigned short a)
+{
+    TIM4->CCR3 = a;
 }
 
 

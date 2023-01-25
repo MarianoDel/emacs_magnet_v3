@@ -8,13 +8,32 @@
 // #### ADC.C #################################
 //---------------------------------------------
 
-/* Includes ------------------------------------------------------------------*/
+// Includes --------------------------------------------------------------------
 #include "adc.h"
 #include "stm32f10x.h"
 #include "hard.h"
 
 
-/* Externals ------------------------------------------------------------------*/
+// Private Types Constants and Macros ------------------------------------------
+#define RCC_ADC1_CLK    (RCC->APB2ENR & 0x00000200)
+#define RCC_ADC1_CLKEN    (RCC->APB2ENR |= 0x00000200)
+#define RCC_ADC1_CLKDIS    (RCC->APB2ENR &= ~0x00000200)
+
+#define RCC_ADC2_CLK    (RCC->APB2ENR & 0x00000400)
+#define RCC_ADC2_CLKEN    (RCC->APB2ENR |= 0x00000400)
+#define RCC_ADC2_CLKDIS    (RCC->APB2ENR &= ~0x00000400)
+
+#define RCC_ADC3_CLK    (RCC->APB2ENR & 0x00008000)
+#define RCC_ADC3_CLKEN    (RCC->APB2ENR |= 0x00008000)
+#define RCC_ADC3_CLKDIS    (RCC->APB2ENR &= ~0x00008000)
+
+#define RCC_ADC_PRESCALER_DIV_2    (RCC->CFGR &= ~RCC_CFGR_ADCPRE)
+#define RCC_ADC_PRESCALER_DIV_4    (RCC->CFGR |= RCC_CFGR_ADCPRE_0)
+#define RCC_ADC_PRESCALER_DIV_6    (RCC->CFGR |= RCC_CFGR_ADCPRE_1)
+#define RCC_ADC_PRESCALER_DIV_8    (RCC->CFGR |= RCC_CFGR_ADCPRE_1 | RCC_CFGR_ADCPRE_0)
+
+
+// Externals -------------------------------------------------------------------
 extern volatile unsigned short adc_ch [];
 
 
@@ -26,7 +45,8 @@ extern volatile unsigned char seq_ready;
 extern volatile unsigned short tt_take_temp_sample;
 #endif
 
-/* Globals ------------------------------------------------------------------*/
+
+// Globals ---------------------------------------------------------------------
 #ifdef ADC_WITH_INT
 volatile unsigned short * p_channel;
 #endif
@@ -40,7 +60,7 @@ unsigned char new_temp_sample = 0;
 #endif
 
 
-/* Module Functions -----------------------------------------------------------*/
+// Module Functions ------------------------------------------------------------
 //Single conversion mode (CONT=0)
 //In Single conversion mode, the ADC performs a single sequence of conversions,
 //converting all the channels once.
@@ -217,7 +237,7 @@ short ConvertTemp (unsigned short adc_temp)
 }
 #endif //ADC_WITH_TEMP_SENSE
 
-void SetChannelSampleTime (unsigned char ADC_Channel, unsigned char ADC_SampleTime)
+void AdcSetChannelSampleTime (unsigned char ADC_Channel, unsigned char ADC_SampleTime)
 {
     uint32_t tmpreg1, tmpreg2;
     
@@ -254,7 +274,8 @@ void SetChannelSampleTime (unsigned char ADC_Channel, unsigned char ADC_SampleTi
     }
 }
 
-void SetChannelSamplePosition (unsigned char ADC_Channel, unsigned char Rank)
+
+void AdcSetChannelSamplePosition (unsigned char ADC_Channel, unsigned char Rank)
 {
     uint32_t tmpreg1, tmpreg2;
 
@@ -308,13 +329,15 @@ void SetChannelSamplePosition (unsigned char ADC_Channel, unsigned char Rank)
     }
 }
 
-void SetChannelsQuantity (unsigned int qtty)
+
+void AdcSetChannelsQuantity (unsigned int qtty)
 {
     ADC1->SQR1 &= ~ADC_SQR1_L;
     ADC1->SQR1 |= qtty;
 }
 
-void ConvertChannel (unsigned char ADC_Channel)
+
+void AdcConvertChannel (unsigned char ADC_Channel)
 {
     ADC1->SQR1 &= ~ADC_SQR1_L;    //convert 1 channel
     
@@ -323,10 +346,12 @@ void ConvertChannel (unsigned char ADC_Channel)
     ADC1->CR2 |= ADC_CR2_SWSTART | ADC_CR2_EXTTRIG;    
 }
 
-unsigned char ConvertSingleChannelFinishFlag (void)
+
+unsigned char AdcConvertSingleChannelFinishFlag (void)
 {
     return (ADC1->SR & ADC_SR_EOC);
 }
+
 
 //--- end of file ---//
 

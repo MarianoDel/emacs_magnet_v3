@@ -33,13 +33,6 @@
 
 
 // Externals -------------------------------------------------------------------
-//-- Externals to acknowledge data ready on usarts
-volatile unsigned char usart1_have_data;
-volatile unsigned char usart2_have_data;
-volatile unsigned char usart3_have_data;
-volatile unsigned char usart4_have_data;
-volatile unsigned char usart5_have_data;
-
 unsigned short comms_messages_1 = 0;
 unsigned short comms_messages_2 = 0;
 unsigned short comms_messages_3 = 0;
