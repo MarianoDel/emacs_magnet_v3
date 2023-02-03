@@ -14,10 +14,11 @@
 // Module Exported Types Constants and Macros ----------------------------------
 #define DUTY_10_PERCENT		100
 #define DUTY_50_PERCENT		500
+#define DUTY_95_PERCENT        950
 #define DUTY_100_PERCENT        1000
 #define DUTY_FOR_DMAX           450
 
-#define DUTY_ALWAYS    (DUTY_100_PERCENT + 1)
+#define DUTY_ALWAYS    (DUTY_100_PERCENT)    //use (duty_100 - 1) in TIM->ARR
 #define DUTY_NONE    0
 
 #define EnableTimer1    (TIM1->CR1 |= TIM_CR1_CEN)
@@ -49,8 +50,9 @@
 void Wait_ms (unsigned short);
 
 // void TIM2_Init(void);
-void TIM_1_Init (void);
-void TIM_3_Init (void);
+void TIM1_Init (void);
+
+void TIM3_Init (void);
 
 void UpdateTIMSync (unsigned short);
 void UpdateTIM_MosfetA (unsigned short);

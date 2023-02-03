@@ -46,6 +46,7 @@ char buffSendErr[64];
 volatile unsigned short timeRun = TIME_RUN_DEF;
 
 //--- Externals de los timers
+volatile unsigned short timer_standby = 0;
 volatile unsigned short wait_ms_var = 0;
 volatile unsigned short comms_timeout = 0;
 
@@ -614,8 +615,8 @@ void TimingDelay_Decrement(void)
     //     OUT1_OFF;
     // }
     
-    // // if (timer_standby)
-    // //     timer_standby--;
+    if (timer_standby)
+        timer_standby--;
 
     // // if (timer_filters)
     // //     timer_filters--;

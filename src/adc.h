@@ -24,10 +24,14 @@
 #define SIZEOF_BOARD_TEMP		8
 #endif
 
-#define Sense_200V     adc_ch[0]
-#define Sense_15V    adc_ch[1]
-#define Sense_12V    adc_ch[2]
-#define ADC_CHANNEL_QUANTITY    3
+#define IS_CH4    adc_ch[0]
+#define IS_CH3    adc_ch[1]
+#define IS_CH2    adc_ch[2]
+#define IS_CH1    adc_ch[3]
+#define Sense_12V    adc_ch[4]
+#define Sense_200V    adc_ch[5]
+#define Sense_15V    adc_ch[6]
+#define ADC_CHANNEL_QUANTITY    7
 #define ADC_LAST_CHANNEL_QUANTITY    (ADC_CHANNEL_QUANTITY - 1)
 //----------- End of ADC Configurations --------------//
 

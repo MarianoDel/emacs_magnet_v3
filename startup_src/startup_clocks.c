@@ -23,7 +23,6 @@
 #include "startup_clocks.h"
 
 
-
 #if (!defined HSI_INTERNAL_RC) && (!defined HSE_CRYSTAL_OSC)
 #error	"No Oscillator Source Defined"
 #endif

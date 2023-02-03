@@ -92,27 +92,42 @@ void AdcConfig (void)
     
     //set trigger (if it's soft look at the end) & Continuos or Discontinuous
     ADC1->CR1 |= ADC_CR1_SCAN;
-    ADC1->CR2 |= ADC_CR2_CONT | ADC_CR2_EXTTRIG;
+    ADC1->CR2 |= ADC_CR2_CONT | ADC_CR2_EXTTRIG;    // with external trigger (can be soft trigger)
     
     //set sampling time for each channel
     // ADC1->SMPR2 |= ADC_SMPR2_SMP4_2 | ADC_SMPR2_SMP4_1 | ADC_SMPR2_SMP4_0;    //sample time Channel 4
     // ADC1->SMPR2 |= ADC_SMPR2_SMP5_2 | ADC_SMPR2_SMP5_1 | ADC_SMPR2_SMP5_0;    //sample time Channel 5
     // ADC1->SMPR2 |= ADC_SMPR2_SMP6_2 | ADC_SMPR2_SMP6_1 | ADC_SMPR2_SMP6_0;    //sample time Channel 6
     // ADC1->SMPR2 |= ADC_SMPR2_SMP7_2 | ADC_SMPR2_SMP7_1 | ADC_SMPR2_SMP7_0;    //sample time Channel 7
-    ADC1->SMPR1 |= ADC_SMPR1_SMP14_2 | ADC_SMPR1_SMP14_1 | ADC_SMPR1_SMP14_0;    //sample time Channel 14
-    ADC1->SMPR1 |= ADC_SMPR1_SMP15_2 | ADC_SMPR1_SMP15_1 | ADC_SMPR1_SMP15_0;    //sample time Channel 15   
+    // ADC1->SMPR1 |= ADC_SMPR1_SMP14_2 | ADC_SMPR1_SMP14_1 | ADC_SMPR1_SMP14_0;    //sample time Channel 14
+    // ADC1->SMPR1 |= ADC_SMPR1_SMP15_2 | ADC_SMPR1_SMP15_1 | ADC_SMPR1_SMP15_0;    //sample time Channel 15
+    AdcSetChannelSampleTime(ADC_Channel_5, ADC_SampleTime_41_5Cycles);
+    AdcSetChannelSampleTime(ADC_Channel_6, ADC_SampleTime_41_5Cycles);
+    AdcSetChannelSampleTime(ADC_Channel_8, ADC_SampleTime_41_5Cycles);
+    AdcSetChannelSampleTime(ADC_Channel_9, ADC_SampleTime_41_5Cycles);    
+    AdcSetChannelSampleTime(ADC_Channel_13, ADC_SampleTime_41_5Cycles);
+    AdcSetChannelSampleTime(ADC_Channel_14, ADC_SampleTime_41_5Cycles);
+    AdcSetChannelSampleTime(ADC_Channel_15, ADC_SampleTime_41_5Cycles);
 
 
     //set regular channel selection, start with 1
-    ADC1->SQR3 |= ADC_SQR3_SQ1_3 | ADC_SQR3_SQ1_2 | ADC_SQR3_SQ1_1;    //first Channel 14
-    ADC1->SQR3 |= ADC_SQR3_SQ2_3 | ADC_SQR3_SQ2_2 | ADC_SQR3_SQ2_1 | ADC_SQR3_SQ2_0;    //second Channel 15
+    // ADC1->SQR3 |= ADC_SQR3_SQ1_3 | ADC_SQR3_SQ1_2 | ADC_SQR3_SQ1_1;    //first Channel 14
+    // ADC1->SQR3 |= ADC_SQR3_SQ2_3 | ADC_SQR3_SQ2_2 | ADC_SQR3_SQ2_1 | ADC_SQR3_SQ2_0;    //second Channel 15
     // ADC1->SQR3 |= ADC_SQR3_SQ3_2 | ADC_SQR3_SQ3_1;    //Channel 6
     // ADC1->SQR3 |= ADC_SQR3_SQ4_2 | ADC_SQR3_SQ4_1 | ADC_SQR3_SQ4_0;    //Channel 7
     // ADC1->SQR3 |= ADC_SQR3_SQ5_3 | ADC_SQR3_SQ5_2 | ADC_SQR3_SQ5_1;    //Channel 14
-    // ADC1->SQR3 |= ADC_SQR3_SQ6_3 | ADC_SQR3_SQ6_2 | ADC_SQR3_SQ6_1 | ADC_SQR3_SQ6_0;    //Channel 15   
+    // ADC1->SQR3 |= ADC_SQR3_SQ6_3 | ADC_SQR3_SQ6_2 | ADC_SQR3_SQ6_1 | ADC_SQR3_SQ6_0;    //Channel 15
+    AdcSetChannelSamplePosition(ADC_Channel_5, 1);
+    AdcSetChannelSamplePosition(ADC_Channel_6, 2);
+    AdcSetChannelSamplePosition(ADC_Channel_8, 3);
+    AdcSetChannelSamplePosition(ADC_Channel_9, 4);
+    AdcSetChannelSamplePosition(ADC_Channel_13, 5);    
+    AdcSetChannelSamplePosition(ADC_Channel_14, 6);
+    AdcSetChannelSamplePosition(ADC_Channel_15, 7);
 
     //set the quantity of channels to convert
-    ADC1->SQR1 |=  ADC_SQR1_L_0;    //convert 2 channels
+    // ADC1->SQR1 |=  ADC_SQR1_L_0;    //convert 2 channels
+    AdcSetChannelsQuantity(ADC_Channels_Qtty_7);    
 
     
 #ifdef ADC_WITH_INT        

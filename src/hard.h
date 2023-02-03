@@ -47,12 +47,12 @@
 
 
 //-------- Oscillator and Crystal selection (Freq in startup_clocks.h) ---
-#define HSI_INTERNAL_RC
-// #define HSE_CRYSTAL_OSC
+// #define HSI_INTERNAL_RC
+#define HSE_CRYSTAL_OSC
 
 #ifdef HSE_CRYSTAL_OSC
-#define CRYSTAL_8MHZ
-// #define CRYSTAL_12MHZ
+// #define CRYSTAL_8MHZ
+#define CRYSTAL_12MHZ
 #endif
 
 #define SYSCLK_FREQ_72MHz

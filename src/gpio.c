@@ -107,7 +107,7 @@ void GpioInit (void)
     //PA7 NC
     temp = GPIOA->CRL;
     temp &= 0xFFF00000;
-    temp |= 0x00048AAA;
+    temp |= 0x00048BAA;
     GPIOA->CRL = temp;
 
     //--- GPIOA High Side ------------------//
@@ -155,7 +155,7 @@ void GpioInit (void)
     //PB15 PROT_CH1 input
     temp = GPIOB->CRH;
     temp &= 0x000F00F0;
-    temp |= 0x42408A0A;
+    temp |= 0x42408B0A;
     GPIOB->CRH = temp;    
     
     //--- GPIOC Low Side -------------------//
@@ -183,7 +183,7 @@ void GpioInit (void)
     //PC15 NC    oscillator
     temp = GPIOC->CRH;   
     temp &= 0xFFF00000;
-    temp |= 0x000A8AAA;
+    temp |= 0x000B8BAA;
     GPIOC->CRH = temp;
 
     //--- GPIOD Low Side -------------------//
@@ -197,7 +197,7 @@ void GpioInit (void)
     //PD7 No implemented    
     temp = GPIOD->CRL;   
     temp &= 0xFFFFF0FF;    
-    temp |= 0x00000A00;
+    temp |= 0x00000800;
     GPIOD->CRL = temp;
 
 }

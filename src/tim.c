@@ -55,6 +55,7 @@ extern volatile unsigned short wait_ms_var;
 
 
 // Globals ---------------------------------------------------------------------
+volatile unsigned char timer1_seq_ready = 0;
 
 
 // Module Functions ------------------------------------------------------------
@@ -151,7 +152,7 @@ void TIM_1_OPM_us (unsigned short a)
 // @param  None
 // @retval None
 //------------------------------------------//
-void TIM_1_Init (void)    //for pwm
+void TIM1_Init (void)    //for pwm
 {
     if (!RCC_TIM1_CLK)
         RCC_TIM1_CLKEN;
@@ -161,21 +162,45 @@ void TIM_1_Init (void)    //for pwm
     TIM1->CR2 = 0x00;
     TIM1->SMCR = 0x0000;
 
-    TIM1->CCMR1 = 0x0060;    //CH1 output PWM mode 2 (channel active TIM1->CNT < TIM1->CCR1)
+    // TIM1->CCMR1 = 0x0060;    //CH1 output PWM mode 2 (channel active TIM1->CNT < TIM1->CCR1)
+    TIM1->CCMR1 = 0x0000; 
     TIM1->CCMR2 = 0x0000;
+    TIM1->CCER = 0x0000;
+    TIM1->BDTR = 0x0000;
+    // TIM1->CCER |= TIM_CCER_CC1E;        
+    // TIM1->BDTR |= TIM_BDTR_MOE;
 
-    TIM1->CCER |= TIM_CCER_CC1E;
-        
-    TIM1->BDTR |= TIM_BDTR_MOE;
-
-    TIM1->ARR = 22;    //48MHz / 22 = 2.181MHz
-    // TIM1->ARR = 32;    //48MHz / 32 = 1.5MHz
-    // TIM1->ARR = 48;    //48MHz / 48 = 1.0MHz        
-
+    TIM1->ARR = DUTY_100_PERCENT - 1;    // 1000 pts -> 7.2KHz
+    TIM1->PSC = 9;    // 13.88us tick
+    
     TIM1->CNT = 0;
 
+    // Enable timer ver UDIS    
+    TIM1->DIER |= TIM_DIER_UIE;
     TIM1->CR1 |= TIM_CR1_CEN;
 
+    //Habilito NVIC
+    //Interrupcion timer1.
+    NVIC_EnableIRQ(TIM1_UP_IRQn);
+    NVIC_SetPriority(TIM1_UP_IRQn, 4);
+
+}
+
+
+void TIM1_UP_IRQHandler (void)
+{
+    // low int flag
+    if (TIM1->SR & TIM_SR_UIF)
+        TIM1->SR = 0x00;
+
+    //Code Handler
+    timer1_seq_ready = 1;
+
+    if (LED2)
+        LED2_OFF;
+    else
+        LED2_ON;
+    
 }
 
 
@@ -223,7 +248,7 @@ void TIM_1_Init (void)    //for pwm
 // }
 
 
-void TIM_3_Init (void)
+void TIM3_Init (void)
 {
     if (!RCC_TIM3_CLK)
         RCC_TIM3_CLKEN;
@@ -282,7 +307,7 @@ void TIM4_Init(void)
     
     TIM4->CCER |= TIM_CCER_CC3E | TIM_CCER_CC2E;
     
-    TIM4->ARR = DUTY_100_PERCENT;    //1000 pwm points freq-> 72MHz / 10 = 7.2KHz
+    TIM4->ARR = DUTY_100_PERCENT - 1;    //1000 pwm points freq-> 72MHz / 10 = 7.2KHz
     TIM4->PSC = 9;
 
     // Enable timer ver UDIS
@@ -323,7 +348,7 @@ void TIM5_Init (void)
     TIM5->CCER |= TIM_CCER_CC2E | TIM_CCER_CC1E;    // ch1 ch2 enabled
 
     // try to be near 7KHz
-    TIM5->ARR = DUTY_100_PERCENT;    //1000 pwm points freq-> 72MHz / 10 = 7.2KHz
+    TIM5->ARR = DUTY_100_PERCENT - 1;    //1000 pwm points freq-> 72MHz / 10 = 7.2KHz
     TIM5->PSC = 9;
     
     // Enable the timer
@@ -455,7 +480,7 @@ void TIM8_Init (void)
     TIM8->BDTR |= TIM_BDTR_MOE;
     
     // try to be near 7KHz
-    TIM8->ARR = DUTY_100_PERCENT;    //1000 pwm points freq-> 72MHz / 10 = 7.2KHz
+    TIM8->ARR = DUTY_100_PERCENT - 1;    //1000 pwm points freq-> 72MHz / 10 = 7.2KHz
     TIM8->PSC = 9;
     
     // Enable the timer

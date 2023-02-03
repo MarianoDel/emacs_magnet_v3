@@ -25,10 +25,17 @@
 //---- Common Defines --------------------
 // 0xMMMF    Mantissa MMM Fraction F/16
 //
-// #define USART_PCKL1_9600        0x0EA6    //con xtal
-#define USART_PCKL1_9600        0x0DD3    //con rc interno da 9060, corrijo
-// #define USART_PCKL2_9600        0x1D4C
-#define USART_PCKL2_9600        0x1B40    //con rc interno da 8930, corrijo
+#ifdef HSE_CRYSTAL_OSC
+#define USART_PCKL2_9600        0x1D4C    // with xtal HSE 12MHz
+#define USART_PCKL1_9600        0x0EA6    // with xtal HSE 12MHz
+#pragma message "HSE used as clk input on usart.c"
+#elif HSI_INTERNAL_RC
+#define USART_PCKL1_9600        0x0DD3    // with RC internal, fix the displacement
+#define USART_PCKL2_9600        0x1B40    // with RC internal
+#pragma message "HSI used as clk input on usart.c"
+#else
+#error "No clock defined! needed by usart.c"
+#endif
 
 #define USART1_9600        USART_PCKL2_9600
 #define USART2_9600        USART_PCKL1_9600
@@ -316,18 +323,16 @@ unsigned char Usart2ReadBuffer (char * bout, unsigned short max_len)
 
     if (len < max_len)
     {
-        //el puntero siempre llega adelantado desde la int, lo corto con un 0
-        *prx2 = '\0';
-        len += 1;
-        memcpy(bout, (unsigned char *) rx2buff, len);
+        *prx2 = '\0';    //buffer from int isnt ended with '\0' do it now
+        len += 1;    //space for '\0'
     }
     else
     {
-        memcpy(bout, (unsigned char *) rx2buff, len);
-        len = max_len;
+        *(bout + max_len - 1) = '\0';
+        len = max_len - 1;
     }
-
-    //ajusto punteros de rx luego de la copia
+    
+    memcpy(bout, (unsigned char *) rx2buff, len);    
     prx2 = rx2buff;
 
     return (unsigned char) len;
@@ -468,7 +473,7 @@ void Usart3SendUnsigned (unsigned char * send, unsigned char size)
 }
 
 
-unsigned char Usart3ReadBuffer (unsigned char * bout, unsigned short max_len)
+unsigned char Usart3ReadBuffer (char * bout, unsigned short max_len)
 {
     unsigned int len;
 
@@ -613,7 +618,7 @@ void Uart4SendUnsigned (unsigned char * send, unsigned char size)
 }
 
 
-unsigned char Uart4ReadBuffer (unsigned char * bout, unsigned short max_len)
+unsigned char Uart4ReadBuffer (char * bout, unsigned short max_len)
 {
     unsigned int len;
 
@@ -761,7 +766,7 @@ void Uart5SendUnsigned (unsigned char * send, unsigned char size)
 }
 
 
-unsigned char Uart5ReadBuffer (unsigned char * bout, unsigned short max_len)
+unsigned char Uart5ReadBuffer (char * bout, unsigned short max_len)
 {
     unsigned int len;
 
