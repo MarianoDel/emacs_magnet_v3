@@ -1,14 +1,19 @@
-*.bin
-*.elf
-*.hex
-*.map
-*.o
-*.o.d
+#files to not save
 *.lst
-*.zip
-*.out
+*.o
+*.elf
+*.map
+*.bin
 .tags
 GPATH
 GRTAGS
 GTAGS
+*.zip
+*.out
+*.pdf
+*.txt
+*.gcov
+*.gcda
+*.gcno
+*.pyc
 
