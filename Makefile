@@ -187,6 +187,9 @@ clean:
 	rm -f $(ASRC:.s=.lst)
 	rm -f *.o
 	rm -f *.out
+	rm -f *.gcda
+	rm -f *.gcno
+	rm -f *.gcov
 
 tests:
 	# simple functions tests, copy functions to test into main
