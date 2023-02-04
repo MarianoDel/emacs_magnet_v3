@@ -193,12 +193,17 @@ tests:
 	gcc src/tests.c
 	./a.out
 
-tests_treat_utils:
+tests_treatment:
 	# compile first modules in this test
-	gcc -c src/treatment.c -I. $(INCDIR)
-	gcc -c src/utils.c -I. $(INCDIR)
-	gcc src/tests_treat_utils.c treatment.o utils.o
+	# first module objects to test
+	gcc -c --coverage src/treatment.c -I. $(INCDIR) $(DDEFS)
+	# second auxiliary helper modules
+	gcc -c src/tests_ok.c -I $(INCDIR)
+	gcc -c src/tests_mock_usart.c -I $(INCDIR)
+	gcc --coverage src/tests_treatment.c treatment.o tests_ok.o tests_mock_usart.o -I $(INCDIR) $(DDEFS)
 	./a.out
+	# process coverage
+	gcov treatment.c -m
 
 tests_comms_rasp:
 	# compile first modules in this test

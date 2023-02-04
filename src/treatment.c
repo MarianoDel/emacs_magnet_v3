@@ -1,5 +1,4 @@
 //---------------------------------------------------------
-// #### PROYECTO STRETCHER MAGNETO F103 - Custom Board ####
 // ##
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags
@@ -9,29 +8,245 @@
 // #### TREATMENT.C ###############################
 //---------------------------------------------------------
 
-/* Includes ------------------------------------------------------------------*/
+// Includes --------------------------------------------------------------------
 #include "treatment.h"
+#include "comms.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-// #include "hard.h"
 
 
-//--- VARIABLES EXTERNAS ---//
+// Private Types Constants and Macros ------------------------------------------
+typedef enum {
+    TREATMENT_STANDBY = 0,
+    TREATMENT_STARTING,
+    TREATMENT_RUNNING,
+    TREATMENT_PAUSED,
+    TREATMENT_WITH_ERRORS,
+    TREATMENT_STOPPING
 
-//--- VARIABLES GLOBALES ---//
-treatment_conf_t treatment_conf;
-unsigned char global_error = 0;
-treatment_t treat_main_state = 0;
+} treatment_t;
 
-// Private Defines ----------------------------------------
 #define ENABLE_CHX_MASK    0x40
 #define DISABLE_CHX_MASK    0x80
 #define CHX_MASK        0x0F
 
 
-//--- FUNCIONES DEL MODULO ---//
+// Externals -------------------------------------------------------------------
+extern unsigned short comms_messages_rpi;
+extern volatile unsigned short secs_in_treatment;
+extern unsigned short secs_end_treatment;
+extern unsigned short secs_elapsed_up_to_now;
+
+
+// Globals ---------------------------------------------------------------------
+treatment_conf_t treatment_conf;
+unsigned char global_error = 0;
+treatment_t treat_state = 0;
+
+
+#define RPI_Flush_Comms (comms_messages_rpi &= ~COMM_RPI_ALL_MSG_MASK)
+
+// Module Functions ------------------------------------------------------------
+void TreatmentManager (void)
+{
+    char buff [100] = { 0 };
+    
+    switch (treat_state)
+    {
+    case TREATMENT_STANDBY:
+        if (comms_messages_rpi & COMM_START_TREAT)
+        {
+            //me piden por el puerto que arranque el tratamiento
+            comms_messages_rpi &= ~COMM_START_TREAT;
+            if (TreatmentAssertParams() == resp_error)
+            {
+                RPI_Send("ERROR on params\r\n");
+            }
+            // else if (check_other_antenna_conns)
+            // {
+            //     RPI_Send("ERROR no antenna\r\n");                
+            // }
+            else
+            {
+                RPI_Send("OK\r\n");
+                // PowerSendConf();
+                treat_state = TREATMENT_STARTING;
+            }
+        }
+        RPI_Flush_Comms;
+        break;
+
+    case TREATMENT_STARTING:
+        secs_end_treatment = TreatmentGetTime();
+        secs_in_treatment = 1;    //con 1 arranca el timer
+        secs_elapsed_up_to_now = 0;
+        // PowerCommunicationStackReset();
+
+        // sprintf (buff, "treat start, ch1: 0x%04x, ch2: 0x%04x, ch3: 0x%04x\r\n",
+        //          comms_messages_1,
+        //          comms_messages_2,
+        //          comms_messages_3);
+                    
+        // RPI_Send(buff);
+
+        // PowerSendStart();
+        treat_state = TREATMENT_RUNNING;
+        ChangeLed(LED_TREATMENT_GENERATING);
+#ifdef USE_BUZZER_ON_START
+        BuzzerCommands(BUZZER_HALF_CMD, 1);
+#endif
+        break;
+
+    case TREATMENT_RUNNING:
+        // PowerCommunicationStack();    //me comunico con las potencias para conocer el estado
+
+        if (comms_messages_rpi & COMM_PAUSE_TREAT)
+        {
+            comms_messages_rpi &= ~COMM_PAUSE_TREAT;
+            RPI_Send("OK\r\n");
+            // PowerSendStop();
+            treat_state = TREATMENT_PAUSED;
+            ChangeLed(LED_TREATMENT_PAUSED);
+            secs_elapsed_up_to_now = secs_in_treatment;
+        }
+
+        if (comms_messages_rpi & COMM_STOP_TREAT)
+        {
+            comms_messages_rpi &= ~COMM_STOP_TREAT;
+
+            //termine el tratamiento por stop, o finish_ok,
+            RPI_Send("OK\r\n");
+            // PowerSendStop();
+            treat_state = TREATMENT_STOPPING;
+        }
+
+        //me mandaron start???
+        if (comms_messages_rpi & COMM_START_TREAT)
+        {
+            comms_messages_rpi &= ~COMM_START_TREAT;
+            RPI_Send("ERROR\r\n");
+        }
+
+        if (secs_in_treatment >= secs_end_treatment)
+        {
+            //termine el tratamiento
+            // PowerSendStop();
+            RPI_Send("ended ok\r\n");
+#ifdef USE_BUZZER_ON_END
+            BuzzerCommands(BUZZER_SHORT_CMD, 3);
+#endif                
+            treat_state = TREATMENT_STOPPING;
+        }
+
+        //reviso si hay algun canal con error
+//         if ((comms_messages_1 & COMM_POWER_ERROR_MASK) ||
+//             (comms_messages_2 & COMM_POWER_ERROR_MASK) ||
+//             (comms_messages_3 & COMM_POWER_ERROR_MASK))
+//         {
+//             PowerSendStop();
+
+//             LED1_ON;
+//             secs_in_treatment = 0;    //con 0 freno el timer
+//             sprintf (buff, "treat err, ch1: 0x%04x, ch2: 0x%04x, ch3: 0x%04x\r\n",
+//                      comms_messages_1,
+//                      comms_messages_2,
+//                      comms_messages_3);
+                    
+//             RPI_Send(buff);
+
+//             if (comms_messages_1 & COMM_POWER_ERROR_MASK)
+//                 Raspberry_Report_Errors(CH1, &comms_messages_1);
+
+//             if (comms_messages_2 & COMM_POWER_ERROR_MASK)
+//                 Raspberry_Report_Errors(CH2, &comms_messages_2);
+
+//             if (comms_messages_3 & COMM_POWER_ERROR_MASK)
+//                 Raspberry_Report_Errors(CH3, &comms_messages_3);
+
+// #ifdef USE_BUZZER_ON_ERROR
+//             BuzzerCommands(BUZZER_LONG_CMD, 1);
+// #endif                                
+//             LED1_OFF;
+//             treat_state = TREATMENT_WITH_ERRORS;
+//         }
+        RPI_Flush_Comms;
+        break;
+
+    case TREATMENT_PAUSED:
+        // un segundo pause, me hace arrancar nuevamente
+        if (comms_messages_rpi & COMM_PAUSE_TREAT)
+        {
+            comms_messages_rpi &= ~COMM_PAUSE_TREAT;
+            secs_in_treatment = secs_elapsed_up_to_now;
+            RPI_Send("OK\r\n");
+            // PowerSendStart();
+            treat_state = TREATMENT_RUNNING;
+            ChangeLed(LED_TREATMENT_GENERATING);
+        }
+
+        if (comms_messages_rpi & COMM_STOP_TREAT)
+        {
+            //estaba en pausa y me mandaron stop
+            comms_messages_rpi &= ~COMM_STOP_TREAT;
+            RPI_Send("OK\r\n");
+            // PowerSendStop();
+            treat_state = TREATMENT_STOPPING;
+        }
+        RPI_Flush_Comms;
+        break;
+                
+    case TREATMENT_STOPPING:
+        secs_in_treatment = 0;    //con 0 freno el timer
+        // sprintf (buff, "treat end, ch1: 0x%04x, ch2: 0x%04x, ch3: 0x%04x\r\n",
+        //          comms_messages_1,
+        //          comms_messages_2,
+        //          comms_messages_3);
+                    
+        RPI_Send(buff);
+        treat_state = TREATMENT_STANDBY;
+        ChangeLed(LED_TREATMENT_STANDBY);
+        break;
+
+    case TREATMENT_WITH_ERRORS:
+        Wait_ms(1000);
+        // Power_Send("chf flush errors\n");
+        RPI_Send("STOP\r\n");
+        Wait_ms(1000);
+        RPI_Send("STOP\r\n");
+        Wait_ms(1000);
+        RPI_Send("Flushing errors\r\n");
+
+        // Power_Send("chf flush errors\n");
+        // comms_messages_1 &= ~COMM_POWER_ERROR_MASK;
+        // comms_messages_2 &= ~COMM_POWER_ERROR_MASK;
+        // comms_messages_3 &= ~COMM_POWER_ERROR_MASK;            
+            
+        Wait_ms(1000);
+        treat_state = TREATMENT_STANDBY;
+        ChangeLed(LED_TREATMENT_STANDBY);
+        break;
+
+    default:
+        treat_state = TREATMENT_STANDBY;
+        break;
+    }            
+
+
+    //reviso comunicacion con raspberry
+    UpdateRaspberryMessages();
+
+    //reviso comunicacion con potencias
+    // UpdatePowerMessages();
+
+    // if (sequence_ready)
+    //     sequence_ready_reset;
+
+    UpdateLed();
+    UpdateBuzzer();
+}
+
 
 resp_t TreatmentSetSignalType (signal_type_t a)
 {
@@ -241,28 +456,28 @@ resp_t TreatmentAssertParams (void)
 
 void TreatmentUpdateMainState (treatment_t ms)
 {
-    treat_main_state = ms;
+    treat_state = ms;
 }
 
 treatment_t TreatmentGetMainState (void)
 {
-    return treat_main_state;
+    return treat_state;
 }
 
 
-void TreatmentSetUpDwn (updwn_e up_or_dwn)
-{
-    if (up_or_dwn)
-        treatment_conf.updwn_conf = UPDWN_MANUAL;
-    else
-        treatment_conf.updwn_conf = UPDWN_AUTO;
+// void TreatmentSetUpDwn (updwn_e up_or_dwn)
+// {
+//     if (up_or_dwn)
+//         treatment_conf.updwn_conf = UPDWN_MANUAL;
+//     else
+//         treatment_conf.updwn_conf = UPDWN_AUTO;
 
-}
+// }
 
-updwn_e TreatmentGetUpDwn (void)
-{
-    return treatment_conf.updwn_conf;
-}
+// updwn_e TreatmentGetUpDwn (void)
+// {
+//     return treatment_conf.updwn_conf;
+// }
 
 
 //--- end of file ---//

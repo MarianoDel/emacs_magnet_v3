@@ -32,9 +32,9 @@
 
 
 
-
 //-------- Type of Program and Features ----------------
 #define USE_NO_TREATMENT_DETECT    //cuando esta en tratamiento revisa si las potencias tambien
+#define USE_BUZZER_ON_START
 
 
 //-------- Kind of Reports Sended ----------------

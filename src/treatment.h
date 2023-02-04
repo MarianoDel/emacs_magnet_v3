@@ -50,32 +50,20 @@ typedef struct {
 
 } signals_struct_t;
 
-typedef enum {
-    UPDWN_AUTO = 0,
-    UPDWN_MANUAL
+// typedef enum {
+//     UPDWN_AUTO = 0,
+//     UPDWN_MANUAL
 
-} updwn_e;
+// } updwn_e;
 
 typedef struct {
     signals_struct_t treatment_signal;
     unsigned short treatment_time;
     unsigned char channels_in_treatment;
     unsigned short timer_synchro;
-    updwn_e updwn_conf;
     
 } treatment_conf_t;
 
-typedef enum {
-    TREATMENT_STANDBY = 0,
-    TREATMENT_STARTING,
-    TREATMENT_RUNNING,
-    TREATMENT_PAUSED,
-    TREATMENT_WITH_ERRORS,
-    TREATMENT_STOPPING,
-    TREATMENT_STOPPING2,
-    MAIN_IN_BRIDGE_MODE
-
-} treatment_t;
 
 typedef enum {
 	ERROR_OK = 0,
@@ -87,16 +75,16 @@ typedef enum {
 } error_t;
 
 
-//TIPO de descarga y estado de signal
-typedef enum
-{
-	INIT_DISCHARGE = 0,
-	NORMAL_DISCHARGE,
-	TAU_DISCHARGE,
-	FAST_DISCHARGE,
-	STOPPED_BY_INT
+// //TIPO de descarga y estado de signal
+// typedef enum
+// {
+// 	INIT_DISCHARGE = 0,
+// 	NORMAL_DISCHARGE,
+// 	TAU_DISCHARGE,
+// 	FAST_DISCHARGE,
+// 	STOPPED_BY_INT
 
-} discharge_state_t;
+// } discharge_state_t;
 
 
 //--- Exported constants ---//
@@ -143,12 +131,14 @@ void TreatmentGetAllConf (char *);
 resp_t TreatmentAssertParams (void);
 void TreatmentSetChannelsFlag (unsigned char);
 unsigned char TreatmentGetChannelsFlag (void);
-unsigned short TreatmentGetSynchroTimer (void);
-void TreatmentUpdateMainState (treatment_t);
-treatment_t TreatmentGetMainState (void);
 
-void TreatmentSetUpDwn (updwn_e);
-updwn_e TreatmentGetUpDwn (void);
+void TreatmentManager (void);
+
+// void TreatmentUpdateMainState (treatment_t);
+// treatment_t TreatmentGetMainState (void);
+
+// void TreatmentSetUpDwn (updwn_e);
+// updwn_e TreatmentGetUpDwn (void);
 
 #endif
 //--- END OF FILE ---//
