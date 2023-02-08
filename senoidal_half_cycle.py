@@ -10,6 +10,7 @@ Voffset = 512
 s_sen_half = np.zeros(muestras)
 s_sen_full = np.zeros(muestras)
 s_sen_rect = np.zeros(muestras)
+s_sen_rect_out = np.zeros(muestras)
 
 
 for i in range(np.size(s_sen_half)):
@@ -20,12 +21,17 @@ for i in range(np.size(s_sen_half)):
     s_sen_rect[i] = np.sin(2*np.pi*(i+1)/muestras) * Vmax
     if s_sen_rect[i] < 0:
         s_sen_rect[i] = 0
+    # rectified sinusoidal outphase
+    s_sen_rect_out[i] = np.sin(2*np.pi*(i+1)/muestras + np.pi) * Vmax
+    if s_sen_rect_out[i] < 0:
+        s_sen_rect_out[i] = 0
     
 
 
 s_sen_half_int = s_sen_half.astype(int)
 s_sen_full_int = s_sen_full.astype(int)
 s_sen_rect_int = s_sen_rect.astype(int)
+s_sen_rect_out_int = s_sen_rect_out.astype(int)
 
 
 ### print on C code format ###
@@ -77,6 +83,24 @@ for i in range(np.size(s_sen_rect_int)):
             print (str(s_sen_rect_int[i]),end='')
         else:                
             print (str(s_sen_rect_int[i]) + ",\n",end='')
+            linea += 1
+        
+print ("};")
+
+
+print ()
+print ()
+print ('--- SINUSOIDAL RECTIFIED OUTPHASE---')
+linea = 1
+print ("{",end='')
+for i in range(np.size(s_sen_rect_out_int)):
+    if i < ((linea * cant_por_linea) - 1):
+        print (str(s_sen_rect_out_int[i]) + ",",end='')
+    else:
+        if i == (np.size(s_sen_rect_out_int) - 1):
+            print (str(s_sen_rect_out_int[i]),end='')
+        else:                
+            print (str(s_sen_rect_out_int[i]) + ",\n",end='')
             linea += 1
         
 print ("};")

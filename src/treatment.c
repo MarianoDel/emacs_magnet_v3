@@ -35,9 +35,6 @@ typedef enum {
 
 // Externals -------------------------------------------------------------------
 extern unsigned short comms_messages_rpi;
-extern volatile unsigned short secs_in_treatment;
-extern unsigned short secs_end_treatment;
-extern unsigned short secs_elapsed_up_to_now;
 
 
 // Globals ---------------------------------------------------------------------
@@ -46,10 +43,17 @@ unsigned char global_error = 0;
 treatment_t treat_state = 0;
 
 
+volatile unsigned short secs_in_treatment = 0;
+volatile unsigned short millis = 0;
+unsigned short secs_end_treatment = 0;
+unsigned short secs_elapsed_up_to_now = 0;
+
+
+
 #define RPI_Flush_Comms (comms_messages_rpi &= ~COMM_RPI_ALL_MSG_MASK)
 
 // Module Functions ------------------------------------------------------------
-void TreatmentManager (void)
+void Treatment_Manager (void)
 {
     char buff [100] = { 0 };
     
@@ -58,9 +62,9 @@ void TreatmentManager (void)
     case TREATMENT_STANDBY:
         if (comms_messages_rpi & COMM_START_TREAT)
         {
-            //me piden por el puerto que arranque el tratamiento
+            // rpi asks to start treatment
             comms_messages_rpi &= ~COMM_START_TREAT;
-            if (TreatmentAssertParams() == resp_error)
+            if (Treatment_AssertParams() == resp_error)
             {
                 RPI_Send("ERROR on params\r\n");
             }
@@ -79,9 +83,11 @@ void TreatmentManager (void)
         break;
 
     case TREATMENT_STARTING:
-        secs_end_treatment = TreatmentGetTime();
-        secs_in_treatment = 1;    //con 1 arranca el timer
+        secs_end_treatment = Treatment_GetTime();
+        secs_in_treatment = 1;    // a 1 here starts the timer
         secs_elapsed_up_to_now = 0;
+
+        // show channels in treatment
         // PowerCommunicationStackReset();
 
         // sprintf (buff, "treat start, ch1: 0x%04x, ch2: 0x%04x, ch3: 0x%04x\r\n",
@@ -97,32 +103,33 @@ void TreatmentManager (void)
 #ifdef USE_BUZZER_ON_START
         BuzzerCommands(BUZZER_HALF_CMD, 1);
 #endif
+        Signals_Setup_All_Channels ();    // consecutive starts and stops will always use this info
         break;
 
     case TREATMENT_RUNNING:
-        // PowerCommunicationStack();    //me comunico con las potencias para conocer el estado
-
+        Signals_Generate_All_Channels ();
+        
         if (comms_messages_rpi & COMM_PAUSE_TREAT)
         {
             comms_messages_rpi &= ~COMM_PAUSE_TREAT;
             RPI_Send("OK\r\n");
-            // PowerSendStop();
-            treat_state = TREATMENT_PAUSED;
             ChangeLed(LED_TREATMENT_PAUSED);
             secs_elapsed_up_to_now = secs_in_treatment;
+            Signals_Stop_All_Channels ();
+            treat_state = TREATMENT_PAUSED;            
         }
 
         if (comms_messages_rpi & COMM_STOP_TREAT)
         {
             comms_messages_rpi &= ~COMM_STOP_TREAT;
 
-            //termine el tratamiento por stop, o finish_ok,
+            // treatment finish by other timer or stop, finish_ok,
             RPI_Send("OK\r\n");
-            // PowerSendStop();
+            Signals_Stop_All_Channels ();            
             treat_state = TREATMENT_STOPPING;
         }
 
-        //me mandaron start???
+        // someone sends me another start???
         if (comms_messages_rpi & COMM_START_TREAT)
         {
             comms_messages_rpi &= ~COMM_START_TREAT;
@@ -131,12 +138,12 @@ void TreatmentManager (void)
 
         if (secs_in_treatment >= secs_end_treatment)
         {
-            //termine el tratamiento
-            // PowerSendStop();
+            // treatment finish by own timer
             RPI_Send("ended ok\r\n");
 #ifdef USE_BUZZER_ON_END
             BuzzerCommands(BUZZER_SHORT_CMD, 3);
-#endif                
+#endif
+            Signals_Stop_All_Channels ();
             treat_state = TREATMENT_STOPPING;
         }
 
@@ -181,7 +188,6 @@ void TreatmentManager (void)
             comms_messages_rpi &= ~COMM_PAUSE_TREAT;
             secs_in_treatment = secs_elapsed_up_to_now;
             RPI_Send("OK\r\n");
-            // PowerSendStart();
             treat_state = TREATMENT_RUNNING;
             ChangeLed(LED_TREATMENT_GENERATING);
         }
@@ -234,21 +240,16 @@ void TreatmentManager (void)
     }            
 
 
-    //reviso comunicacion con raspberry
+    // check rasp comms at all time
     UpdateRaspberryMessages();
 
-    //reviso comunicacion con potencias
-    // UpdatePowerMessages();
-
-    // if (sequence_ready)
-    //     sequence_ready_reset;
-
     UpdateLed();
+    
     UpdateBuzzer();
 }
 
 
-resp_t TreatmentSetSignalType (signal_type_t a)
+resp_t Treatment_SetSignalType (signal_type_t a)
 {
     if ((a == SQUARE_SIGNAL) ||
         (a == TRIANGULAR_SIGNAL) ||
@@ -261,12 +262,14 @@ resp_t TreatmentSetSignalType (signal_type_t a)
     return resp_ok;
 }
 
-signal_type_t TreatmentGetSignalType (void)
+
+signal_type_t Treatment_GetSignalType (void)
 {
     return treatment_conf.treatment_signal.signal;
 }
 
-resp_t TreatmentSetFrequency (unsigned char freq_int, unsigned char freq_dec)
+
+resp_t Treatment_SetFrequency (unsigned char freq_int, unsigned char freq_dec)
 {
     resp_t resp = resp_error;
     unsigned int calc = 1000000;
@@ -291,12 +294,8 @@ resp_t TreatmentSetFrequency (unsigned char freq_int, unsigned char freq_dec)
     return resp;
 }
 
-unsigned short TreatmentGetSynchroTimer (void)
-{
-    return treatment_conf.timer_synchro;
-}
 
-void TreatmentSetChannelsFlag (unsigned char  a)
+void Treatment_SetChannelsFlag (unsigned char  a)
 {
     if (a & ENABLE_CHX_MASK)
         treatment_conf.channels_in_treatment |= (a & CHX_MASK);
@@ -305,7 +304,8 @@ void TreatmentSetChannelsFlag (unsigned char  a)
         treatment_conf.channels_in_treatment &= (~(a & CHX_MASK));
 }
 
-unsigned char TreatmentGetChannelsFlag (void)
+
+unsigned char Treatment_GetChannelsFlag (void)
 {
     return (treatment_conf.channels_in_treatment & CHX_MASK);
 }
@@ -333,13 +333,14 @@ unsigned char TreatmentGetChannelsFlag (void)
 //     return resp_ok;
 // }
 
-void TreatmentGetFrequency (unsigned char * f_int, unsigned char * f_dec)
+void Treatment_GetFrequency (unsigned char * f_int, unsigned char * f_dec)
 {
     *f_int = treatment_conf.treatment_signal.freq_int;
     *f_dec = treatment_conf.treatment_signal.freq_dec;    
 }
 
-resp_t TreatmentSetPower (unsigned char a)
+
+resp_t Treatment_SetPower (unsigned char a)
 {
     if (a > 100)
         treatment_conf.treatment_signal.power = 100;
@@ -351,12 +352,14 @@ resp_t TreatmentSetPower (unsigned char a)
     return resp_ok;
 }
 
-unsigned char TreatmentGetPower (void)
+
+unsigned char Treatment_GetPower (void)
 {
     return treatment_conf.treatment_signal.power;
 }
 
-resp_t TreatmentSetTime (unsigned char h, unsigned char m, unsigned char s)
+
+resp_t Treatment_SetTime (unsigned char h, unsigned char m, unsigned char s)
 {
     if ((h > 1) || (m > 60) || (s > 60))
         return resp_error;
@@ -368,7 +371,8 @@ resp_t TreatmentSetTime (unsigned char h, unsigned char m, unsigned char s)
     return resp_ok;
 }
 
-resp_t TreatmentSetTimeinMinutes (unsigned short m)
+
+resp_t Treatment_SetTimeinMinutes (unsigned short m)
 {
     if (m > 120)
         return resp_error;
@@ -378,12 +382,14 @@ resp_t TreatmentSetTimeinMinutes (unsigned short m)
     return resp_ok;
 }
 
-unsigned short TreatmentGetTime (void)
+
+unsigned short Treatment_GetTime (void)
 {
     return treatment_conf.treatment_time;
 }
 
-void TreatmentGetAllConf (char * tosend)
+
+void Treatment_GetAllConf (char * tosend)
 {
     char buf[30];
 
@@ -429,8 +435,9 @@ void TreatmentGetAllConf (char * tosend)
     strcat(tosend, buf);
 }
 
+
 //verifica que se cumplan con todos los parametros para poder enviar una senial coherente
-resp_t TreatmentAssertParams (void)
+resp_t Treatment_AssertParams (void)
 {
     resp_t resp = resp_error;
 
@@ -454,30 +461,25 @@ resp_t TreatmentAssertParams (void)
 }
 
 
-void TreatmentUpdateMainState (treatment_t ms)
-{
-    treat_state = ms;
-}
-
-treatment_t TreatmentGetMainState (void)
-{
-    return treat_state;
-}
-
-
-// void TreatmentSetUpDwn (updwn_e up_or_dwn)
+// treatment_t Treatment_GetState (void)
 // {
-//     if (up_or_dwn)
-//         treatment_conf.updwn_conf = UPDWN_MANUAL;
-//     else
-//         treatment_conf.updwn_conf = UPDWN_AUTO;
-
+//     return treat_state;
 // }
 
-// updwn_e TreatmentGetUpDwn (void)
-// {
-//     return treatment_conf.updwn_conf;
-// }
+
+void Treatment_Timeouts (void)
+{
+    if (secs_in_treatment)
+    {
+        if (millis < (1000 - 1)) 
+            millis++;
+        else
+        {
+            secs_in_treatment++;
+            millis = 0;
+        }
+    }    
+}
 
 
 //--- end of file ---//

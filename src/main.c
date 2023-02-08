@@ -55,10 +55,6 @@ volatile unsigned short adc_ch [ADC_CHANNEL_QUANTITY];
 
 
 // Globals ---------------------------------------------------------------------
-volatile unsigned short secs_in_treatment = 0;
-volatile unsigned short millis = 0;
-unsigned short secs_end_treatment;
-unsigned short secs_elapsed_up_to_now;
 volatile unsigned short timer_sync_xxx_ms = 0;
 volatile unsigned short timer_out4 = 0;
 
@@ -596,17 +592,8 @@ void TimingDelay_Decrement(void)
     // if (comms_timeout)
     //     comms_timeout--;
 
-    // if (secs_in_treatment)
-    // {
-    //     if (millis < 1000)
-    //         millis++;
-    //     else
-    //     {
-    //         secs_in_treatment++;
-    //         millis = 0;
-    //     }
-    // }
-
+    // Treatment_Timeouts ();
+    
     // if (timer_out4)
     //     timer_out4--;
     // else

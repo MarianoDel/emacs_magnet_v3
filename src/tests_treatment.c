@@ -11,8 +11,6 @@
 #include "treatment.h"
 #include "comms.h"
 
-// #include "utils.h"
-
 // helper modules
 #include "tests_ok.h"
 #include "tests_mock_usart.h"
@@ -114,8 +112,8 @@ void Test_Treatment_Module (void)
     printf("Testing Treatment Module: ");
 
     signal_type_t signal = SQUARE_SIGNAL;
-    resp = TreatmentSetSignalType (signal);
-    signal = TreatmentGetSignalType();
+    resp = Treatment_SetSignalType (signal);
+    signal = Treatment_GetSignalType();
     if ((resp != resp_ok) || (signal != SQUARE_SIGNAL))
     {
         printf("\nTreatSignal error with %d ", signal);
@@ -123,8 +121,8 @@ void Test_Treatment_Module (void)
     }
 
     signal = TRIANGULAR_SIGNAL;
-    resp = TreatmentSetSignalType (signal);
-    signal = TreatmentGetSignalType();
+    resp = Treatment_SetSignalType (signal);
+    signal = Treatment_GetSignalType();
     if ((resp != resp_ok) || (signal != TRIANGULAR_SIGNAL))
     {
         printf("\nTreatSignal error with %d ", signal);
@@ -132,8 +130,8 @@ void Test_Treatment_Module (void)
     }
 
     signal = SINUSOIDAL_SIGNAL;
-    resp = TreatmentSetSignalType (signal);
-    signal = TreatmentGetSignalType();
+    resp = Treatment_SetSignalType (signal);
+    signal = Treatment_GetSignalType();
     if ((resp != resp_ok) || (signal != SINUSOIDAL_SIGNAL))
     {
         printf("\nTreatSignal error with %d ", signal);
@@ -141,7 +139,7 @@ void Test_Treatment_Module (void)
     }
 
     signal = 10;
-    resp = TreatmentSetSignalType (signal);
+    resp = Treatment_SetSignalType (signal);
     if (resp != resp_error)
     {
         printf("\nTreatSignal error with %d ", signal);
@@ -150,8 +148,8 @@ void Test_Treatment_Module (void)
 
     unsigned char f_int = 10;
     unsigned char f_dec = 10;
-    resp = TreatmentSetFrequency (f_int, f_dec);
-    TreatmentGetFrequency (&f_int, &f_dec);
+    resp = Treatment_SetFrequency (f_int, f_dec);
+    Treatment_GetFrequency (&f_int, &f_dec);
     if ((resp != resp_ok) || (f_int != 10) || (f_dec != 10))
     {
         printf("\nTreatFreq error with %d.%d ", f_int, f_dec);
@@ -160,7 +158,7 @@ void Test_Treatment_Module (void)
 
     f_int = 100;
     f_dec = 10;
-    resp = TreatmentSetFrequency (f_int, f_dec);
+    resp = Treatment_SetFrequency (f_int, f_dec);
     if (resp != resp_error)
     {
         printf("\nTreatFreq error with %d.%d ", f_int, f_dec);
@@ -168,8 +166,8 @@ void Test_Treatment_Module (void)
     }
 
     unsigned char power = 100;
-    resp = TreatmentSetPower (power);
-    power = TreatmentGetPower ();
+    resp = Treatment_SetPower (power);
+    power = Treatment_GetPower ();
 
     if ((resp != resp_ok) || (power != 100))
     {
@@ -178,8 +176,8 @@ void Test_Treatment_Module (void)
     }
 
     power = 1;
-    resp = TreatmentSetPower (power);
-    power = TreatmentGetPower ();
+    resp = Treatment_SetPower (power);
+    power = Treatment_GetPower ();
     if ((resp != resp_ok) || (power != 10))
     {
         printf("\nTreatPower error with %d ", power);
@@ -187,8 +185,8 @@ void Test_Treatment_Module (void)
     }
 
     power = 120;
-    resp = TreatmentSetPower (power);
-    power = TreatmentGetPower ();
+    resp = Treatment_SetPower (power);
+    power = Treatment_GetPower ();
     if ((resp != resp_ok) || (power != 100))
     {
         printf("\nTreatPower error with %d ", power);
@@ -197,8 +195,8 @@ void Test_Treatment_Module (void)
 
     unsigned char minutes = 100;
     unsigned short secs = 0;
-    resp = TreatmentSetTimeinMinutes (minutes);
-    secs = TreatmentGetTime ();
+    resp = Treatment_SetTimeinMinutes (minutes);
+    secs = Treatment_GetTime ();
     if ((resp != resp_ok) || (secs != (minutes * 60)))
     {
         printf("\nTreatTime error with %d ", minutes);
@@ -206,7 +204,7 @@ void Test_Treatment_Module (void)
     }
 
     minutes = 121;
-    resp = TreatmentSetTimeinMinutes (minutes);
+    resp = Treatment_SetTimeinMinutes (minutes);
     if (resp != resp_error)
     {
         printf("\nTreatTime error with %d ", minutes);
@@ -216,8 +214,8 @@ void Test_Treatment_Module (void)
     unsigned char channels_a = 0;
     unsigned char channels_b = 0;    
     channels_a |= ENABLE_CH1_FLAG | ENABLE_CH2_FLAG | ENABLE_CH3_FLAG;
-    TreatmentSetChannelsFlag (channels_a);
-    channels_b = TreatmentGetChannelsFlag ();
+    Treatment_SetChannelsFlag (channels_a);
+    channels_b = Treatment_GetChannelsFlag ();
     if ((channels_a & 0x0f) != channels_b)
     {
         printf("\nTreatChannels error with setted: %d getted: %d ", channels_a, channels_b);
@@ -225,8 +223,8 @@ void Test_Treatment_Module (void)
     }
 
     channels_a = DISABLE_CH1_FLAG;
-    TreatmentSetChannelsFlag (channels_a);
-    channels_b = TreatmentGetChannelsFlag ();
+    Treatment_SetChannelsFlag (channels_a);
+    channels_b = Treatment_GetChannelsFlag ();
     if (channels_b != ((ENABLE_CH2_FLAG | ENABLE_CH3_FLAG) & 0x0f))
     {
         printf("\nTreatChannels error with setted: %d getted: %d ", channels_a, channels_b);
@@ -260,7 +258,7 @@ void Test_Treatment_Manager (void)
 
     printf("-- treat in standby\n");
     for (int i = 0; i < 20; i++)
-        TreatmentManager();
+        Treatment_Manager();
 
     if (treat_state != TREATMENT_STANDBY)
         some_err = 1;
@@ -271,7 +269,7 @@ void Test_Treatment_Manager (void)
         comms_messages_rpi |= COMM_START_TREAT;
         
         for (int i = 0; i < 20; i++)
-            TreatmentManager();
+            Treatment_Manager();
 
         if (treat_state != TREATMENT_RUNNING)
             some_err = 1;
@@ -285,7 +283,7 @@ void Test_Treatment_Manager (void)
         
         for (int i = 0; i < 20; i++)
         {
-            TreatmentManager();
+            Treatment_Manager();
             if (i == 5)
                 comms_messages_rpi |= COMM_START_TREAT;
         }
@@ -301,7 +299,7 @@ void Test_Treatment_Manager (void)
         comms_messages_rpi |= COMM_PAUSE_TREAT;
         
         for (int i = 0; i < 20; i++)
-            TreatmentManager();
+            Treatment_Manager();
 
         if (treat_state != TREATMENT_RUNNING)
             some_err = 1;
@@ -314,7 +312,42 @@ void Test_Treatment_Manager (void)
         comms_messages_rpi |= COMM_STOP_TREAT;
         
         for (int i = 0; i < 20; i++)
-            TreatmentManager();
+            Treatment_Manager();
+
+        if (treat_state != TREATMENT_STANDBY)
+            some_err = 1;
+        
+    }
+
+    printf("-- treat to running\n");    
+    if (!some_err)
+    {
+        comms_messages_rpi |= COMM_START_TREAT;
+        
+        for (int i = 0; i < 20; i++)
+        {
+            Treatment_Manager();
+            if (i == 5)
+                comms_messages_rpi |= COMM_START_TREAT;
+        }
+
+        if (treat_state != TREATMENT_RUNNING)
+            some_err = 1;
+        
+    }
+
+
+    printf("-- treat to pause and stop\n");
+    if (!some_err)
+    {
+        comms_messages_rpi |= COMM_PAUSE_TREAT;
+        
+        for (int i = 0; i < 20; i++)
+        {
+            Treatment_Manager();
+            if (i == 5)
+                comms_messages_rpi |= COMM_STOP_TREAT;
+        }
 
         if (treat_state != TREATMENT_STANDBY)
             some_err = 1;

@@ -117,28 +117,25 @@ typedef enum {
 
 
 
-//--- Exported functions ---//
-resp_t TreatmentSetSignalType (signal_type_t);
-signal_type_t TreatmentGetSignalType (void);
-resp_t TreatmentSetFrequency (unsigned char, unsigned char);
-void TreatmentGetFrequency (unsigned char *, unsigned char *);
-resp_t TreatmentSetPower (unsigned char);
-unsigned char TreatmentGetPower (void);
-resp_t TreatmentSetTime (unsigned char, unsigned char, unsigned char);
-resp_t TreatmentSetTimeinMinutes (unsigned short);
-unsigned short TreatmentGetTime (void);
-void TreatmentGetAllConf (char *);
-resp_t TreatmentAssertParams (void);
-void TreatmentSetChannelsFlag (unsigned char);
-unsigned char TreatmentGetChannelsFlag (void);
+// Module Exported Functions ---------------------------------------------------
+void Treatment_SetChannelsFlag (unsigned char);
+unsigned char Treatment_GetChannelsFlag (void);
 
-void TreatmentManager (void);
+void Treatment_Manager (void);
+resp_t Treatment_SetSignalType (signal_type_t);
+signal_type_t Treatment_GetSignalType (void);
+resp_t Treatment_SetFrequency (unsigned char, unsigned char);
+void Treatment_GetFrequency (unsigned char *, unsigned char *);
+resp_t Treatment_SetPower (unsigned char);
+unsigned char Treatment_GetPower (void);
+resp_t Treatment_SetTime (unsigned char, unsigned char, unsigned char);
+resp_t Treatment_SetTimeinMinutes (unsigned short);
+unsigned short Treatment_GetTime (void);
+void Treatment_GetAllConf (char * tosend);
+resp_t Treatment_AssertParams (void);
+// unsigned char Treatment_GetState (void);
+void Treatment_Timeouts (void);
 
-// void TreatmentUpdateMainState (treatment_t);
-// treatment_t TreatmentGetMainState (void);
-
-// void TreatmentSetUpDwn (updwn_e);
-// updwn_e TreatmentGetUpDwn (void);
 
 #endif
 //--- END OF FILE ---//

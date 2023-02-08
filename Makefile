@@ -70,6 +70,7 @@ SRC += ./src/usart.c
 SRC += ./src/tim.c
 SRC += ./src/dma.c
 SRC += ./src/hard.c
+SRC += ./src/dsp.c
 # SRC += ./src/flash_program.c
 
 SRC += ./src/comms_from_rasp.c
@@ -207,6 +208,19 @@ tests_treatment:
 	./a.out
 	# process coverage
 	gcov treatment.c -m
+
+tests_signals:
+	# compile first modules in this test
+	# first module objects to test
+	gcc -c --coverage src/signals.c -I. $(INCDIR) $(DDEFS)
+	gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
+	# second auxiliary helper modules
+	gcc -c src/tests_ok.c -I $(INCDIR)
+	gcc -c src/tests_vector_utils.c -I $(INCDIR)
+	gcc --coverage src/tests_signals.c signals.o dsp.o tests_ok.o tests_vector_utils.o -I $(INCDIR) $(DDEFS)
+	./a.out
+	# process coverage
+	gcov signals.c -m
 
 tests_comms_rasp:
 	# compile first modules in this test
