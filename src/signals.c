@@ -1096,10 +1096,10 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
 // ex. sinusoidal
 const unsigned short * p_table_inphase;
 const unsigned short * p_table_outphase;
-pi_data_obj_t pi_channel1;
-pi_data_obj_t pi_channel2;
-pi_data_obj_t pi_channel3;
-pi_data_obj_t pi_channel4;
+pi_data_obj_t pi_ch1;
+pi_data_obj_t pi_ch2;
+pi_data_obj_t pi_ch3;
+pi_data_obj_t pi_ch4;
 unsigned short signal_index = 0;
 void Signals_Setup_All_Channels (void)
 {
@@ -1111,22 +1111,22 @@ void Signals_Setup_All_Channels (void)
     // ch2_max_current = 870;
     // ch3_max_current = 870;
     // ch4_max_current = 870;
-    PI_roof_Flush (&pi_channel1);
-    PI_roof_Flush (&pi_channel2);
-    PI_roof_Flush (&pi_channel3);
-    PI_roof_Flush (&pi_channel4);
+    PI_roof_Flush (&pi_ch1);
+    PI_roof_Flush (&pi_ch2);
+    PI_roof_Flush (&pi_ch3);
+    PI_roof_Flush (&pi_ch4);
 
-    pi_channel1.kp = 5;
-    pi_channel1.ki = 2;
+    pi_ch1.kp = 5;
+    pi_ch1.ki = 2;
 
-    pi_channel2.kp = 5;
-    pi_channel2.ki = 2;
+    pi_ch2.kp = 5;
+    pi_ch2.ki = 2;
 
-    pi_channel3.kp = 5;
-    pi_channel3.ki = 2;
+    pi_ch3.kp = 5;
+    pi_ch3.ki = 2;
 
-    pi_channel4.kp = 5;
-    pi_channel4.ki = 2;    
+    pi_ch4.kp = 5;
+    pi_ch4.ki = 2;    
 }
 
 
@@ -1197,28 +1197,28 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
     case CH1:
         pf_high_left = TIM8_Update_CH3;
         pf_low_right = TIM8_Update_CH4;
-        p_pi = &pi_channel1;
+        p_pi = &pi_ch1;
         sample = IS_CH1;
         break;
 
     case CH2:
         pf_high_left = TIM8_Update_CH2;
         pf_low_right = TIM8_Update_CH1;
-        p_pi = &pi_channel2;
+        p_pi = &pi_ch2;
         sample = IS_CH2;        
         break;
 
     case CH3:
         pf_high_left = TIM4_Update_CH2;
         pf_low_right = TIM4_Update_CH3;
-        p_pi = &pi_channel3;
+        p_pi = &pi_ch3;
         sample = IS_CH3;        
         break;
 
     case CH4:
         pf_high_left = TIM5_Update_CH1;
         pf_low_right = TIM5_Update_CH2;
-        p_pi = &pi_channel4;
+        p_pi = &pi_ch4;
         sample = IS_CH4;
         break;
             

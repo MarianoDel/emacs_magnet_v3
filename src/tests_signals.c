@@ -22,16 +22,30 @@
 
 
 // Types Constants and Macros --------------------------------------------------
+#define SIZEOF_SIGNALS    512
 
 
 // Externals -------------------------------------------------------------------
 volatile unsigned short adc_ch [10];
-// volatile unsigned char usart1_have_data = 0;
-unsigned short comms_messages_rpi = 0;
 volatile unsigned char timer1_seq_ready = 0;
 
 
 // Globals ---------------------------------------------------------------------
+short v_duty_ch1 [SIZEOF_SIGNALS] = { 0 };
+short v_error_ch1 [SIZEOF_SIGNALS] = { 0 };
+short v_sp_ch1 [SIZEOF_SIGNALS] = { 0 };
+
+short v_duty_ch2 [SIZEOF_SIGNALS] = { 0 };
+short v_error_ch2 [SIZEOF_SIGNALS] = { 0 };
+short v_sp_ch2 [SIZEOF_SIGNALS] = { 0 };
+
+short v_duty_ch3 [SIZEOF_SIGNALS] = { 0 };
+short v_error_ch3 [SIZEOF_SIGNALS] = { 0 };
+short v_sp_ch3 [SIZEOF_SIGNALS] = { 0 };
+
+short v_duty_ch4 [SIZEOF_SIGNALS] = { 0 };
+short v_error_ch4 [SIZEOF_SIGNALS] = { 0 };
+short v_sp_ch4 [SIZEOF_SIGNALS] = { 0 };
 
 
 // Module Functions to Test ----------------------------------------------------
@@ -61,10 +75,10 @@ int main (int argc, char *argv[])
 
 extern const unsigned short * p_table_inphase;
 extern const unsigned short * p_table_outphase;
-extern pi_data_obj_t pi_channel1;
-extern pi_data_obj_t pi_channel2;
-extern pi_data_obj_t pi_channel3;
-extern pi_data_obj_t pi_channel4;
+extern pi_data_obj_t pi_ch1;
+extern pi_data_obj_t pi_ch2;
+extern pi_data_obj_t pi_ch3;
+extern pi_data_obj_t pi_ch4;
 extern unsigned short signal_index;
 void Test_Generate_Setup (void)
 {
@@ -97,29 +111,52 @@ void Test_Generate_Setup (void)
 
 void Test_Generate_All_Channels (void)
 {
-    // short v_duty_ch1 [1000] = { 0 };
-    // short v_error_ch1 [1000] = { 0 };
-    // short v_sp_ch1 [1000] = { 0 };
-
-    // short v_duty_ch2 [1000] = { 0 };
-    // short v_error_ch2 [1000] = { 0 };
-    // short v_sp_ch2 [1000] = { 0 };
-
-    // short v_duty_ch3 [1000] = { 0 };
-    // short v_error_ch3 [1000] = { 0 };
-    // short v_sp_ch3 [1000] = { 0 };
-
-    // short v_duty_ch4 [1000] = { 0 };
-    // short v_error_ch4 [1000] = { 0 };
-    // short v_sp_ch4 [1000] = { 0 };
     
     Signals_Setup_All_Channels();
 
-    for (int i = 0; i < 511; i++)
+    for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
     {
         timer1_seq_ready = 1;
         Signals_Generate_All_Channels ();
+
+        // save ch1 data
+        v_duty_ch1[i] = pi_ch1.last_d;
+        v_sp_ch1[i] = pi_ch1.setpoint;
+        v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
+
+        // save ch2 data
+        v_duty_ch2[i] = pi_ch2.last_d;
+        v_sp_ch2[i] = pi_ch2.setpoint;
+        v_error_ch2[i] = pi_ch2.setpoint - pi_ch2.sample;
+
+        // save ch3 data
+        v_duty_ch3[i] = pi_ch3.last_d;
+        v_sp_ch3[i] = pi_ch3.setpoint;
+        v_error_ch3[i] = pi_ch3.setpoint - pi_ch3.sample;
+
+        // save ch4 data
+        v_duty_ch4[i] = pi_ch4.last_d;
+        v_sp_ch4[i] = pi_ch4.setpoint;
+        v_error_ch4[i] = pi_ch4.setpoint - pi_ch4.sample;
+        
     }
+
+    ///////////////////////////
+    // Backup Data to a file //
+    ///////////////////////////
+    FILE * file = fopen("data.txt", "w");
+
+    if (file == NULL)
+    {
+        printf("data file not created!\n");
+        return;
+    }
+
+    Vector_Short_To_File (file, "duty", v_duty_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "error", v_error_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "setpoint", v_sp_ch1, SIZEOF_SIGNALS);
+    printf("\nRun by hand python3 simul_outputs.py\n");
+    
 }
 
 
