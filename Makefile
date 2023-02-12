@@ -222,6 +222,19 @@ tests_signals:
 	# process coverage
 	gcov signals.c -m
 
+
+tests_signals_simul:
+	# compile first modules in this test
+	# first module objects to test
+	gcc -c src/signals.c -I. $(INCDIR) $(DDEFS)
+	gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
+	# second auxiliary helper modules
+	gcc -c src/tests_ok.c -I $(INCDIR)
+	gcc -c src/tests_vector_utils.c -I $(INCDIR)
+	gcc -c src/tests_recursive_utils.c -I $(INCDIR)
+	gcc src/tests_signals_simul.c signals.o dsp.o tests_ok.o tests_vector_utils.o tests_recursive_utils.o -I $(INCDIR) $(DDEFS)
+	./a.out
+
 tests_comms_rasp:
 	# compile first modules in this test
 	gcc -c src/comms_from_rasp.c -I. $(INCDIR) -DSTM32F10X_HD

@@ -1199,6 +1199,7 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
         pf_low_right = TIM8_Update_CH4;
         p_pi = &pi_ch1;
         sample = IS_CH1;
+        // printf("is_ch1: %d sp: %d\n", IS_CH1, new_sp);
         break;
 
     case CH2:
@@ -1233,7 +1234,10 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
     // if (sp > 4095)
     //     printf("sp is wrong!!! %d\n", sp);
     
-    // set duty cycle
+    // set duty cycle and save pi current data
+    p_pi->sample = sample;
+    p_pi->setpoint = sp;
+    
     if (sp == 0)
     {
         //fast discharge
@@ -1244,8 +1248,6 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
     else
     {
         // normal emission
-        p_pi->sample = sample;
-        p_pi->setpoint = sp;
         short duty = PI_roof (p_pi);        
         
         if (duty > 0)

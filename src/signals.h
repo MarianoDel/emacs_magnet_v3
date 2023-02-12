@@ -91,7 +91,7 @@ typedef enum
 #define TAU_LR_MILLIS    9
 
 //--- Exported macro ---//
-#define SIZEOF_SIGNALS		100
+// #define SIZEOF_SIGNALS		100
 
 #define ERROR_OVERCURRENT_MASK			0x01
 #define ERROR_NO_CURRENT_MASK				0x02

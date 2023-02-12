@@ -10,6 +10,9 @@ from recursive_tf import RecursiveTF
 
 """
         Magnet power output on channels from 1 to 4
+        Control to Output Plant Analysis 
+
+        Using Reduce and Complete Model
 
 """
 
@@ -22,7 +25,7 @@ Poles_Zeros_RM_Digital = False
 Poles_Zeros_CM_Digital = False
 
 Step_Plant_Digital = True
-Step_Plant_Recursive_Digital = True
+Step_Plant_Recursive_Digital = False
 
 
 #TF without constant
@@ -148,6 +151,7 @@ filter_rm_dig_zoh_n, filter_rm_dig_zoh_d, td = cont2discrete((filter_rm_TF.num, 
 filter_cm_dig_zoh_n, filter_cm_dig_zoh_d, td = cont2discrete((filter_cm_TF.num, filter_cm_TF.den), Tsampling, method='zoh')
 
 # normalized by TransferFunction
+print ()
 print ("Digital Filter Reduce Model Zoh:")
 filter_rm_dig_zoh = TransferFunction(filter_rm_dig_zoh_n, filter_rm_dig_zoh_d, dt=td)
 print (filter_rm_dig_zoh)
