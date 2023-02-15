@@ -19,7 +19,7 @@ typedef enum {
 	TRIANGULAR_SIGNAL,
 	SINUSOIDAL_SIGNAL
 
-} signal_type_t;
+} signal_type_e;
 
 typedef enum {
 	ZERO_DEG_OFFSET = 0,
@@ -28,25 +28,27 @@ typedef enum {
         HUNDRED_EIGHTY_DEG_OFFSET,
         TWO_HUNDRED_FORTY_DEG_OFFSET
 
-} signal_offset_t;
+} signal_offset_e;
 
 typedef struct {
-    signal_type_t signal;
-    signal_offset_t offset;
+    // general all channels things
+    signal_type_e signal;
 
     unsigned char freq_int;
     unsigned char freq_dec;
-    
-    unsigned char power;
-    unsigned char synchro_needed;    //por ahora salen siempre sincronizadas
 
-    //internals
-    unsigned short t1;
-    unsigned short t2;
+    unsigned char power;    
 
-    unsigned short kprop;
-    unsigned short kinteg;
-    unsigned short kderv;
+    // by channel things    
+    unsigned short kp_ch1;
+    unsigned short ki_ch1;
+    unsigned short kp_ch2;
+    unsigned short ki_ch2;
+    unsigned short kp_ch3;
+    unsigned short ki_ch3;
+    unsigned short kp_ch4;
+    unsigned short ki_ch4;
+
 
 } signals_struct_t;
 
@@ -60,7 +62,7 @@ typedef enum {
         TREATMENT_JUMPER_PROTECTED,
         TREATMENT_JUMPER_PROTECT_OFF
 
-} treatment_t;
+} treatment_e;
 
 typedef enum {
 	ERROR_OK = 0,
@@ -69,7 +71,7 @@ typedef enum {
 	ERROR_SOFT_OVERCURRENT,
 	ERROR_OVERTEMP
 
-} error_t;
+} error_e;
 
 
 //TIPO de descarga y estado de signal
@@ -84,7 +86,7 @@ typedef enum
 	GEN_SIGNAL_STOPPED_BY_INT,
         GEN_SIGNAL_DRAWING_ENDED
 
-} gen_signal_state_t;
+} gen_signal_state_e;
 
 
 //--- Exported constants ---//
@@ -134,7 +136,7 @@ typedef enum
 
 //--- Exported functions ---//
 // resp_t SetSignalType (signals_struct_t *, signal_type_t);
-resp_t SetSignalTypeAndOffset (signal_type_t, signal_offset_t);
+resp_t SetSignalTypeAndOffset (signal_type_e, signal_offset_e);
 resp_t SetFrequency (unsigned char, unsigned char);
 resp_t SetPower (unsigned char);
 void GenerateSignalReset (void);
@@ -142,15 +144,15 @@ void GenerateSignalReset (void);
 resp_t AssertTreatmentParams (void);
 resp_t StartTreatment (void);
 void StopTreatment (void);
-error_t GetErrorStatus (void);
-void SetErrorStatus (error_t);
+error_e GetErrorStatus (void);
+void SetErrorStatus (error_e);
 void SendAllConf (void);
 void TreatmentManager (void);
 void Overcurrent_Shutdown (void);
 void TreatmentManager_IntSpeed (void);
 
-treatment_t GetTreatmentState (void);
-gen_signal_state_t GetGenSignalState (void);
+treatment_e GetTreatmentState (void);
+gen_signal_state_e GetGenSignalState (void);
 
 void Signals_Setup_All_Channels (void);
 void Signals_Generate_All_Channels (void);

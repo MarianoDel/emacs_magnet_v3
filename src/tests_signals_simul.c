@@ -20,7 +20,14 @@
 #include <math.h>
 
 // Types Constants and Macros --------------------------------------------------
-#define SIZEOF_SIGNALS    512
+#define SIZEOF_SIGNALS    512    // two cycles
+// #define SIZEOF_SIGNALS    256    // only one cycle
+
+#define CH1    0
+#define CH2    1
+#define CH3    2
+#define CH4    3
+
 
 #define IS_CH4    adc_ch[0]
 #define IS_CH3    adc_ch[1]
@@ -55,32 +62,23 @@ short v_error_ch4 [SIZEOF_SIGNALS] = { 0 };
 short v_sp_ch4 [SIZEOF_SIGNALS] = { 0 };
 short v_adc_ch4 [SIZEOF_SIGNALS] = { 0 };
 
+recursive_filter_t plant_ch1;
+recursive_filter_t plant_ch2;
+recursive_filter_t plant_ch3;
+recursive_filter_t plant_ch4;
 
 
 // Module Functions to Test ----------------------------------------------------
 // -- set recursive
-void Plant_Out_Recursive_Reset (void);
-float Plant_Out_Recursive (short duty_in);
-void Plant_Step_Response (void);
+void Plant_Out_Recursive_Reset (int which_channel, recursive_filter_t * f);
+float Plant_Out_Recursive (recursive_filter_t * f, short duty_in);
+void Plant_Step_Response (recursive_filter_t *f);
 
-// void Plant_Step_Response_Duty (void);
 
 // -- tests functions
 void Test_Generate_All_Channels (void);
 void Test_Plant_Step_Response (void);
 
-// void TestGenSignalVoltage (void);
-// void TestGenSignalBipolar (void);
-// void TestSignalCloseLoop (void);
-// void TestSignalSinus (void);
-// void TestSignalPreDistorted (void);
-// void TestStepDCM (void);
-// void TestStepCCM (void);
-// void TestInputToOutput (void);
-// void TestRecursiveDump (void);
-// void TestPRController (void);
-
-// void Filter_Step_Response (void);
 unsigned short Adc12BitsConvertion (float sample);
 unsigned short Adc10BitsConvertion (float sample);
 
@@ -92,13 +90,16 @@ int main (int argc, char *argv[])
 
     // printf("testing plant step response...\n");
     // printf("recursive reset on plant...\n");
-    // Plant_Out_Recursive_Reset ();
+    // Plant_Out_Recursive_Reset (&plant_ch1);
     // Test_Plant_Step_Response ();
     // printf("end step response test\n");
     
     printf("testing signals and simulation...\n");
     printf("recursive reset on plant...\n");
-    Plant_Out_Recursive_Reset ();
+    Plant_Out_Recursive_Reset (CH1, &plant_ch1);
+    Plant_Out_Recursive_Reset (CH2, &plant_ch2);
+    Plant_Out_Recursive_Reset (CH3, &plant_ch3);
+    Plant_Out_Recursive_Reset (CH4, &plant_ch4);    
     Test_Generate_All_Channels ();
     printf("end generation test\n");    
 
@@ -117,26 +118,74 @@ int main (int argc, char *argv[])
 // )
 #define B_SIZE    1
 #define A_SIZE    2
-float b_vector [B_SIZE] = { 0.62806727 };
-float a_vector [A_SIZE] = { 1., -0.94942247 };
-float ins_vector [B_SIZE] = { 0.0 };
-float outs_vector [A_SIZE] = { 0.0 };
-recursive_filter_t filter_t;
-void Plant_Out_Recursive_Reset (void)
+// ch1 plant
+float b_vector_ch1 [B_SIZE] = { 0.62806727 };
+float a_vector_ch1 [A_SIZE] = { 1., -0.94942247 };
+float ins_vector_ch1 [B_SIZE] = { 0.0 };
+float outs_vector_ch1 [A_SIZE] = { 0.0 };
+// ch2 plant
+float b_vector_ch2 [B_SIZE] = { 0.62806727 };
+float a_vector_ch2 [A_SIZE] = { 1., -0.94942247 };
+float ins_vector_ch2 [B_SIZE] = { 0.0 };
+float outs_vector_ch2 [A_SIZE] = { 0.0 };
+// ch3 plant
+float b_vector_ch3 [B_SIZE] = { 0.62806727 };
+float a_vector_ch3 [A_SIZE] = { 1., -0.94942247 };
+float ins_vector_ch3 [B_SIZE] = { 0.0 };
+float outs_vector_ch3 [A_SIZE] = { 0.0 };
+// ch4 plant
+float b_vector_ch4 [B_SIZE] = { 0.62806727 };
+float a_vector_ch4 [A_SIZE] = { 1., -0.94942247 };
+float ins_vector_ch4 [B_SIZE] = { 0.0 };
+float outs_vector_ch4 [A_SIZE] = { 0.0 };
+void Plant_Out_Recursive_Reset (int which_channel, recursive_filter_t * f)
 {
-    filter_t.b_params = b_vector;
-    filter_t.a_params = a_vector;
-    filter_t.b_size = B_SIZE;
-    filter_t.a_size = A_SIZE;
-    filter_t.last_inputs = ins_vector;
-    filter_t.last_outputs = outs_vector;    
-    Recursive_Filter_Float_Reset(&filter_t);
+    switch (which_channel)
+    {
+    case CH1:
+        f->b_params = b_vector_ch1;
+        f->a_params = a_vector_ch1;
+        f->b_size = B_SIZE;
+        f->a_size = A_SIZE;
+        f->last_inputs = ins_vector_ch1;
+        f->last_outputs = outs_vector_ch1;    
+        break;
+
+    case CH2:
+        f->b_params = b_vector_ch2;
+        f->a_params = a_vector_ch2;
+        f->b_size = B_SIZE;
+        f->a_size = A_SIZE;
+        f->last_inputs = ins_vector_ch2;
+        f->last_outputs = outs_vector_ch2;    
+        break;
+
+    case CH3:
+        f->b_params = b_vector_ch3;
+        f->a_params = a_vector_ch3;
+        f->b_size = B_SIZE;
+        f->a_size = A_SIZE;
+        f->last_inputs = ins_vector_ch3;
+        f->last_outputs = outs_vector_ch3;    
+        break;
+
+    case CH4:
+        f->b_params = b_vector_ch4;
+        f->a_params = a_vector_ch4;
+        f->b_size = B_SIZE;
+        f->a_size = A_SIZE;
+        f->last_inputs = ins_vector_ch4;
+        f->last_outputs = outs_vector_ch4;    
+        break;
+    }
+    
+    Recursive_Filter_Float_Reset(f);
 }
 
 
-float Plant_Out_Recursive (short duty)
+float Plant_Out_Recursive (recursive_filter_t * f, short duty)
 {
-    return Recursive_Filter_Float(&filter_t, (float) duty / 1000.0);
+    return Recursive_Filter_Float(f, (float) duty / 1000.0);
 }
 
 
@@ -194,10 +243,21 @@ void Test_Generate_All_Channels (void)
         return;
     }
 
-    Vector_Short_To_File (file, "duty", v_duty_ch1, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "adc", v_adc_ch1, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "error", v_error_ch1, SIZEOF_SIGNALS);    
-    Vector_Short_To_File (file, "setpoint", v_sp_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
+    Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
+
+    // Vector_Short_To_File (file, "duty2", v_duty_ch2, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "adc2", v_adc_ch2, SIZEOF_SIGNALS);
+    // Vector_Short_To_File (file, "error2", v_error_ch2, SIZEOF_SIGNALS);    
+    // Vector_Short_To_File (file, "setpoint2", v_sp_ch2, SIZEOF_SIGNALS);
+    
+    // Vector_Short_To_File (file, "duty4", v_duty_ch4, SIZEOF_SIGNALS);
+    // Vector_Short_To_File (file, "adc4", v_adc_ch4, SIZEOF_SIGNALS);
+    // Vector_Short_To_File (file, "error4", v_error_ch4, SIZEOF_SIGNALS);    
+    // Vector_Short_To_File (file, "setpoint4", v_sp_ch4, SIZEOF_SIGNALS);
+    
     printf("\nRun by hand python3 simul_outputs.py\n");
     
 }
@@ -207,11 +267,12 @@ float v_dummy [SIZEOF_SIGNALS] = { 0 };
 void Test_Plant_Step_Response (void)
 {
     int length = 200;
-    
+
+    printf("testing only for ch1!\n");
     for (int i = 0; i < length; i++)
     {
         v_duty_ch1[i] = 950;
-        v_dummy[i] = Plant_Out_Recursive (v_duty_ch1[i]);
+        v_dummy[i] = Plant_Out_Recursive (&plant_ch1, v_duty_ch1[i]);
         v_error_ch1[i] = Adc12BitsConvertion(v_dummy[i]);        
     }
 
@@ -232,110 +293,6 @@ void Test_Plant_Step_Response (void)
     printf("\nRun by hand python3 simul_outputs.py\n");
     
 }
-
-// void TestSignalSinus (void)
-// {
-//     float calc = 0.0;
-//     // int filter_cntr = 0;
-
-//     Plant_Out_Recursive_Reset();
-    
-//     for (int j = 0; j < HOW_MANY_CYCLES; j++)
-//     {
-//         for (int i = 0; i < SIZEOF_SIGNAL; i++)
-//         {
-//             calc = sin (3.1415 * i / SIZEOF_SIGNAL);
-//             calc = calc * 311;
-//             vline[i + (j * SIZEOF_SIGNAL)] = calc;
-//             vinput[i + (j * SIZEOF_SIGNAL)] = 350;
-//         }
-//     }
-
-//     GenSignalSinusDutySet(100);
-
-//     gen_signal_e sig_state = SIGNAL_RUNNING;
-//     unsigned short duty = 0;
-//     unsigned short isense = 0;
-//     unsigned short ki_multiplier = KI_SIGNAL_PEAK_MULTIPLIER;    
-//     for (int j = 0; j < HOW_MANY_CYCLES; j++)
-//     {
-//         GenSignalSinusReset();
-//         sig_state = SIGNAL_RUNNING;
-//         duty = 0;
-//         isense = 0;
-        
-//         for (int i = 0; i < SIZEOF_SIGNAL; i++)
-//         {
-//             isense = last_output;
-//             sig_state = GenSignalSinus(isense, ki_multiplier, &duty);
-//             if (sig_state == SIGNAL_RUNNING)
-//                 HIGH_LEFT(duty);
-//             else
-//                 HIGH_LEFT(0);
-//         }
-
-//         // if (filter_cntr > 50)
-//         // {
-//         //     filter_cntr = 0;
-//         //     GenSignalSinusApplyFilter ();
-//         // }
-//         // else
-//         //     filter_cntr++;
-//     }
-
-//     unsigned short reference [VECTOR_LENGTH] = { 0 };
-//     unsigned int ref_calc = 0;
-//     for (int j = 0; j < HOW_MANY_CYCLES; j++)
-//     {
-//         for (int i = 0; i < SIZEOF_SIGNAL; i++)
-//         {
-//             ref_calc = sin_half_cycle[i] * ki_multiplier;
-//             ref_calc = ref_calc >> 12;
-//             reference[i + (j * SIZEOF_SIGNAL)] = (unsigned short) ref_calc;
-//         }
-//     }
-
-//     // ShowVectorUShort("\nVector reference:\n", reference, VECTOR_LENGTH);
-//     // ShowVectorUShort("\nVector voltage input:\n", vinput, VECTOR_LENGTH);
-//     // ShowVectorUShort("\nVector duty_high_left:\n", duty_high_left, VECTOR_LENGTH);
-//     // ShowVectorUShort("\nVector duty_high_right:\n", duty_high_right, VECTOR_LENGTH);
-
-//     // ShowVectorFloat("\nVector vinput_applied:\n", vinput_applied, VECTOR_LENGTH);
-//     // ShowVectorFloat("\nVector plant output:\n", voutput, VECTOR_LENGTH);
-
-//     // ShowVectorUShort("\nVector plant output ADC:\n", voutput_adc, VECTOR_LENGTH);
-
-//     int error [VECTOR_LENGTH] = { 0 };
-//     for (int i = 0; i < VECTOR_LENGTH; i++)
-//         error[i] = reference[i] - voutput_adc[i];
-
-//     // ShowVectorInt("\nPlant output error:\n", error, VECTOR_LENGTH);
-//     // ShowVectorUShort("\nVector reference:\n", reference, SIZEOF_SIGNAL);
-
-//     ///////////////////////////
-//     // Backup Data to a file //
-//     ///////////////////////////
-//     FILE * file = fopen("data.txt", "w");
-
-//     if (file == NULL)
-//     {
-//         printf("data file not created!\n");
-//         return;
-//     }
-
-//     Vector_UShort_To_File(file, "reference", reference, VECTOR_LENGTH);
-//     // Vector_UShort_To_File(file, "vinput", vinput, VECTOR_LENGTH);    
-//     Vector_UShort_To_File(file, "duty_high_left", duty_high_left, VECTOR_LENGTH);
-
-//     Vector_Float_To_File(file, "vinput applied", vinput_applied, VECTOR_LENGTH);
-//     Vector_Float_To_File(file, "voutput getted", voutput, VECTOR_LENGTH);    
-
-//     Vector_UShort_To_File(file, "voutput_adc", voutput_adc, VECTOR_LENGTH);
-
-//     printf("\nRun by hand python3 simul_sinus_filter.py\n");    
-    
-// }
-
 
 
 unsigned short Adc12BitsConvertion (float sample)
@@ -381,7 +338,7 @@ void TIM8_Update_CH3 (unsigned short a)
     if (a)
     {
         float output = 0.0;
-        output = Plant_Out_Recursive(a);
+        output = Plant_Out_Recursive(&plant_ch1, a);
         // printf("input: %d output: %f ", a, output);
         IS_CH1 = Adc12BitsConvertion (output);
         // printf("sample: %d\n", IS_CH1);        
@@ -393,13 +350,13 @@ void TIM8_Update_CH4 (unsigned short a)
     if (a == 0)    // no emition no adc data
     {
         IS_CH1 = 0;
-        Plant_Out_Recursive_Reset ();        
+        Plant_Out_Recursive_Reset (CH1, &plant_ch1);
     }
     else if (a < 950)    // regulation on negative
     {
         float output = 0.0;
-        // output = Plant_Out_Recursive(-a);
-        output = Plant_Out_Recursive(-a << 5);    // simulate a fast discharge     
+        output = Plant_Out_Recursive(&plant_ch1, -a);
+        // output = Plant_Out_Recursive(&plant_ch1, -a << 5);    // simulate a fast discharge     
         IS_CH1 = Adc12BitsConvertion (output);
     }
     else
@@ -410,43 +367,97 @@ void TIM8_Update_CH4 (unsigned short a)
 
 void TIM8_Update_CH2 (unsigned short a)
 {
+    if (a)
+    {
+        float output = 0.0;
+        output = Plant_Out_Recursive(&plant_ch2, a);
+        IS_CH2 = Adc12BitsConvertion (output);
+    }
     // printf("HL CH2: %d\n", a);
-    // float output = 0.0;
-    // output = Plant_Out_Recursive(a);
-
-    // IS_CH2 = Adc12BitsConvertion (output);    
 }
 
 void TIM8_Update_CH1 (unsigned short a)
 {
+    if (a == 0)    // no emition no adc data
+    {
+        IS_CH2 = 0;
+        Plant_Out_Recursive_Reset (CH2, &plant_ch2);
+    }
+    else if (a < 950)    // regulation on negative
+    {
+        float output = 0.0;
+        // output = Plant_Out_Recursive(-a);
+        output = Plant_Out_Recursive(&plant_ch2, -a << 5);    // simulate a fast discharge     
+        IS_CH2 = Adc12BitsConvertion (output);
+    }
+    else
+    {
+        // regulation by positive, do nothing in here
+    }
     // printf("LR CH2: %d\n", a);
 }
 
 void TIM4_Update_CH2 (unsigned short a)
 {
+    if (a)
+    {
+        float output = 0.0;
+        output = Plant_Out_Recursive(&plant_ch3, a);
+        IS_CH3 = Adc12BitsConvertion (output);
+    }
     // printf("HL CH3: %d\n", a);
-    // float output = 0.0;
-    // output = Plant_Out_Recursive(a);
-
-    // IS_CH1 = Adc12BitsConvertion (output);    
 }
 
 void TIM4_Update_CH3 (unsigned short a)
 {
+    if (a == 0)    // no emition no adc data
+    {
+        IS_CH3 = 0;
+        Plant_Out_Recursive_Reset (CH3, &plant_ch3);
+    }
+    else if (a < 950)    // regulation on negative
+    {
+        float output = 0.0;
+        // output = Plant_Out_Recursive(-a);
+        output = Plant_Out_Recursive(&plant_ch3, -a << 5);    // simulate a fast discharge     
+        IS_CH3 = Adc12BitsConvertion (output);
+    }
+    else
+    {
+        // regulation by positive, do nothing in here
+    }
     // printf("LR CH3: %d\n", a);
 }
 
 void TIM5_Update_CH1 (unsigned short a)
 {
+    if (a)
+    {
+        float output = 0.0;
+        output = Plant_Out_Recursive(&plant_ch4, a);
+        IS_CH4 = Adc12BitsConvertion (output);
+    }
     // printf("HL CH4: %d\n", a);
-    // float output = 0.0;
-    // output = Plant_Out_Recursive(a);
-
-    // IS_CH1 = Adc12BitsConvertion (output);    
 }
 
 void TIM5_Update_CH2 (unsigned short a)
 {
+    if (a == 0)    // no emition no adc data
+    {
+        IS_CH4 = 0;
+        Plant_Out_Recursive_Reset (CH4, &plant_ch4);
+    }
+    else if (a < 950)    // regulation on negative
+    {
+        float output = 0.0;
+        // output = Plant_Out_Recursive(-a);
+        output = Plant_Out_Recursive(&plant_ch4, -a << 5);    // simulate a fast discharge     
+        IS_CH4 = Adc12BitsConvertion (output);
+    }
+    else
+    {
+        // regulation by positive, do nothing in here
+    }    
     // printf("LR CH4: %d\n", a);
 }
 

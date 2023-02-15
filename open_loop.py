@@ -22,7 +22,7 @@ from recursive_tf import RecursiveTF
 ############################################
 Bode_Plant_Digital = False
 Poles_Zeros_RM_Digital = False
-Bode_PID_Digital = True
+Bode_PID_Digital = False
 Bode_Open_Loop_Digital = True
     
 # Poles_Zeros_CM_Digital = False
@@ -119,8 +119,8 @@ if Poles_Zeros_RM_Digital == True:
 # Digital PID from trial and error #
 ####################################
 ## values used on embedded
-kp = 10
-ki = 10
+kp = 128
+ki = 0
 kd = 0
 div = 128
 pid = PID_int(1,1, div)

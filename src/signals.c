@@ -50,17 +50,17 @@ extern volatile unsigned char timer1_seq_ready;
 
 
 // Globals ---------------------------------------------------------------------
-treatment_t treatment_state = TREATMENT_INIT_FIRST_TIME;
-signals_struct_t signal_to_gen;
-gen_signal_state_t gen_signal_state = GEN_SIGNAL_INIT;
-unsigned char global_error = 0;
+// treatment_e treatment_state = TREATMENT_INIT_FIRST_TIME;
+// signals_struct_t signal_to_gen;
+// gen_signal_state_e gen_signal_state = GEN_SIGNAL_INIT;
+// unsigned char global_error = 0;
 
-unsigned short * p_signal;
-unsigned short * p_signal_running;
+// unsigned short * p_signal;
+// unsigned short * p_signal_running;
 
-short d = 0;
-short ez1 = 0;
-short ez2 = 0;
+// short d = 0;
+// short ez1 = 0;
+// short ez2 = 0;
 
 
 //-- para determinacion de soft overcurrent ------------
@@ -79,33 +79,6 @@ unsigned char current_integral_ended = 0;
 unsigned char current_integral_errors = 0;
 #endif
 
-//parametros del PID segun las seniales (es el valor elegido dividido 128)
-//PID nuevos
-#define PID_SQUARE_P    224
-#define PID_SQUARE_I    256
-#define PID_SQUARE_D    0
-
-#define PID_TRIANGULAR_P    224
-#define PID_TRIANGULAR_I    256
-#define PID_TRIANGULAR_D    0
-
-// #define PID_SINUSOIDAL_P    224
-#define PID_SINUSOIDAL_P    525
-#define PID_SINUSOIDAL_I    256
-#define PID_SINUSOIDAL_D    0
-
-//PID original
-// #define PID_SQUARE_P    640
-// #define PID_SQUARE_I    200
-// #define PID_SQUARE_D    0
-
-// #define PID_TRIANGULAR_P    640
-// #define PID_TRIANGULAR_I    128
-// #define PID_TRIANGULAR_D    0
-
-// #define PID_SINUSOIDAL_P    640
-// #define PID_SINUSOIDAL_I    16
-// #define PID_SINUSOIDAL_D    0
 
 const unsigned short sinusoidal_table_inphase [] = {25,50,75,100,125,150,174,199,224,248,
                                                     272,296,320,344,368,391,414,437,459,482,
@@ -162,84 +135,116 @@ const unsigned short sinusoidal_table_outphase [] = {0,0,0,0,0,0,0,0,0,0,
                                                      125,100,75,50,25,0};
 
 
-#ifdef MAX_CURRENT_3_0_A
-//Signals Templates
-#define I_MAX 465
-
-//seniales nuevas
-const unsigned short s_sinusoidal_3A [SIZEOF_SIGNALS] = {14,29,43,58,72,87,101,115,129,143,
-                                                         157,171,184,197,211,224,236,249,261,273,
-                                                         285,296,307,318,328,338,348,358,367,376,
-                                                         384,392,400,407,414,420,426,432,437,442,
-                                                         446,450,453,456,459,461,462,464,464,465,
-                                                         464,464,462,461,459,456,453,450,446,442,
-                                                         437,432,426,420,414,407,400,392,384,376,
-                                                         367,358,348,338,328,318,307,296,285,273,
-                                                         261,249,236,224,211,197,184,171,157,143,
-                                                         129,115,101,87,72,58,43,29,14,0};
-
-const unsigned short s_triangular_3A [SIZEOF_SIGNALS] = {4,9,13,18,23,27,32,37,41,46,
-                                                         51,55,60,65,69,74,79,83,88,93,
-                                                         97,102,106,111,116,120,125,130,134,139,
-                                                         144,148,153,158,162,167,172,176,181,186,
-                                                         190,195,199,204,209,213,218,223,227,232,
-                                                         237,241,246,251,255,260,265,269,274,279,
-                                                         283,288,292,297,302,306,311,316,320,325,
-                                                         330,334,339,344,348,353,358,362,367,372,
-                                                         376,381,385,390,395,399,404,409,413,418,
-                                                         423,427,432,437,441,446,451,455,460,465};
-
-
-const unsigned short s_square_3A [SIZEOF_SIGNALS] = {465,465,465,465,465,465,465,465,465,465,
-                                                     465,465,465,465,465,465,465,465,465,465,
-                                                     465,465,465,465,465,465,465,465,465,465,
-                                                     465,465,465,465,465,465,465,465,465,465,
-                                                     465,465,465,465,465,465,465,465,465,465,
-                                                     465,465,465,465,465,465,465,465,465,465,
-                                                     465,465,465,465,465,465,465,465,465,465,
-                                                     465,465,465,465,465,465,465,465,465,465,
-                                                     465,465,465,465,465,465,465,465,465,465,
-                                                     465,465,465,465,465,465,465,465,465,465};
-#endif
-
-#ifdef MAX_CURRENT_3_6_A
-//Signals Templates
-#define I_MAX 558
-
-const unsigned short s_triangular_3A [SIZEOF_SIGNALS] = {5,11,16,22,27,33,39,44,50,55,
-                                                         61,66,72,78,83,89,94,100,106,111,
-                                                         117,122,128,133,139,145,150,156,161,167,
-                                                         172,178,184,189,195,200,206,212,217,223,
-                                                         228,234,239,245,251,256,262,267,273,279,
-                                                         284,290,295,301,306,312,318,323,329,334,
-                                                         340,345,351,357,362,368,373,379,385,390,
-                                                         396,401,407,412,418,424,429,435,440,446,
-                                                         451,457,463,468,474,479,485,491,496,502,
-                                                         507,513,518,524,530,535,541,546,552,558};
+const unsigned short triangular_table_inphase [] = {7,15,23,31,39,47,55,63,71,79,
+                                                    87,95,103,111,119,127,135,143,151,159,
+                                                    167,175,183,191,199,207,215,223,231,239,
+                                                    247,255,263,271,279,287,295,303,311,319,
+                                                    327,335,343,351,359,367,375,383,391,399,
+                                                    407,415,423,431,439,447,455,463,471,479,
+                                                    487,495,503,511,519,527,535,543,551,559,
+                                                    567,575,583,591,599,607,615,623,631,639,
+                                                    647,655,663,671,679,687,695,703,711,719,
+                                                    727,735,743,751,759,767,775,783,791,799,
+                                                    807,815,823,831,839,847,855,863,871,879,
+                                                    887,895,903,911,919,927,935,943,951,959,
+                                                    967,975,983,991,999,1007,1015,1023,0,0,
+                                                    0,0,0,0,0,0,0,0,0,0,
+                                                    0,0,0,0,0,0,0,0,0,0,
+                                                    0,0,0,0,0,0,0,0,0,0,
+                                                    0,0,0,0,0,0,0,0,0,0,
+                                                    0,0,0,0,0,0,0,0,0,0,
+                                                    0,0,0,0,0,0,0,0,0,0,
+                                                    0,0,0,0,0,0,0,0,0,0,
+                                                    0,0,0,0,0,0,0,0,0,0,
+                                                    0,0,0,0,0,0,0,0,0,0,
+                                                    0,0,0,0,0,0,0,0,0,0,
+                                                    0,0,0,0,0,0,0,0,0,0,
+                                                    0,0,0,0,0,0,0,0,0,0,
+                                                    0,0,0,0,0,0};
 
 
-const unsigned short s_sinusoidal_3A [SIZEOF_SIGNALS] = {17,35,52,69,87,104,121,138,155,172,
-                                                         189,205,221,237,253,268,284,298,313,327,
-                                                         342,355,369,381,394,406,418,429,440,451,
-                                                         461,471,480,488,497,504,512,518,525,530,
-                                                         535,540,544,548,551,553,555,556,557,558,
-                                                         557,556,555,553,551,548,544,540,535,530,
-                                                         525,518,512,504,497,488,480,471,461,451,
-                                                         440,429,418,406,394,381,369,355,342,327,
-                                                         313,298,284,268,253,237,221,205,189,172,
-                                                         155,138,121,104,87,69,52,35,17,0};
+const unsigned short triangular_table_outphase [] = {0,0,0,0,0,0,0,0,0,0,
+                                                     0,0,0,0,0,0,0,0,0,0,
+                                                     0,0,0,0,0,0,0,0,0,0,
+                                                     0,0,0,0,0,0,0,0,0,0,
+                                                     0,0,0,0,0,0,0,0,0,0,
+                                                     0,0,0,0,0,0,0,0,0,0,
+                                                     0,0,0,0,0,0,0,0,0,0,
+                                                     0,0,0,0,0,0,0,0,0,0,
+                                                     0,0,0,0,0,0,0,0,0,0,
+                                                     0,0,0,0,0,0,0,0,0,0,
+                                                     0,0,0,0,0,0,0,0,0,0,
+                                                     0,0,0,0,0,0,0,0,0,0,
+                                                     0,0,0,0,0,0,0,0,7,15,
+                                                     23,31,39,47,55,63,71,79,87,95,
+                                                     103,111,119,127,135,143,151,159,167,175,
+                                                     183,191,199,207,215,223,231,239,247,255,
+                                                     263,271,279,287,295,303,311,319,327,335,
+                                                     343,351,359,367,375,383,391,399,407,415,
+                                                     423,431,439,447,455,463,471,479,487,495,
+                                                     503,511,519,527,535,543,551,559,567,575,
+                                                     583,591,599,607,615,623,631,639,647,655,
+                                                     663,671,679,687,695,703,711,719,727,735,
+                                                     743,751,759,767,775,783,791,799,807,815,
+                                                     823,831,839,847,855,863,871,879,887,895,
+                                                     903,911,919,927,935,943,951,959,967,975,
+                                                     983,991,999,1007,1015,1023};
 
-const unsigned short s_square_3A [SIZEOF_SIGNALS] = {558,558,558,558,558,558,558,558,558,558,
-                                                     558,558,558,558,558,558,558,558,558,558,
-                                                     558,558,558,558,558,558,558,558,558,558,
-                                                     558,558,558,558,558,558,558,558,558,558,
-                                                     558,558,558,558,558,558,558,558,558,558,
-                                                     558,558,558,558,558,558,558,558,558,558,
-                                                     558,558,558,558,558,558,558,558,558,558,
-                                                     558,558,558,558,558,558,558,558,558,558,
-                                                     558,558,558,558,558,558,558,558,558,558,
-                                                     558,558,558,558,558,558,558,558,558,558};
-#endif
+
+const unsigned short square_table_inphase [] = {1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                1023,1023,1023,1023,1023,1023,1023,1023,0,0,
+                                                0,0,0,0,0,0,0,0,0,0,
+                                                0,0,0,0,0,0,0,0,0,0,
+                                                0,0,0,0,0,0,0,0,0,0,
+                                                0,0,0,0,0,0,0,0,0,0,
+                                                0,0,0,0,0,0,0,0,0,0,
+                                                0,0,0,0,0,0,0,0,0,0,
+                                                0,0,0,0,0,0,0,0,0,0,
+                                                0,0,0,0,0,0,0,0,0,0,
+                                                0,0,0,0,0,0,0,0,0,0,
+                                                0,0,0,0,0,0,0,0,0,0,
+                                                0,0,0,0,0,0,0,0,0,0,
+                                                0,0,0,0,0,0,0,0,0,0,
+                                                0,0,0,0,0,0};
+
+const unsigned short square_table_outphase [] = {0,0,0,0,0,0,0,0,0,0,
+                                                 0,0,0,0,0,0,0,0,0,0,
+                                                 0,0,0,0,0,0,0,0,0,0,
+                                                 0,0,0,0,0,0,0,0,0,0,
+                                                 0,0,0,0,0,0,0,0,0,0,
+                                                 0,0,0,0,0,0,0,0,0,0,
+                                                 0,0,0,0,0,0,0,0,0,0,
+                                                 0,0,0,0,0,0,0,0,0,0,
+                                                 0,0,0,0,0,0,0,0,0,0,
+                                                 0,0,0,0,0,0,0,0,0,0,
+                                                 0,0,0,0,0,0,0,0,0,0,
+                                                 0,0,0,0,0,0,0,0,0,0,
+                                                 0,0,0,0,0,0,0,0,1023,1023,
+                                                 1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                 1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                 1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                 1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                 1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                 1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                 1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                 1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                 1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                 1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                 1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                 1023,1023,1023,1023,1023,1023,1023,1023,1023,1023,
+                                                 1023,1023,1023,1023,1023,1023};
+
 
 
 // Module Private Functions ----------------------------------------------------
@@ -1093,7 +1098,6 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
 // }
 
 
-// ex. sinusoidal
 const unsigned short * p_table_inphase;
 const unsigned short * p_table_outphase;
 pi_data_obj_t pi_ch1;
@@ -1101,11 +1105,52 @@ pi_data_obj_t pi_ch2;
 pi_data_obj_t pi_ch3;
 pi_data_obj_t pi_ch4;
 unsigned short signal_index = 0;
+
+// just for test, im still thinking how to manage this
+signals_struct_t global_signals = {
+    // general all channels things
+    .signal = SINUSOIDAL_SIGNAL,
+    // .signal = SQUARE_SIGNAL,
+    // .signal = TRIANGULAR_SIGNAL,
+
+    .freq_int = 23,
+    .freq_dec = 10,
+
+    .power = 100,
+
+    // by channel things    
+    .kp_ch1 = 10,
+    .ki_ch1 = 10,
+    .kp_ch2 = 60,
+    .ki_ch2 = 3,
+    .kp_ch3 = 5,
+    .ki_ch3 = 2,
+    .kp_ch4 = 1,
+    .ki_ch4 = 30,
+    
+};
+
 void Signals_Setup_All_Channels (void)
 {
-    p_table_inphase = sinusoidal_table_inphase;
-    p_table_outphase = sinusoidal_table_outphase;
+    switch (global_signals.signal)
+    {
+    case SINUSOIDAL_SIGNAL:
+        p_table_inphase = sinusoidal_table_inphase;
+        p_table_outphase = sinusoidal_table_outphase;
+        break;
 
+    case SQUARE_SIGNAL:
+        p_table_inphase = square_table_inphase;
+        p_table_outphase = square_table_outphase;
+        break;
+
+    case TRIANGULAR_SIGNAL:
+        p_table_inphase = triangular_table_inphase;
+        p_table_outphase = triangular_table_outphase;
+        break;
+        
+    }
+    
     signal_index = 0;
     // ch1_max_current = 870;
     // ch2_max_current = 870;
@@ -1116,25 +1161,26 @@ void Signals_Setup_All_Channels (void)
     PI_roof_Flush (&pi_ch3);
     PI_roof_Flush (&pi_ch4);
 
-    pi_ch1.kp = 5;
-    pi_ch1.ki = 2;
+    pi_ch1.kp = global_signals.kp_ch1;
+    pi_ch1.ki = global_signals.ki_ch1;
 
-    pi_ch2.kp = 5;
-    pi_ch2.ki = 2;
+    pi_ch2.kp = global_signals.kp_ch2;
+    pi_ch2.ki = global_signals.ki_ch2;
 
-    pi_ch3.kp = 5;
-    pi_ch3.ki = 2;
+    pi_ch3.kp = global_signals.kp_ch3;
+    pi_ch3.ki = global_signals.ki_ch3;
 
-    pi_ch4.kp = 5;
-    pi_ch4.ki = 2;    
+    pi_ch4.kp = global_signals.kp_ch4;
+    pi_ch4.ki = global_signals.ki_ch4;
 }
 
 
-unsigned char channel1_in_treat = 1;
-unsigned char channel2_in_treat = 1;
-unsigned char channel3_in_treat = 1;
-unsigned char channel4_in_treat = 1;
+unsigned char treat_in_ch1 = 1;
+unsigned char treat_in_ch2 = 1;
+unsigned char treat_in_ch3 = 1;
+unsigned char treat_in_ch4 = 1;
 #define CHANNEL_CONNECTED_GOOD    1
+#define CHANNEL_DISCONNECT    2
 void Signals_Generate_All_Channels (void)
 {
     if (!timer1_seq_ready)
@@ -1142,6 +1188,7 @@ void Signals_Generate_All_Channels (void)
 
     timer1_seq_ready = 0;
     // seq_ready_cnt++;
+    unsigned char signal_ended = 0;
                 
     // get the current SP
     unsigned short sp_inphase = *(p_table_inphase + signal_index);
@@ -1151,36 +1198,129 @@ void Signals_Generate_All_Channels (void)
     if (signal_index < 255)
         signal_index++;
     else
+    {
         signal_index = 0;
+        signal_ended = 1;
+    }
     
-    if (channel1_in_treat == CHANNEL_CONNECTED_GOOD)
+    if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
         Signals_Generate_Channel (CH1, sp_inphase);
 
-    if (channel2_in_treat == CHANNEL_CONNECTED_GOOD)
+    if (treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
         Signals_Generate_Channel (CH2, sp_inphase);
 
-    if (channel3_in_treat == CHANNEL_CONNECTED_GOOD)
+    if (treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
         Signals_Generate_Channel (CH3, sp_outphase);
 
-    if (channel4_in_treat == CHANNEL_CONNECTED_GOOD)
+    if (treat_in_ch4 == CHANNEL_CONNECTED_GOOD)
         Signals_Generate_Channel (CH4, sp_outphase);
 
     // now check channels for errors
-    // if (channel1_in_treat == CHANNEL_CONNECTED_GOOD)
-    // {
-    // }
+#ifdef USE_SOFT_NO_CURRENT
+    if (signal_ended)
+    {
+        if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+        {
+            if (signal_integral_ch1 < signal_no_current_threshold_ch1)
+            {
+                if (signal_no_current_cnt_ch1 < NO_CURRENT_THRESHOLD_CNT)
+                    signal_no_current_cnt_ch1++;
+                else
+                {
+                    treat_in_ch1 = CHANNEL_DISCONNECT;
+                    ErrorSetStatus(ERROR_NO_CURRENT);
+                }
+            }
+        }
 
-    // if (channel2_in_treat == CHANNEL_CONNECTED_GOOD)
-    // {
-    // }
+        if (treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
+        {
+            if (signal_integral_ch2 < signal_no_current_threshold_ch2)
+            {
+                if (signal_no_current_cnt_ch2 < NO_CURRENT_THRESHOLD_CNT)
+                    signal_no_current_cnt_ch2++;
+                else
+                {
+                    treat_in_ch2 = CHANNEL_DISCONNECT;
+                    ErrorSetStatus(ERROR_NO_CURRENT);
+                }
+            }
+        }
 
-    // if (channel3_in_treat == CHANNEL_CONNECTED_GOOD)
-    // {
-    // }
+        if (treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
+        {
+            if (signal_integral_ch3 < signal_no_current_threshold_ch3)
+            {
+                if (signal_no_current_cnt_ch3 < NO_CURRENT_THRESHOLD_CNT)
+                    signal_no_current_cnt_ch3++;
+                else
+                {
+                    treat_in_ch3 = CHANNEL_DISCONNECT;
+                    ErrorSetStatus(ERROR_NO_CURRENT);
+                }
+            }
+        }
 
-    // if (channel4_in_treat == CHANNEL_CONNECTED_GOOD)
-    // {
-    // }
+        if (treat_in_ch4 == CHANNEL_CONNECTED_GOOD)
+        {
+            if (signal_integral_ch4 < signal_no_current_threshold_ch4)
+            {
+                if (signal_no_current_cnt_ch4 < NO_CURRENT_THRESHOLD_CNT)
+                    signal_no_current_cnt_ch4++;
+                else
+                {
+                    treat_in_ch4 = CHANNEL_DISCONNECT;
+                    ErrorSetStatus(ERROR_NO_CURRENT);
+                }
+            }
+        }        
+        
+        signal_integral_ch1 = 0;
+        signal_integral_ch2 = 0;
+        signal_integral_ch3 = 0;
+        signal_integral_ch4 = 0;
+
+    }
+#endif    // USE_SOFT_NO_CURRENT
+
+#ifdef USE_SOFT_OVERCURRENT
+        if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+        {
+            if (MA8Circular(IS_CH1) > soft_overcurrent_threshold_ch1)
+            {
+                treat_in_ch1 = CHANNEL_DISCONNECT;
+                ErrorSetStatus(ERROR_SOFT_OVERCURRENT);
+            }
+        }
+
+        if (treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
+        {
+            if (MA8Circular(IS_CH2) > soft_overcurrent_threshold_ch2)
+            {
+                treat_in_ch2 = CHANNEL_DISCONNECT;
+                ErrorSetStatus(ERROR_SOFT_OVERCURRENT);
+            }
+        }
+
+        if (treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
+        {
+            if (MA8Circular(IS_CH3) > soft_overcurrent_threshold_ch3)
+            {
+                treat_in_ch3 = CHANNEL_DISCONNECT;
+                ErrorSetStatus(ERROR_SOFT_OVERCURRENT);
+            }
+        }
+
+        if (treat_in_ch4 == CHANNEL_CONNECTED_GOOD)
+        {
+            if (MA8Circular(IS_CH4) > soft_overcurrent_threshold_ch4)
+            {
+                treat_in_ch4 = CHANNEL_DISCONNECT;
+                ErrorSetStatus(ERROR_SOFT_OVERCURRENT);
+            }
+        }
+#endif
+    // end of check channels errors
     
 }    
 
@@ -1199,7 +1339,7 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
         pf_low_right = TIM8_Update_CH4;
         p_pi = &pi_ch1;
         sample = IS_CH1;
-        // printf("is_ch1: %d sp: %d\n", IS_CH1, new_sp);
+        // printf("is_ch1: %d sp_ch1: %d\n", IS_CH1, new_sp);
         break;
 
     case CH2:
@@ -1221,13 +1361,15 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
         pf_low_right = TIM5_Update_CH2;
         p_pi = &pi_ch4;
         sample = IS_CH4;
+        // printf("is_ch4: %d sp_ch4: %d\n", IS_CH4, new_sp);        
         break;
             
     }
 
     // ch1 max current fixt
     // unsigned int sp = new_sp * signal.power * antenna.power;
-    unsigned int sp = new_sp * 100 * 870;    //870 corriente max de antena
+    // unsigned int sp = new_sp * 100 * 870;    //870 corriente max de antena
+    unsigned int sp = new_sp * global_signals.power * 870;    //870 corriente max de antena    
     sp >>= 10;    //div 1024 compensate for max current
     sp = sp / 100;    //compensate for percentage power 
 
@@ -1277,8 +1419,6 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
                 duty = DUTY_95_PERCENT;
                                                 
             pf_high_left (DUTY_NONE);
-            // LOW_RIGHT_PWM_CH4 (duty >> 1);
-            // duty >>= 4;                        
             pf_low_right (duty);                        
                 
             // fixt duty
