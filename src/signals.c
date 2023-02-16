@@ -27,22 +27,24 @@
 #define CH3    2
 #define CH4    3
 
+#define USE_SOFT_NO_CURRENT
+// #define USE_SOFT_OVERCURRENT
 // Externals -------------------------------------------------------------------
 //del ADC
 // extern volatile unsigned char seq_ready;
 extern volatile unsigned short adc_ch[];
 
 //del Main
-extern volatile unsigned short timer_signals;
+// extern volatile unsigned short timer_signals;
 
 
 //de usart para sync
-extern volatile unsigned char sync_on_signal;
+// extern volatile unsigned char sync_on_signal;
 
 //del pid dsp.c
-extern unsigned short pid_param_p;
-extern unsigned short pid_param_i;
-extern unsigned short pid_param_d;
+// extern unsigned short pid_param_p;
+// extern unsigned short pid_param_i;
+// extern unsigned short pid_param_d;
 
 // externals from tim
 extern volatile unsigned char timer1_seq_ready;
@@ -73,10 +75,21 @@ unsigned short soft_overcurrent_threshold = 0;
 //SIZEOF_SIGNALS * max_ADC = 150 * 1023 = 153450
 //ojo, depende del salto de indice en la tabla segun la freq elegida
 #ifdef USE_SOFT_NO_CURRENT
-unsigned int current_integral = 0;
-unsigned int current_integral_running = 0;
-unsigned char current_integral_ended = 0;
-unsigned char current_integral_errors = 0;
+unsigned int signal_no_current_threshold_ch1 = 0;
+unsigned int signal_no_current_threshold_ch2 = 0;
+unsigned int signal_no_current_threshold_ch3 = 0;
+unsigned int signal_no_current_threshold_ch4 = 0;
+
+unsigned int signal_integral_ch1 = 0;
+unsigned int signal_integral_ch2 = 0;
+unsigned int signal_integral_ch3 = 0;
+unsigned int signal_integral_ch4 = 0;
+
+unsigned char signal_no_current_cnt_ch1 = 0;
+unsigned char signal_no_current_cnt_ch2 = 0;
+unsigned char signal_no_current_cnt_ch3 = 0;
+unsigned char signal_no_current_cnt_ch4 = 0;
+#define NO_CURRENT_THRESHOLD_CNT    4
 #endif
 
 
@@ -1123,6 +1136,8 @@ signals_struct_t global_signals = {
     .ki_ch1 = 10,
     .kp_ch2 = 60,
     .ki_ch2 = 3,
+    // .kp_ch2 = 0,
+    // .ki_ch2 = 0,
     .kp_ch3 = 5,
     .ki_ch3 = 2,
     .kp_ch4 = 1,
@@ -1132,21 +1147,26 @@ signals_struct_t global_signals = {
 
 void Signals_Setup_All_Channels (void)
 {
+    unsigned char signal_mean = 0;
+    
     switch (global_signals.signal)
     {
     case SINUSOIDAL_SIGNAL:
         p_table_inphase = sinusoidal_table_inphase;
         p_table_outphase = sinusoidal_table_outphase;
+        signal_mean = 32;
         break;
 
     case SQUARE_SIGNAL:
         p_table_inphase = square_table_inphase;
         p_table_outphase = square_table_outphase;
+        signal_mean = 50;        
         break;
 
     case TRIANGULAR_SIGNAL:
         p_table_inphase = triangular_table_inphase;
         p_table_outphase = triangular_table_outphase;
+        signal_mean = 25;
         break;
         
     }
@@ -1172,6 +1192,22 @@ void Signals_Setup_All_Channels (void)
 
     pi_ch4.kp = global_signals.kp_ch4;
     pi_ch4.ki = global_signals.ki_ch4;
+
+#ifdef USE_SOFT_NO_CURRENT    
+    // power * mean * integ (sizeof signal = 256) / 2
+    unsigned int mean_current = global_signals.power * signal_mean * 128;
+    mean_current = mean_current / 10000;    //adjust power and mean
+
+    signal_no_current_threshold_ch1 = mean_current * 870;    //antenna current peak value
+    signal_no_current_threshold_ch2 = mean_current * 870;    //antenna current peak value
+    signal_no_current_threshold_ch3 = mean_current * 870;    //antenna current peak value
+    signal_no_current_threshold_ch4 = mean_current * 870;    //antenna current peak value    
+
+    signal_integral_ch1 = 0;
+    signal_integral_ch2 = 0;
+    signal_integral_ch3 = 0;
+    signal_integral_ch4 = 0;    
+#endif
 }
 
 
@@ -1228,7 +1264,7 @@ void Signals_Generate_All_Channels (void)
                 else
                 {
                     treat_in_ch1 = CHANNEL_DISCONNECT;
-                    ErrorSetStatus(ERROR_NO_CURRENT);
+                    ErrorSetStatus(ERROR_NO_CURRENT, CH1);
                 }
             }
         }
@@ -1242,7 +1278,7 @@ void Signals_Generate_All_Channels (void)
                 else
                 {
                     treat_in_ch2 = CHANNEL_DISCONNECT;
-                    ErrorSetStatus(ERROR_NO_CURRENT);
+                    ErrorSetStatus(ERROR_NO_CURRENT, CH2);
                 }
             }
         }
@@ -1256,7 +1292,7 @@ void Signals_Generate_All_Channels (void)
                 else
                 {
                     treat_in_ch3 = CHANNEL_DISCONNECT;
-                    ErrorSetStatus(ERROR_NO_CURRENT);
+                    ErrorSetStatus(ERROR_NO_CURRENT, CH3);
                 }
             }
         }
@@ -1270,7 +1306,7 @@ void Signals_Generate_All_Channels (void)
                 else
                 {
                     treat_in_ch4 = CHANNEL_DISCONNECT;
-                    ErrorSetStatus(ERROR_NO_CURRENT);
+                    ErrorSetStatus(ERROR_NO_CURRENT, CH4);
                 }
             }
         }        
@@ -1279,7 +1315,13 @@ void Signals_Generate_All_Channels (void)
         signal_integral_ch2 = 0;
         signal_integral_ch3 = 0;
         signal_integral_ch4 = 0;
-
+    }
+    else
+    {
+        signal_integral_ch1 += IS_CH1;
+        signal_integral_ch2 += IS_CH2;
+        signal_integral_ch3 += IS_CH3;
+        signal_integral_ch4 += IS_CH4;                
     }
 #endif    // USE_SOFT_NO_CURRENT
 

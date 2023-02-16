@@ -20,7 +20,8 @@
 #include <math.h>
 
 // Types Constants and Macros --------------------------------------------------
-#define SIZEOF_SIGNALS    512    // two cycles
+#define SIZEOF_SIGNALS    (256 * 6)    // six cycles
+// #define SIZEOF_SIGNALS    512    // two cycles
 // #define SIZEOF_SIGNALS    256    // only one cycle
 
 #define CH1    0
@@ -473,6 +474,12 @@ void UpdateRaspberryMessages (void)
 {
 }
 
+void ErrorSetStatus (unsigned char error, unsigned char channel)
+{
+    error <<= 4;
+    error += channel + 1;
+    printf("error: 0x%02x\n", error);
+}
 //--- end of file ---//
 
 
