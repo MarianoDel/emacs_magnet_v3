@@ -10,6 +10,7 @@
 // Includes Modules for tests --------------------------------------------------
 #include "signals.h"
 #include "dsp.h"
+#include "tests_know_antennas.h"
 
 // helper modules
 #include "tests_ok.h"
@@ -20,8 +21,8 @@
 #include <math.h>
 
 // Types Constants and Macros --------------------------------------------------
-#define SIZEOF_SIGNALS    (256 * 6)    // six cycles
-// #define SIZEOF_SIGNALS    512    // two cycles
+// #define SIZEOF_SIGNALS    (256 * 6)    // six cycles
+#define SIZEOF_SIGNALS    512    // two cycles
 // #define SIZEOF_SIGNALS    256    // only one cycle
 
 #define CH1    0
@@ -74,11 +75,15 @@ recursive_filter_t plant_ch4;
 void Plant_Out_Recursive_Reset (int which_channel, recursive_filter_t * f);
 float Plant_Out_Recursive (recursive_filter_t * f, short duty_in);
 void Plant_Step_Response (recursive_filter_t *f);
+void Plant_Out_PI_Flush (unsigned char which_channel);
+int Plant_Out_Recursive_From_Know_Antennas_Reset (recursive_filter_t * f);
 
 
 // -- tests functions
 void Test_Generate_All_Channels (void);
 void Test_Plant_Step_Response (void);
+void Test_All_Signals_All_Antennas (void);
+
 
 unsigned short Adc12BitsConvertion (float sample);
 unsigned short Adc10BitsConvertion (float sample);
@@ -95,15 +100,24 @@ int main (int argc, char *argv[])
     // Test_Plant_Step_Response ();
     // printf("end step response test\n");
     
-    printf("testing signals and simulation...\n");
+    // printf("testing signals and simulation...\n");
+    // printf("recursive reset on plant...\n");
+    // Plant_Out_Recursive_Reset (CH1, &plant_ch1);
+    // Plant_Out_Recursive_Reset (CH2, &plant_ch2);
+    // Plant_Out_Recursive_Reset (CH3, &plant_ch3);
+    // Plant_Out_Recursive_Reset (CH4, &plant_ch4);    
+    // Test_Generate_All_Channels ();
+    // printf("end generation test\n");    
+
+    printf("testing three signals and knowed antennas at same freq on ch1...\n");
     printf("recursive reset on plant...\n");
     Plant_Out_Recursive_Reset (CH1, &plant_ch1);
     Plant_Out_Recursive_Reset (CH2, &plant_ch2);
     Plant_Out_Recursive_Reset (CH3, &plant_ch3);
-    Plant_Out_Recursive_Reset (CH4, &plant_ch4);    
-    Test_Generate_All_Channels ();
+    Plant_Out_Recursive_Reset (CH4, &plant_ch4);
+    Test_All_Signals_All_Antennas ();
     printf("end generation test\n");    
-
+    
     printf("all simulations done!\n");
     
     return 0;
@@ -244,9 +258,9 @@ void Test_Generate_All_Channels (void)
         return;
     }
 
-    Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+    // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
     Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
+    // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
     Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
 
     // Vector_Short_To_File (file, "duty2", v_duty_ch2, SIZEOF_SIGNALS);
@@ -254,13 +268,119 @@ void Test_Generate_All_Channels (void)
     // Vector_Short_To_File (file, "error2", v_error_ch2, SIZEOF_SIGNALS);    
     // Vector_Short_To_File (file, "setpoint2", v_sp_ch2, SIZEOF_SIGNALS);
     
+    // Vector_Short_To_File (file, "duty3", v_duty_ch3, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "adc3", v_adc_ch3, SIZEOF_SIGNALS);
+    // Vector_Short_To_File (file, "error3", v_error_ch3, SIZEOF_SIGNALS);    
+    // Vector_Short_To_File (file, "setpoint3", v_sp_ch3, SIZEOF_SIGNALS);
+
     // Vector_Short_To_File (file, "duty4", v_duty_ch4, SIZEOF_SIGNALS);
-    // Vector_Short_To_File (file, "adc4", v_adc_ch4, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "adc4", v_adc_ch4, SIZEOF_SIGNALS);
     // Vector_Short_To_File (file, "error4", v_error_ch4, SIZEOF_SIGNALS);    
     // Vector_Short_To_File (file, "setpoint4", v_sp_ch4, SIZEOF_SIGNALS);
     
     printf("\nRun by hand python3 simul_outputs.py\n");
     
+}
+
+
+extern unsigned char treat_in_ch1;
+void Test_All_Signals_All_Antennas (void)
+{
+    int more_antennas = 0;
+    int current_ok = 1;
+    
+    do {
+    
+        more_antennas = Plant_Out_Recursive_From_Know_Antennas_Reset (&plant_ch1);
+        Signals_Setup_All_Channels();
+    
+        for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+        {
+            timer1_seq_ready = 1;
+            Signals_Generate_All_Channels ();
+
+            // save ch1 data
+            v_duty_ch1[i] = pi_ch1.last_d;
+            v_sp_ch1[i] = pi_ch1.setpoint;
+            v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
+            v_adc_ch1[i] = pi_ch1.sample;
+
+            if (treat_in_ch1 == 2)    //some error on channel!!!
+            {
+                printf("treat stopped on channel 1 in sequence: %d\n", i);
+                current_ok = 0;
+                break;
+            }
+        }
+        
+    } while ((more_antennas) && (current_ok));
+
+    printf(" antennas shuffle ended: ");
+    if (current_ok)
+        PrintOK();
+    else
+        PrintERR();
+        
+
+    ///////////////////////////
+    // Backup Data to a file //
+    ///////////////////////////
+    FILE * file = fopen("data.txt", "w");
+
+    if (file == NULL)
+    {
+        printf("data file not created!\n");
+        return;
+    }
+
+    // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
+    // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
+    Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
+
+    printf("\nRun by hand python3 simul_outputs.py\n");
+    
+}
+
+
+float Vin = 192.0;
+float Rsense = 0.055;
+float Ao = 13.0;
+float La = 0.142;
+float Ra = 11.0;
+float fs = 1500.0;
+int Plant_Out_Recursive_From_Know_Antennas_Reset (recursive_filter_t * f)
+{
+    int more_antennas = 0;
+    antenna_st my_antenna;
+    
+    f->b_params = b_vector_ch1;
+    f->a_params = a_vector_ch1;
+    f->b_size = B_SIZE;
+    f->a_size = A_SIZE;
+    f->last_inputs = ins_vector_ch1;
+    f->last_outputs = outs_vector_ch1;
+
+    more_antennas = TSP_Get_Know_Antennas (&my_antenna);
+    La = my_antenna.inductance_int + my_antenna.inductance_dec / 100.0;
+    La = La / 100.0;    // convert mHy to Hy
+    Ra = my_antenna.resistance_int + my_antenna.resistance_dec / 100.0;
+    
+    float b0 = Vin * Rsense * Ao;
+    b0 = b0 / (La * fs);
+
+    float a0 = 1.0;
+    float a1 = -1.0 + (Ra + Rsense)/(La * fs);
+
+    b_vector_ch1[0] = b0;
+    a_vector_ch1[0] = a0;
+    a_vector_ch1[1] = a1;        
+
+    for (int i = 0; i < B_SIZE; i++)
+        ins_vector_ch1[i] = 0.0;
+
+    for (int i = 0; i < A_SIZE; i++)
+        outs_vector_ch1[i] = 0.0;
 }
 
 
@@ -332,6 +452,33 @@ unsigned short Adc10BitsConvertion (float sample)
 }
 
 
+void Plant_Out_PI_Flush (unsigned char which_channel)
+{
+    switch (which_channel)
+    {
+    case CH1:
+        pi_ch1.sample = 0;
+        pi_ch1.setpoint = 0;
+        break;
+
+    case CH2:
+        pi_ch2.sample = 0;
+        pi_ch2.setpoint = 0;        
+        break;
+        
+    case CH3:
+        pi_ch3.sample = 0;
+        pi_ch3.setpoint = 0;        
+        break;
+        
+    case CH4:
+        pi_ch4.sample = 0;
+        pi_ch4.setpoint = 0;
+        break;
+    }
+}
+
+
 // Mocked Module Functions -----------------------------------------------------
 void TIM8_Update_CH3 (unsigned short a)
 {
@@ -352,6 +499,7 @@ void TIM8_Update_CH4 (unsigned short a)
     {
         IS_CH1 = 0;
         Plant_Out_Recursive_Reset (CH1, &plant_ch1);
+        Plant_Out_PI_Flush (CH1);
     }
     else if (a < 950)    // regulation on negative
     {
@@ -383,6 +531,7 @@ void TIM8_Update_CH1 (unsigned short a)
     {
         IS_CH2 = 0;
         Plant_Out_Recursive_Reset (CH2, &plant_ch2);
+        Plant_Out_PI_Flush (CH2);
     }
     else if (a < 950)    // regulation on negative
     {
@@ -415,6 +564,7 @@ void TIM4_Update_CH3 (unsigned short a)
     {
         IS_CH3 = 0;
         Plant_Out_Recursive_Reset (CH3, &plant_ch3);
+        Plant_Out_PI_Flush (CH3);        
     }
     else if (a < 950)    // regulation on negative
     {
@@ -447,6 +597,7 @@ void TIM5_Update_CH2 (unsigned short a)
     {
         IS_CH4 = 0;
         Plant_Out_Recursive_Reset (CH4, &plant_ch4);
+        Plant_Out_PI_Flush (CH4);
     }
     else if (a < 950)    // regulation on negative
     {

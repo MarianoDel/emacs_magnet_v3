@@ -28,7 +28,7 @@
 #define CH4    3
 
 #define USE_SOFT_NO_CURRENT
-// #define USE_SOFT_OVERCURRENT
+#define USE_SOFT_OVERCURRENT
 // Externals -------------------------------------------------------------------
 //del ADC
 // extern volatile unsigned char seq_ready;
@@ -67,8 +67,15 @@ extern volatile unsigned char timer1_seq_ready;
 
 //-- para determinacion de soft overcurrent ------------
 #ifdef USE_SOFT_OVERCURRENT
-unsigned short soft_overcurrent_max_current_in_cycles = 0;
-unsigned short soft_overcurrent_threshold = 0;
+ma8_u16_data_obj_t signal_ovcp_filter_ch1;
+ma8_u16_data_obj_t signal_ovcp_filter_ch2;
+ma8_u16_data_obj_t signal_ovcp_filter_ch3;
+ma8_u16_data_obj_t signal_ovcp_filter_ch4;
+
+unsigned short signal_ovcp_threshold_ch1 = 0;
+unsigned short signal_ovcp_threshold_ch2 = 0;
+unsigned short signal_ovcp_threshold_ch3 = 0;
+unsigned short signal_ovcp_threshold_ch4 = 0;
 #endif
 
 //-- para determinar no current
@@ -1122,8 +1129,8 @@ unsigned short signal_index = 0;
 // just for test, im still thinking how to manage this
 signals_struct_t global_signals = {
     // general all channels things
-    .signal = SINUSOIDAL_SIGNAL,
-    // .signal = SQUARE_SIGNAL,
+    // .signal = SINUSOIDAL_SIGNAL,
+    .signal = SQUARE_SIGNAL,
     // .signal = TRIANGULAR_SIGNAL,
 
     .freq_int = 23,
@@ -1132,10 +1139,10 @@ signals_struct_t global_signals = {
     .power = 100,
 
     // by channel things    
-    .kp_ch1 = 10,
-    .ki_ch1 = 10,
-    .kp_ch2 = 60,
-    .ki_ch2 = 3,
+    .kp_ch1 = 50,
+    .ki_ch1 = 3,
+    .kp_ch2 = 10,
+    .ki_ch2 = 10,
     // .kp_ch2 = 0,
     // .ki_ch2 = 0,
     .kp_ch3 = 5,
@@ -1208,6 +1215,21 @@ void Signals_Setup_All_Channels (void)
     signal_integral_ch3 = 0;
     signal_integral_ch4 = 0;    
 #endif
+
+#ifdef USE_SOFT_OVERCURRENT
+    // soft overcurrent is 20% above the maximun current with 100% power
+
+    signal_ovcp_threshold_ch1 = 12 * 870 / 10;
+    signal_ovcp_threshold_ch2 = 12 * 870 / 10;
+    signal_ovcp_threshold_ch3 = 12 * 870 / 10;
+    signal_ovcp_threshold_ch4 = 12 * 870 / 10;
+    
+    MA8_U16Circular_Reset(&signal_ovcp_filter_ch1);
+    MA8_U16Circular_Reset(&signal_ovcp_filter_ch2);
+    MA8_U16Circular_Reset(&signal_ovcp_filter_ch3);
+    MA8_U16Circular_Reset(&signal_ovcp_filter_ch4);
+    
+#endif    
 }
 
 
@@ -1328,37 +1350,69 @@ void Signals_Generate_All_Channels (void)
 #ifdef USE_SOFT_OVERCURRENT
         if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
         {
-            if (MA8Circular(IS_CH1) > soft_overcurrent_threshold_ch1)
+            unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch1, IS_CH1);
+            if (filter_c > signal_ovcp_threshold_ch1)
             {
+                printf("ch1 current filtered: %d threshold: %d sample: %d index: %d\n",
+                       filter_c,
+                       signal_ovcp_threshold_ch1,
+                       IS_CH1,
+                       signal_index);
+
+                Signals_Stop_Single_Channel(CH1);
                 treat_in_ch1 = CHANNEL_DISCONNECT;
-                ErrorSetStatus(ERROR_SOFT_OVERCURRENT);
+                ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH1);
             }
         }
 
         if (treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
         {
-            if (MA8Circular(IS_CH2) > soft_overcurrent_threshold_ch2)
+            unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch2, IS_CH2);
+            if (filter_c > signal_ovcp_threshold_ch2)
             {
+                printf("ch2 current filtered: %d threshold: %d sample: %d index: %d\n",
+                       filter_c,
+                       signal_ovcp_threshold_ch2,
+                       IS_CH2,
+                       signal_index);
+
+                Signals_Stop_Single_Channel(CH2);                
                 treat_in_ch2 = CHANNEL_DISCONNECT;
-                ErrorSetStatus(ERROR_SOFT_OVERCURRENT);
+                ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH2);
             }
         }
 
         if (treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
         {
-            if (MA8Circular(IS_CH3) > soft_overcurrent_threshold_ch3)
+            unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch3, IS_CH3);
+            if (filter_c > signal_ovcp_threshold_ch3)
             {
+                printf("ch3 current filtered: %d threshold: %d sample: %d index: %d\n",
+                       filter_c,
+                       signal_ovcp_threshold_ch3,
+                       IS_CH3,
+                       signal_index);
+
+                Signals_Stop_Single_Channel(CH3);                
                 treat_in_ch3 = CHANNEL_DISCONNECT;
-                ErrorSetStatus(ERROR_SOFT_OVERCURRENT);
+                ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH3);
             }
         }
 
-        if (treat_in_ch4 == CHANNEL_CONNECTED_GOOD)
+        if (treat_in_ch4 == CHANNEL_CONNECTED_GOOD)        
         {
-            if (MA8Circular(IS_CH4) > soft_overcurrent_threshold_ch4)
+            unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch4, IS_CH4);
+            if (filter_c > signal_ovcp_threshold_ch4)
             {
+                printf("ch4 current filtered: %d threshold: %d sample: %d index: %d\n",
+                       filter_c,
+                       signal_ovcp_threshold_ch4,
+                       IS_CH4,
+                       signal_index);
+
+                Signals_Stop_Single_Channel(CH4);
                 treat_in_ch4 = CHANNEL_DISCONNECT;
-                ErrorSetStatus(ERROR_SOFT_OVERCURRENT);
+                ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH4);
             }
         }
 #endif
@@ -1471,5 +1525,48 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
     }
 }
 
+
+void Signals_Stop_All_Channels (void)
+{
+    HIGH_LEFT_PWM_CH1(DUTY_NONE);
+    LOW_RIGHT_PWM_CH1(DUTY_NONE);
+    
+    HIGH_LEFT_PWM_CH2(DUTY_NONE);
+    LOW_RIGHT_PWM_CH2(DUTY_NONE);
+
+    HIGH_LEFT_PWM_CH3(DUTY_NONE);    
+    LOW_RIGHT_PWM_CH3(DUTY_NONE);
+    
+    HIGH_LEFT_PWM_CH4(DUTY_NONE);
+    LOW_RIGHT_PWM_CH4(DUTY_NONE);    
+}
+
+
+void Signals_Stop_Single_Channel (unsigned char which_channel)
+{
+    switch (which_channel)
+    {
+    case CH1:
+        HIGH_LEFT_PWM_CH1(DUTY_NONE);
+        LOW_RIGHT_PWM_CH1(DUTY_NONE);
+        break;
+
+    case CH2:
+        HIGH_LEFT_PWM_CH2(DUTY_NONE);
+        LOW_RIGHT_PWM_CH2(DUTY_NONE);
+        break;
+
+    case CH3:
+        HIGH_LEFT_PWM_CH3(DUTY_NONE);    
+        LOW_RIGHT_PWM_CH3(DUTY_NONE);
+        break;
+
+    case CH4:
+        HIGH_LEFT_PWM_CH4(DUTY_NONE);
+        LOW_RIGHT_PWM_CH4(DUTY_NONE);    
+        break;
+            
+    }    
+}
 
 //--- end of file ---//

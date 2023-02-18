@@ -157,6 +157,8 @@ gen_signal_state_e GetGenSignalState (void);
 void Signals_Setup_All_Channels (void);
 void Signals_Generate_All_Channels (void);
 void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_sp);
+void Signals_Stop_All_Channels (void);
+void Signals_Stop_Single_Channel (unsigned char which_channel);
 
 #endif    /* _SIGNALS_H_ */
 
