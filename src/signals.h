@@ -49,6 +49,11 @@ typedef struct {
     unsigned short kp_ch4;
     unsigned short ki_ch4;
 
+    unsigned short max_c_ch1;
+    unsigned short max_c_ch2;
+    unsigned short max_c_ch3;
+    unsigned short max_c_ch4;
+
 
 } signals_struct_t;
 

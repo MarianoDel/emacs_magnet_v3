@@ -1125,6 +1125,10 @@ pi_data_obj_t pi_ch2;
 pi_data_obj_t pi_ch3;
 pi_data_obj_t pi_ch4;
 unsigned short signal_index = 0;
+unsigned short ch1_max_current = 0;
+unsigned short ch2_max_current = 0;
+unsigned short ch3_max_current = 0;
+unsigned short ch4_max_current = 0;
 
 // just for test, im still thinking how to manage this
 signals_struct_t global_signals = {
@@ -1149,6 +1153,12 @@ signals_struct_t global_signals = {
     .ki_ch3 = 2,
     .kp_ch4 = 1,
     .ki_ch4 = 30,
+
+    // .max_c_ch1 = 870,
+    .max_c_ch1 = 1590,    
+    .max_c_ch2 = 870,
+    .max_c_ch3 = 870,
+    .max_c_ch4 = 870,
     
 };
 
@@ -1179,10 +1189,12 @@ void Signals_Setup_All_Channels (void)
     }
     
     signal_index = 0;
-    // ch1_max_current = 870;
-    // ch2_max_current = 870;
-    // ch3_max_current = 870;
-    // ch4_max_current = 870;
+
+    ch1_max_current = global_signals.max_c_ch1;
+    ch2_max_current = global_signals.max_c_ch2;
+    ch3_max_current = global_signals.max_c_ch3;
+    ch4_max_current = global_signals.max_c_ch4;
+
     PI_roof_Flush (&pi_ch1);
     PI_roof_Flush (&pi_ch2);
     PI_roof_Flush (&pi_ch3);
@@ -1205,10 +1217,10 @@ void Signals_Setup_All_Channels (void)
     unsigned int mean_current = global_signals.power * signal_mean * 128;
     mean_current = mean_current / 10000;    //adjust power and mean
 
-    signal_no_current_threshold_ch1 = mean_current * 870;    //antenna current peak value
-    signal_no_current_threshold_ch2 = mean_current * 870;    //antenna current peak value
-    signal_no_current_threshold_ch3 = mean_current * 870;    //antenna current peak value
-    signal_no_current_threshold_ch4 = mean_current * 870;    //antenna current peak value    
+    signal_no_current_threshold_ch1 = mean_current * ch1_max_current;    //antenna current peak value
+    signal_no_current_threshold_ch2 = mean_current * ch2_max_current;    //antenna current peak value
+    signal_no_current_threshold_ch3 = mean_current * ch3_max_current;    //antenna current peak value
+    signal_no_current_threshold_ch4 = mean_current * ch4_max_current;    //antenna current peak value    
 
     signal_integral_ch1 = 0;
     signal_integral_ch2 = 0;
@@ -1219,10 +1231,10 @@ void Signals_Setup_All_Channels (void)
 #ifdef USE_SOFT_OVERCURRENT
     // soft overcurrent is 20% above the maximun current with 100% power
 
-    signal_ovcp_threshold_ch1 = 12 * 870 / 10;
-    signal_ovcp_threshold_ch2 = 12 * 870 / 10;
-    signal_ovcp_threshold_ch3 = 12 * 870 / 10;
-    signal_ovcp_threshold_ch4 = 12 * 870 / 10;
+    signal_ovcp_threshold_ch1 = 12 * ch1_max_current / 10;
+    signal_ovcp_threshold_ch2 = 12 * ch2_max_current / 10;
+    signal_ovcp_threshold_ch3 = 12 * ch3_max_current / 10;
+    signal_ovcp_threshold_ch4 = 12 * ch4_max_current / 10;
     
     MA8_U16Circular_Reset(&signal_ovcp_filter_ch1);
     MA8_U16Circular_Reset(&signal_ovcp_filter_ch2);
@@ -1427,6 +1439,7 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
 {
     pi_data_obj_t * p_pi;
     unsigned short sample = 0;
+    unsigned short max_c = 0;
     
     switch (which_channel)
     {
@@ -1435,6 +1448,7 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
         pf_low_right = TIM8_Update_CH4;
         p_pi = &pi_ch1;
         sample = IS_CH1;
+        max_c = ch1_max_current;
         // printf("is_ch1: %d sp_ch1: %d\n", IS_CH1, new_sp);
         break;
 
@@ -1442,14 +1456,16 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
         pf_high_left = TIM8_Update_CH2;
         pf_low_right = TIM8_Update_CH1;
         p_pi = &pi_ch2;
-        sample = IS_CH2;        
+        sample = IS_CH2;
+        max_c = ch2_max_current;        
         break;
 
     case CH3:
         pf_high_left = TIM4_Update_CH2;
         pf_low_right = TIM4_Update_CH3;
         p_pi = &pi_ch3;
-        sample = IS_CH3;        
+        sample = IS_CH3;
+        max_c = ch3_max_current;        
         break;
 
     case CH4:
@@ -1457,6 +1473,7 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
         pf_low_right = TIM5_Update_CH2;
         p_pi = &pi_ch4;
         sample = IS_CH4;
+        max_c = ch4_max_current;        
         // printf("is_ch4: %d sp_ch4: %d\n", IS_CH4, new_sp);        
         break;
             
@@ -1465,7 +1482,7 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
     // ch1 max current fixt
     // unsigned int sp = new_sp * signal.power * antenna.power;
     // unsigned int sp = new_sp * 100 * 870;    //870 corriente max de antena
-    unsigned int sp = new_sp * global_signals.power * 870;    //870 corriente max de antena    
+    unsigned int sp = new_sp * global_signals.power * max_c;    //870 corriente max de antena    
     sp >>= 10;    //div 1024 compensate for max current
     sp = sp / 100;    //compensate for percentage power 
 

@@ -188,6 +188,31 @@ int TSP_Get_Know_Antennas (antenna_st * p)
 }
 
 
+void TSP_Get_Know_Antennas_Reset (void)
+{
+    know_antenna = 0;
+}
+
+
+void TSP_Get_Know_Single_Antenna (antenna_st * p, unsigned char index)
+{
+    know_antenna = index;
+    
+    if (TSP_Get_Know_Antennas (p) == 0)
+    {
+        //return a default antenna
+        printf("\nname:Plannar default\n");
+        p->resistance_int = 11;
+        p->resistance_dec = 00;
+        p->inductance_int = 142;
+        p->inductance_dec = 00;
+        p->current_limit_int = 1;
+        p->current_limit_dec = 0;
+        p->temp_max_int = 65;
+        p->temp_max_dec = 0;        
+    }
+}
+
 //--- end of file ---//
 
 

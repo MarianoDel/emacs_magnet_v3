@@ -69,6 +69,7 @@ recursive_filter_t plant_ch2;
 recursive_filter_t plant_ch3;
 recursive_filter_t plant_ch4;
 
+float max_antenna_current = 0.0;
 
 // Module Functions to Test ----------------------------------------------------
 // -- set recursive
@@ -77,12 +78,14 @@ float Plant_Out_Recursive (recursive_filter_t * f, short duty_in);
 void Plant_Step_Response (recursive_filter_t *f);
 void Plant_Out_PI_Flush (unsigned char which_channel);
 int Plant_Out_Recursive_From_Know_Antennas_Reset (recursive_filter_t * f);
+void Plant_Out_Recursive_From_Single_Antenna_Reset (recursive_filter_t * f, unsigned char antenna_index);
 
 
 // -- tests functions
 void Test_Generate_All_Channels (void);
 void Test_Plant_Step_Response (void);
 void Test_All_Signals_All_Antennas (void);
+void Test_Single_Signal_Single_Antenna (void);
 
 
 unsigned short Adc12BitsConvertion (float sample);
@@ -100,23 +103,32 @@ int main (int argc, char *argv[])
     // Test_Plant_Step_Response ();
     // printf("end step response test\n");
     
-    // printf("testing signals and simulation...\n");
-    // printf("recursive reset on plant...\n");
-    // Plant_Out_Recursive_Reset (CH1, &plant_ch1);
-    // Plant_Out_Recursive_Reset (CH2, &plant_ch2);
-    // Plant_Out_Recursive_Reset (CH3, &plant_ch3);
-    // Plant_Out_Recursive_Reset (CH4, &plant_ch4);    
-    // Test_Generate_All_Channels ();
-    // printf("end generation test\n");    
-
-    printf("testing three signals and knowed antennas at same freq on ch1...\n");
+    printf("testing signals and simulation...\n");
     printf("recursive reset on plant...\n");
     Plant_Out_Recursive_Reset (CH1, &plant_ch1);
     Plant_Out_Recursive_Reset (CH2, &plant_ch2);
     Plant_Out_Recursive_Reset (CH3, &plant_ch3);
-    Plant_Out_Recursive_Reset (CH4, &plant_ch4);
-    Test_All_Signals_All_Antennas ();
+    Plant_Out_Recursive_Reset (CH4, &plant_ch4);    
+    Test_Generate_All_Channels ();
     printf("end generation test\n");    
+
+    // printf("testing three signals and knowed antennas at same freq on ch1...\n");
+    // printf("recursive reset on plant...\n");
+    // Plant_Out_Recursive_Reset (CH1, &plant_ch1);
+    // Plant_Out_Recursive_Reset (CH2, &plant_ch2);
+    // Plant_Out_Recursive_Reset (CH3, &plant_ch3);
+    // Plant_Out_Recursive_Reset (CH4, &plant_ch4);
+    // Test_All_Signals_All_Antennas ();
+    // printf("end generation test\n");    
+
+    // printf("testing specific antenna with specific signal same freq on ch1...\n");
+    // printf("recursive reset on plant...\n");
+    // Plant_Out_Recursive_Reset (CH1, &plant_ch1);
+    // Plant_Out_Recursive_Reset (CH2, &plant_ch2);
+    // Plant_Out_Recursive_Reset (CH3, &plant_ch3);
+    // Plant_Out_Recursive_Reset (CH4, &plant_ch4);
+    // Test_Single_Signal_Single_Antenna ();
+    // printf("end generation test\n");    
     
     printf("all simulations done!\n");
     
@@ -284,42 +296,117 @@ void Test_Generate_All_Channels (void)
 
 
 extern unsigned char treat_in_ch1;
+extern signals_struct_t global_signals;
+// = {
+//     // general all channels things
+//     // .signal = SINUSOIDAL_SIGNAL,
+//     .signal = SQUARE_SIGNAL,
+//     // .signal = TRIANGULAR_SIGNAL,
+
+//     .freq_int = 23,
+//     .freq_dec = 10,
+
+//     .power = 100,
+
+//     // by channel things    
+//     .kp_ch1 = 50,
+//     .ki_ch1 = 3,
+//     .kp_ch2 = 10,
+//     .ki_ch2 = 10,
+//     // .kp_ch2 = 0,
+//     // .ki_ch2 = 0,
+//     .kp_ch3 = 5,
+//     .ki_ch3 = 2,
+//     .kp_ch4 = 1,
+//     .ki_ch4 = 30,
+    
+// };
+
+
 void Test_All_Signals_All_Antennas (void)
 {
     int more_antennas = 0;
     int current_ok = 1;
-    
-    do {
-    
-        more_antennas = Plant_Out_Recursive_From_Know_Antennas_Reset (&plant_ch1);
-        Signals_Setup_All_Channels();
-    
-        for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+
+    for (int j = 0; j < 3; j++)
+    {
+        switch (j)
         {
-            timer1_seq_ready = 1;
-            Signals_Generate_All_Channels ();
-
-            // save ch1 data
-            v_duty_ch1[i] = pi_ch1.last_d;
-            v_sp_ch1[i] = pi_ch1.setpoint;
-            v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
-            v_adc_ch1[i] = pi_ch1.sample;
-
-            if (treat_in_ch1 == 2)    //some error on channel!!!
-            {
-                printf("treat stopped on channel 1 in sequence: %d\n", i);
-                current_ok = 0;
-                break;
-            }
+        case 0:
+            printf("\nemitting with SINUSOIDAL_SIGNAL\n");
+            global_signals.signal = SINUSOIDAL_SIGNAL;
+            global_signals.kp_ch1 = 2;
+            global_signals.ki_ch1 = 30;
+            break;
+        case 1:
+            printf("\nemitting with TRIANGULAR_SIGNAL\n");
+            global_signals.signal = TRIANGULAR_SIGNAL;
+            global_signals.kp_ch1 = 60;
+            global_signals.ki_ch1 = 3;
+            break;
+        case 2:
+            printf("\nemitting with SQUARE_SIGNAL\n");
+            global_signals.signal = SQUARE_SIGNAL;
+            global_signals.kp_ch1 = 50;
+            global_signals.ki_ch1 = 2;
+            break;
         }
-        
-    } while ((more_antennas) && (current_ok));
 
-    printf(" antennas shuffle ended: ");
+        TSP_Get_Know_Antennas_Reset ();
+        
+        do {        
+            more_antennas = Plant_Out_Recursive_From_Know_Antennas_Reset (&plant_ch1);
+            if (more_antennas)
+            {
+                // empty signals buffers
+                for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+                {
+                    v_duty_ch1[i] = 0;
+                    v_sp_ch1[i] = 0;
+                    v_error_ch1[i] = 0;
+                    v_adc_ch1[i] = 0;
+                }
+            
+                // current sensed 1A -> 887 pts
+                global_signals.max_c_ch1 = (unsigned short) (max_antenna_current * 887);
+                printf("max_c_ch1: %d current: %f\n", global_signals.max_c_ch1, max_antenna_current);
+                Signals_Setup_All_Channels();
+    
+                for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+                {
+                    timer1_seq_ready = 1;
+                    Signals_Generate_All_Channels ();
+
+                    // save ch1 data
+                    v_duty_ch1[i] = pi_ch1.last_d;
+                    v_sp_ch1[i] = pi_ch1.setpoint;
+                    v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
+                    v_adc_ch1[i] = pi_ch1.sample;
+
+                    if (treat_in_ch1 == 2)    //some error on channel!!!
+                    {
+                        printf("treat stopped on channel 1 in sequence: %d\n", i);
+                        current_ok = 0;
+                        break;
+                    }
+                }
+            }
+        
+        } while ((more_antennas) && (current_ok));
+
+        printf(" antennas shuffle ended: ");
+        if (current_ok)
+            PrintOK();
+        else
+            PrintERR();
+    }
+
+    printf(" signals shuffle ended: ");
     if (current_ok)
         PrintOK();
     else
         PrintERR();
+
         
 
     ///////////////////////////
@@ -362,9 +449,50 @@ int Plant_Out_Recursive_From_Know_Antennas_Reset (recursive_filter_t * f)
     f->last_outputs = outs_vector_ch1;
 
     more_antennas = TSP_Get_Know_Antennas (&my_antenna);
+    if (more_antennas)
+    {
+        La = my_antenna.inductance_int + my_antenna.inductance_dec / 100.0;
+        La = La / 100.0;    // convert mHy to Hy
+        Ra = my_antenna.resistance_int + my_antenna.resistance_dec / 100.0;
+        max_antenna_current = my_antenna.current_limit_int + my_antenna.current_limit_dec / 100.0;
+    
+        float b0 = Vin * Rsense * Ao;
+        b0 = b0 / (La * fs);
+
+        float a0 = 1.0;
+        float a1 = -1.0 + (Ra + Rsense)/(La * fs);
+
+        b_vector_ch1[0] = b0;
+        a_vector_ch1[0] = a0;
+        a_vector_ch1[1] = a1;        
+
+        for (int i = 0; i < B_SIZE; i++)
+            ins_vector_ch1[i] = 0.0;
+
+        for (int i = 0; i < A_SIZE; i++)
+            outs_vector_ch1[i] = 0.0;
+    }
+    return more_antennas;
+}
+
+
+void Plant_Out_Recursive_From_Single_Antenna_Reset (recursive_filter_t * f, unsigned char antenna_index)
+{
+    antenna_st my_antenna;
+    
+    f->b_params = b_vector_ch1;
+    f->a_params = a_vector_ch1;
+    f->b_size = B_SIZE;
+    f->a_size = A_SIZE;
+    f->last_inputs = ins_vector_ch1;
+    f->last_outputs = outs_vector_ch1;
+
+    TSP_Get_Know_Single_Antenna (&my_antenna, antenna_index);
+
     La = my_antenna.inductance_int + my_antenna.inductance_dec / 100.0;
     La = La / 100.0;    // convert mHy to Hy
     Ra = my_antenna.resistance_int + my_antenna.resistance_dec / 100.0;
+    max_antenna_current = my_antenna.current_limit_int + my_antenna.current_limit_dec / 100.0;
     
     float b0 = Vin * Rsense * Ao;
     b0 = b0 / (La * fs);
@@ -381,6 +509,100 @@ int Plant_Out_Recursive_From_Know_Antennas_Reset (recursive_filter_t * f)
 
     for (int i = 0; i < A_SIZE; i++)
         outs_vector_ch1[i] = 0.0;
+    
+}
+
+
+void Test_Single_Signal_Single_Antenna (void)
+{
+    unsigned char antenna_index = 0;    //check tests_know_antennas.c
+
+    unsigned char antenna_signal = SQUARE_SIGNAL;
+
+    int current_ok = 1;
+
+    switch (antenna_signal)
+    {
+    case SINUSOIDAL_SIGNAL:
+        printf("\nemitting with SINUSOIDAL_SIGNAL\n");
+        global_signals.signal = SINUSOIDAL_SIGNAL;
+        global_signals.kp_ch1 = 2;
+        global_signals.ki_ch1 = 30;
+        break;
+    case TRIANGULAR_SIGNAL:
+        printf("\nemitting with TRIANGULAR_SIGNAL\n");
+        global_signals.signal = TRIANGULAR_SIGNAL;
+        global_signals.kp_ch1 = 60;
+        global_signals.ki_ch1 = 3;
+        break;
+    case SQUARE_SIGNAL:
+        printf("\nemitting with SQUARE_SIGNAL\n");
+        global_signals.signal = SQUARE_SIGNAL;
+        global_signals.kp_ch1 = 50;
+        global_signals.ki_ch1 = 3;
+        break;
+    }
+
+    Plant_Out_Recursive_From_Single_Antenna_Reset (&plant_ch1, antenna_index);
+
+    // empty signals buffers
+    for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+    {
+        v_duty_ch1[i] = 0;
+        v_sp_ch1[i] = 0;
+        v_error_ch1[i] = 0;
+        v_adc_ch1[i] = 0;
+    }
+            
+    // current sensed 1A -> 887 pts
+    global_signals.max_c_ch1 = (unsigned short) (max_antenna_current * 887);
+    printf("max_c_ch1: %d current: %f\n", global_signals.max_c_ch1, max_antenna_current);
+    Signals_Setup_All_Channels();
+    
+    for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+    {
+        timer1_seq_ready = 1;
+        Signals_Generate_All_Channels ();
+
+        // save ch1 data
+        v_duty_ch1[i] = pi_ch1.last_d;
+        v_sp_ch1[i] = pi_ch1.setpoint;
+        v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
+        v_adc_ch1[i] = pi_ch1.sample;
+
+        if (treat_in_ch1 == 2)    //some error on channel!!!
+        {
+            printf("treat stopped on channel 1 in sequence: %d\n", i);
+            current_ok = 0;
+            break;
+        }
+    }
+
+    printf(" antenna emission ended: ");
+    if (current_ok)
+        PrintOK();
+    else
+        PrintERR();
+        
+
+    ///////////////////////////
+    // Backup Data to a file //
+    ///////////////////////////
+    FILE * file = fopen("data.txt", "w");
+
+    if (file == NULL)
+    {
+        printf("data file not created!\n");
+        return;
+    }
+
+    // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
+    // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
+    Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
+
+    printf("\nRun by hand python3 simul_outputs.py\n");
+    
 }
 
 

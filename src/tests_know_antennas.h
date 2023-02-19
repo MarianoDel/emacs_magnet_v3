@@ -27,6 +27,8 @@ typedef struct {
 
 // Module Exported Functions ---------------------------------------------------
 int TSP_Get_Know_Antennas (antenna_st * p);
+void TSP_Get_Know_Antennas_Reset (void);
+void TSP_Get_Know_Single_Antenna (antenna_st * p, unsigned char index);
     
 
 #endif    /* _TESTS_KNOW_ANTENNAS_H_ */
