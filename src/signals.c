@@ -63,7 +63,7 @@ extern volatile unsigned char timer1_seq_ready;
 // short d = 0;
 // short ez1 = 0;
 // short ez2 = 0;
-
+unsigned short phase_accum = 0;
 
 //-- para determinacion de soft overcurrent ------------
 #ifdef USE_SOFT_OVERCURRENT
@@ -1261,15 +1261,16 @@ void Signals_Generate_All_Channels (void)
     unsigned char signal_ended = 0;
                 
     // get the current SP
-    unsigned short sp_inphase = *(p_table_inphase + signal_index);
-    unsigned short sp_outphase = *(p_table_outphase + signal_index);
+    unsigned char s_index = signal_index >> 8;
+    unsigned short sp_inphase = *(p_table_inphase + s_index);
+    unsigned short sp_outphase = *(p_table_outphase + s_index);
 
-    // index update (modulo 8?)               
-    if (signal_index < 255)
-        signal_index++;
+    // index update (modulo 16?)
+    if (signal_index < 65535)
+        signal_index += phase_accum;
     else
     {
-        signal_index = 0;
+        signal_index += phase_accum;    //modulo 16 roundup
         signal_ended = 1;
     }
     
