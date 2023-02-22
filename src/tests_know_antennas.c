@@ -32,7 +32,7 @@ int TSP_Get_Know_Antennas (antenna_st * p)
     case 0:
         // const char s_antena [] = { "ant0,012.27,087.90,001.80,065.00\r\n" };
         // const char s_name [] = { "name:Plannar 5 inches\r\n" };
-        printf("\nname:Plannar 5 inches\n");
+        printf("\nname:Plannar 5 inches in index: %d\n", know_antenna);
         p->resistance_int = 12;
         p->resistance_dec = 27;
         p->inductance_int = 87;
@@ -47,7 +47,7 @@ int TSP_Get_Know_Antennas (antenna_st * p)
     case 1:
         // const char s_antena [] = { "ant1,023.85,141.60,001.30,065.00\r\n" };
         // const char s_name [] = { "name:Plannar 5 inches\r\n" };
-        printf("\nname:Plannar 5 inches\n");
+        printf("\nname:Plannar 5 inches in index: %d\n", know_antenna);
         p->resistance_int = 23;
         p->resistance_dec = 85;
         p->inductance_int = 141;
@@ -62,7 +62,7 @@ int TSP_Get_Know_Antennas (antenna_st * p)
     case 2:
         // const char s_antena [] = { "ant1,017.00,120.00,001.30,065.00\r\n" };
         // const char s_name [] = { "name:Plannar 5 inches\r\n" };
-        printf("\nname:Plannar 5 inches\n");
+        printf("\nname:Plannar 5 inches in index: %d\n", know_antenna);
         p->resistance_int = 17;
         p->resistance_dec = 00;
         p->inductance_int = 120;
@@ -77,7 +77,7 @@ int TSP_Get_Know_Antennas (antenna_st * p)
     case 3:
         // const char s_antena [] = { "ant2,005.70,011.10,002.80,065.00\r\n" };
         // const char s_name [] = { "name:Wrist Tunnel\r\n" };
-        printf("\nname:Wrist Tunnel\n");
+        printf("\nname:Wrist Tunnel in index: %d\n", know_antenna);
         p->resistance_int = 5;
         p->resistance_dec = 70;
         p->inductance_int = 11;
@@ -92,7 +92,7 @@ int TSP_Get_Know_Antennas (antenna_st * p)
     case 4:
         // const char s_antena [] = { "ant3,003.50,019.00,003.50,065.00\r\n" };
         // const char s_name [] = { "name:Tunnel 6 inches\r\n" };
-        printf("\nname:Tunnel 6 inches\n");
+        printf("\nname:Tunnel 6 inches in index: %d\n", know_antenna);
         p->resistance_int = 3;
         p->resistance_dec = 50;
         p->inductance_int = 19;
@@ -107,7 +107,7 @@ int TSP_Get_Know_Antennas (antenna_st * p)
     case 5:
         // const char s_antena [] = { "ant4,004.00,022.60,003.50,065.00\r\n" };
         // const char s_name [] = { "name:Tunnel 8 inches\r\n" };
-        printf("\nname:Tunnel 8 inches\n");
+        printf("\nname:Tunnel 8 inches in index: %d\n", know_antenna);
         p->resistance_int = 4;
         p->resistance_dec = 00;
         p->inductance_int = 22;
@@ -122,7 +122,7 @@ int TSP_Get_Know_Antennas (antenna_st * p)
     case 6:
         // const char s_antena [] = { "ant4,002.50,021.00,003.50,065.00\r\n" };
         // const char s_name [] = { "name:Tunnel 10 inches\r\n" };
-        printf("\nname:Tunnel 10 inches\n");
+        printf("\nname:Tunnel 10 inches in index: %d\n", know_antenna);
         p->resistance_int = 2;
         p->resistance_dec = 50;
         p->inductance_int = 21;
@@ -137,7 +137,7 @@ int TSP_Get_Know_Antennas (antenna_st * p)
     case 7:
         // const char s_antena [] = { "ant4,006.60,056.50,003.50,065.00\r\n" };
         // const char s_name [] = { "name:Tunnel 10 inches\r\n" };
-        printf("\nname:Tunnel 10 inches\n");
+        printf("\nname:Tunnel 10 inches in index: %d\n", know_antenna);
         p->resistance_int = 6;
         p->resistance_dec = 60;
         p->inductance_int = 56;
@@ -152,7 +152,7 @@ int TSP_Get_Know_Antennas (antenna_st * p)
     case 8:
         // const char s_antena [] = { "ant4,010.10,128.10,003.50,065.00\r\n" };
         // const char s_name [] = { "name:Tunnel 10 inches\r\n" };
-        printf("\nname:Tunnel 10 inches\n");
+        printf("\nname:Tunnel 10 inches in index: %d\n", know_antenna);
         p->resistance_int = 10;
         p->resistance_dec = 10;
         p->inductance_int = 128;
@@ -167,7 +167,7 @@ int TSP_Get_Know_Antennas (antenna_st * p)
     case 9:
         // const char s_antena [] = { "anta,061.00,063.00,000.64,055.00\r\n" };
         // const char s_name [] = { "name:GT Googles\r\n" };
-        printf("\nname:GT Googles\n");
+        printf("\nname:GT Googles in index: %d\n", know_antenna);
         p->resistance_int = 61;
         p->resistance_dec = 0;
         p->inductance_int = 63;

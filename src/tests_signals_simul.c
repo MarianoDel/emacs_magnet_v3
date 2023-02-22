@@ -11,6 +11,7 @@
 #include "signals.h"
 #include "dsp.h"
 #include "tests_know_antennas.h"
+#include "tim.h"    // for TIM timers
 
 // helper modules
 #include "tests_ok.h"
@@ -134,13 +135,22 @@ int main (int argc, char *argv[])
     // Test_Single_Signal_Single_Antenna ();
     // printf("end generation test\n");    
 
-    printf("testing specific antenna with specific signal specific freq on ch1...\n");
+    // printf("testing specific antenna with specific signal specific freq on ch1...\n");
+    // printf("recursive reset on plant...\n");
+    // Plant_Out_Recursive_Reset (CH1, &plant_ch1);
+    // Plant_Out_Recursive_Reset (CH2, &plant_ch2);
+    // Plant_Out_Recursive_Reset (CH3, &plant_ch3);
+    // Plant_Out_Recursive_Reset (CH4, &plant_ch4);
+    // Test_Single_Signal_Single_Antenna_Single_Freq ();
+    // printf("end generation test\n");    
+
+    printf("testing all signals all antennas all frequencies on ch1...\n");
     printf("recursive reset on plant...\n");
     Plant_Out_Recursive_Reset (CH1, &plant_ch1);
     Plant_Out_Recursive_Reset (CH2, &plant_ch2);
     Plant_Out_Recursive_Reset (CH3, &plant_ch3);
     Plant_Out_Recursive_Reset (CH4, &plant_ch4);
-    Test_Single_Signal_Single_Antenna_Single_Freq ();
+    Test_All_Signals_All_Antennas_All_Freq ();
     printf("end generation test\n");    
     
     printf("all simulations done!\n");
@@ -493,6 +503,32 @@ int Plant_Out_Recursive_From_Know_Antennas_Reset (recursive_filter_t * f)
 
     printf("b params: %f\n", f->b_params[0]);
     printf("a params: %f %f\n", f->a_params[0], f->a_params[1]);
+
+    // reset pi controller
+    Plant_Out_PI_Flush (CH1);
+    Plant_Out_PI_Flush (CH2);
+    Plant_Out_PI_Flush (CH3);
+    Plant_Out_PI_Flush (CH4);    
+
+    // reset pwm and adc
+    // reset pwm and adc
+    TIM8_Update_CH3(0);
+    TIM8_Update_CH4(0);
+
+    TIM8_Update_CH2 (0);
+    TIM8_Update_CH1 (0);
+    
+    TIM4_Update_CH2 (0);
+    TIM4_Update_CH3 (0);
+    
+    TIM5_Update_CH1 (0);
+    TIM5_Update_CH2 (0);
+    
+    IS_CH1 = 0;
+    IS_CH2 = 0;
+    IS_CH3 = 0;
+    IS_CH4 = 0;    
+    
     return more_antennas;
 }
 
@@ -533,6 +569,30 @@ void Plant_Out_Recursive_From_Single_Antenna_Reset (recursive_filter_t * f, unsi
 
     printf("b params: %f\n", f->b_params[0]);
     printf("a params: %f %f\n", f->a_params[0], f->a_params[1]);
+
+    // reset pi controller
+    Plant_Out_PI_Flush (CH1);
+    Plant_Out_PI_Flush (CH2);
+    Plant_Out_PI_Flush (CH3);
+    Plant_Out_PI_Flush (CH4);    
+
+    // reset pwm and adc
+    TIM8_Update_CH3(0);
+    TIM8_Update_CH4(0);
+
+    TIM8_Update_CH2 (0);
+    TIM8_Update_CH1 (0);
+    
+    TIM4_Update_CH2 (0);
+    TIM4_Update_CH3 (0);
+    
+    TIM5_Update_CH1 (0);
+    TIM5_Update_CH2 (0);
+    
+    IS_CH1 = 0;
+    IS_CH2 = 0;
+    IS_CH3 = 0;
+    IS_CH4 = 0;    
     
 }
 
@@ -635,12 +695,20 @@ void Test_Single_Signal_Single_Antenna (void)
 
 void Test_Single_Signal_Single_Antenna_Single_Freq (void)
 {
-    unsigned char antenna_index = 3;    //check tests_know_antennas.c
+    unsigned char antenna_index = 0;    //check tests_know_antennas.c
 
     // unsigned char antenna_signal = TRIANGULAR_SIGNAL;
     // unsigned char antenna_signal = SQUARE_SIGNAL;
     unsigned char antenna_signal = SINUSOIDAL_SIGNAL;
 
+    // float my_freq = 0.9;
+    // float my_freq = 5.0;    
+    // float my_freq = 11.5;
+    // float my_freq = 23.5;
+    // float my_freq = 44.0;
+    // float my_freq = 67.0;
+    // float my_freq = 60.9;
+    // float my_freq = 80.9;
     float my_freq = 100.0;
 
     int current_ok = 1;
@@ -650,8 +718,10 @@ void Test_Single_Signal_Single_Antenna_Single_Freq (void)
     case SINUSOIDAL_SIGNAL:
         printf("\nemitting with SINUSOIDAL_SIGNAL\n");
         global_signals.signal = SINUSOIDAL_SIGNAL;
-        global_signals.kp_ch1 = 2;
-        global_signals.ki_ch1 = 30;
+        global_signals.kp_ch1 = 80;
+        global_signals.ki_ch1 = 20;
+        // global_signals.kp_ch1 = 40;
+        // global_signals.ki_ch1 = 12;
         break;
     case TRIANGULAR_SIGNAL:
         printf("\nemitting with TRIANGULAR_SIGNAL\n");
@@ -662,8 +732,8 @@ void Test_Single_Signal_Single_Antenna_Single_Freq (void)
     case SQUARE_SIGNAL:
         printf("\nemitting with SQUARE_SIGNAL\n");
         global_signals.signal = SQUARE_SIGNAL;
-        global_signals.kp_ch1 = 5;
-        global_signals.ki_ch1 = 2;
+        global_signals.kp_ch1 = 60;
+        global_signals.ki_ch1 = 3;
         break;
     }
 
@@ -677,6 +747,23 @@ void Test_Single_Signal_Single_Antenna_Single_Freq (void)
     
     Plant_Out_Recursive_From_Single_Antenna_Reset (&plant_ch1, antenna_index);
 
+    // check the Tau for parameters correction
+    float Tau = La * Ra;
+    float DCgain = 192.0 / Ra;
+    printf("antenna La: %f Ra: %f Tau: %f DC gain: %f\n",
+           La,
+           Ra,
+           Tau,
+           DCgain);
+
+    // override pi parameters
+    if ((Tau > 3.0) && (DCgain < 9.0) && (antenna_signal == SINUSOIDAL_SIGNAL))
+    {
+        printf("override pi params!\n");
+        global_signals.kp_ch1 = 1;
+        global_signals.ki_ch1 = 100;
+    }
+    
     // empty signals buffers
     for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
     {
@@ -716,6 +803,159 @@ void Test_Single_Signal_Single_Antenna_Single_Freq (void)
     else
         PrintERR();
         
+
+    ///////////////////////////
+    // Backup Data to a file //
+    ///////////////////////////
+    FILE * file = fopen("data.txt", "w");
+
+    if (file == NULL)
+    {
+        printf("data file not created!\n");
+        return;
+    }
+
+    // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
+    // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
+    Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
+
+    printf("\nRun by hand python3 simul_outputs.py\n");
+    
+}
+
+
+void Test_All_Signals_All_Antennas_All_Freq (void)
+{
+    // unsigned char antenna_index = 10;    //check tests_know_antennas.c
+    // float my_freq = -4.1;
+    int antenna_signal = SQUARE_SIGNAL;
+
+    unsigned char antenna_index = 8;    //check tests_know_antennas.c
+    float my_freq = 0.9;
+    
+    int shuffle_not_ended = 1;
+    int current_ok = 1;
+
+    do {
+        // change antennas
+        if (antenna_index < 9)
+            antenna_index++;
+        else
+        {
+            antenna_index = 0;
+
+            // change frequency
+            if ((int) my_freq < 100)
+                my_freq += 20.0;
+            else
+            {
+                my_freq = 0.9;
+
+                // change signal
+                if (antenna_signal < SINUSOIDAL_SIGNAL)
+                    antenna_signal++;
+                else
+                {
+                    shuffle_not_ended = 0;
+                }
+            }
+        }
+
+        switch (antenna_signal)
+        {
+        case SINUSOIDAL_SIGNAL:
+            printf("\nemitting with SINUSOIDAL_SIGNAL\n");
+            global_signals.signal = SINUSOIDAL_SIGNAL;
+            global_signals.kp_ch1 = 80;
+            global_signals.ki_ch1 = 20;
+            // global_signals.kp_ch1 = 2;
+            // global_signals.ki_ch1 = 30;
+            break;
+        case TRIANGULAR_SIGNAL:
+            printf("\nemitting with TRIANGULAR_SIGNAL\n");
+            global_signals.signal = TRIANGULAR_SIGNAL;
+            global_signals.kp_ch1 = 10;
+            global_signals.ki_ch1 = 10;
+            break;
+        case SQUARE_SIGNAL:
+            printf("\nemitting with SQUARE_SIGNAL\n");
+            global_signals.signal = SQUARE_SIGNAL;
+            global_signals.kp_ch1 = 60;
+            global_signals.ki_ch1 = 3;
+            break;
+        }
+
+        // resolve this with fsampling and 256 signal points
+        float phase = my_freq * 256 * 256 / 7000.0;
+        phase_accum = (unsigned short) phase;
+        printf("freq ask: %f phase calc: %f phase_accum: %d\n",
+               my_freq,
+               phase,
+               phase_accum);        
+    
+        Plant_Out_Recursive_From_Single_Antenna_Reset (&plant_ch1, antenna_index);
+
+        // check the Tau for parameters correction
+        float Tau = La * Ra;
+        float DCgain = 192.0 / Ra;        
+        printf("antenna La: %f Ra: %f Tau: %f DC gain: %f\n",
+               La,
+               Ra,
+               Tau,
+               DCgain);
+
+        // override pi parameters
+        if ((Tau > 3.0) && (DCgain < 9.0) && (antenna_signal == SINUSOIDAL_SIGNAL))
+        {
+            printf("override pi params!\n");
+            global_signals.kp_ch1 = 1;
+            global_signals.ki_ch1 = 100;
+        }
+        
+        // empty signals buffers
+        for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+        {
+            v_duty_ch1[i] = 0;
+            v_sp_ch1[i] = 0;
+            v_error_ch1[i] = 0;
+            v_adc_ch1[i] = 0;
+        }
+            
+        // current sensed 1A -> 887 pts
+        global_signals.max_c_ch1 = (unsigned short) (max_antenna_current * 887);
+        printf("max_c_ch1: %d current: %f\n", global_signals.max_c_ch1, max_antenna_current);
+        Signals_Setup_All_Channels();
+    
+        for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+        {
+            timer1_seq_ready = 1;
+            Signals_Generate_All_Channels ();
+
+            // save ch1 data
+            v_duty_ch1[i] = pi_ch1.last_d;
+            v_sp_ch1[i] = pi_ch1.setpoint;
+            v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
+            v_adc_ch1[i] = pi_ch1.sample;
+
+            if (treat_in_ch1 == 2)    //some error on channel!!!
+            {
+                printf("treat stopped on channel 1 in sequence: %d\n", i);
+                current_ok = 0;
+                break;
+            }
+        }
+
+        printf(" antenna emission ended: ");
+        if (current_ok)
+            PrintOK();
+        else
+        {
+            PrintERR();
+            break;
+        }
+
+    } while (shuffle_not_ended);
 
     ///////////////////////////
     // Backup Data to a file //
