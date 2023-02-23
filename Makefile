@@ -236,6 +236,20 @@ tests_signals_simul:
 	gcc src/tests_signals_simul.c signals.o dsp.o tests_ok.o tests_know_antennas.o tests_vector_utils.o tests_recursive_utils.o -I $(INCDIR) $(DDEFS)
 	./a.out
 
+tests_antennas:
+	# compile first modules in this test
+	# first module objects to test
+	gcc -c --coverage src/antennas.c -I. $(INCDIR) $(DDEFS)
+	# gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
+	# second auxiliary helper modules
+	gcc -c src/tests_ok.c -I $(INCDIR)
+	gcc -c src/tests_mock_usart.c -I $(INCDIR)
+	# gcc -c src/tests_vector_utils.c -I $(INCDIR)
+	gcc --coverage src/tests_antennas.c antennas.o tests_ok.o tests_mock_usart.o -I $(INCDIR) $(DDEFS)
+	./a.out
+	# process coverage
+	gcov antennas.c -m
+
 tests_comms_rasp:
 	# compile first modules in this test
 	gcc -c src/comms_from_rasp.c -I. $(INCDIR) -DSTM32F10X_HD

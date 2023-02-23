@@ -32,6 +32,21 @@ char usart2_msg_sended [200] = { 0 };
 
 void (*pU2Cb) (char *);
 
+// Mock the Usart3
+unsigned char usart3_have_data = 0;
+char usart3_msg_received [200] = { 0 };
+char usart3_msg_sended [200] = { 0 };
+
+// Mock the Uart4
+unsigned char uart4_have_data = 0;
+char uart4_msg_received [200] = { 0 };
+char uart4_msg_sended [200] = { 0 };
+
+// Mock the Uart5
+unsigned char uart5_have_data = 0;
+char uart5_msg_received [200] = { 0 };
+char uart5_msg_sended [200] = { 0 };
+
 // Module Functions ------------------------------------------------------------
 void Usart1Send (char * msg)
 {
@@ -125,6 +140,26 @@ void Usart2HaveActivationBufferReset (void)
 }
 
 
+void Usart3Send (char * msg)
+{
+    strcpy(usart3_msg_sended, msg);
+    PrintYellow("usart3 tx -> ");
+    printf("%s\n", msg);    
+}
+
+void Uart4Send (char * msg)
+{
+    strcpy(uart4_msg_sended, msg);
+    PrintYellow("uart4 tx -> ");
+    printf("%s\n", msg);    
+}
+
+void Uart5Send (char * msg)
+{
+    strcpy(uart5_msg_sended, msg);
+    PrintYellow("uart5 tx -> ");
+    printf("%s\n", msg);    
+}
 
 
 

@@ -9,39 +9,34 @@
 // #### TREATMENT.H ############################################
 //---------------------------------------------------------
 
-/* Define to prevent recursive inclusion -------------------------------------*/
+// Define to prevent recursive inclusion ---------------------------------------
 #ifndef __TREATMENT_H_
 #define __TREATMENT_H_
 #include "hard.h"    //para respuestas
+#include "signals_defs.h"
 
 
-//--- Exported types ---//
-typedef enum {
-	SQUARE_SIGNAL = 0,
-	TRIANGULAR_SIGNAL,
-	SINUSOIDAL_SIGNAL
-
-} signal_type_t;
-
+// Module Exported Types Constants and Macros ----------------------------------
 typedef enum {
 	CH1_ENABLE = 1,
 	CH2_ENABLE,
 	CH3_ENABLE,
+	CH4_ENABLE,        
 	CH1_DISABLE,
 	CH2_DISABLE,
-	CH3_DISABLE
+	CH3_DISABLE,
+	CH4_DISABLE
 
-} ch_in_treatment_t;
+} ch_in_treatment_e;
 
-//esta esta relacionada con F030 src/signal.h
-//si se modifica cambiar las dos!!!
+
 typedef struct {
-	signal_type_t signal;
+	signal_type_e signal;
 	unsigned char freq_int;
 	unsigned char freq_dec;    
 	// unsigned char freq_table_inc;
 	unsigned char power;
-	unsigned char synchro_needed;
+	// unsigned char synchro_needed;
 
 	//internals
 	// unsigned short kprop;
@@ -60,7 +55,7 @@ typedef struct {
     signals_struct_t treatment_signal;
     unsigned short treatment_time;
     unsigned char channels_in_treatment;
-    unsigned short timer_synchro;
+    // unsigned short timer_synchro;
     
 } treatment_conf_t;
 
@@ -123,7 +118,7 @@ unsigned char Treatment_GetChannelsFlag (void);
 
 void Treatment_Manager (void);
 resp_t Treatment_SetSignalType (signal_type_t);
-signal_type_t Treatment_GetSignalType (void);
+signal_type_e Treatment_GetSignalType (void);
 resp_t Treatment_SetFrequency (unsigned char, unsigned char);
 void Treatment_GetFrequency (unsigned char *, unsigned char *);
 resp_t Treatment_SetPower (unsigned char);

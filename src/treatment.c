@@ -249,7 +249,7 @@ void Treatment_Manager (void)
 }
 
 
-resp_t Treatment_SetSignalType (signal_type_t a)
+resp_t Treatment_SetSignalType (signal_type_e a)
 {
     if ((a == SQUARE_SIGNAL) ||
         (a == TRIANGULAR_SIGNAL) ||
@@ -263,7 +263,7 @@ resp_t Treatment_SetSignalType (signal_type_t a)
 }
 
 
-signal_type_t Treatment_GetSignalType (void)
+signal_type_e Treatment_GetSignalType (void)
 {
     return treatment_conf.treatment_signal.signal;
 }
@@ -287,7 +287,7 @@ resp_t Treatment_SetFrequency (unsigned char freq_int, unsigned char freq_dec)
     {
         treatment_conf.treatment_signal.freq_int = freq_int;
         treatment_conf.treatment_signal.freq_dec = freq_dec;
-        treatment_conf.timer_synchro = (unsigned short) calc;
+        // treatment_conf.timer_synchro = (unsigned short) calc;
         resp = resp_ok;
     }
     
@@ -430,7 +430,7 @@ void Treatment_GetAllConf (char * tosend)
 
     //Timer for sync
     unsigned short tsync = 0;
-    tsync = treatment_conf.timer_synchro / 10;
+    // tsync = treatment_conf.timer_synchro / 10;
     sprintf(buf, "synchro: %dms\n", tsync);
     strcat(tosend, buf);
 }

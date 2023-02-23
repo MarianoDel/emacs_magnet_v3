@@ -27,6 +27,12 @@ void Usart2HaveDataReset (void);
 
 void Usart2Callback (void (* pCb) (char *));
 
+void Usart3Send (char * msg);
+
+void Uart4Send (char * msg);
+
+void Uart5Send (char * msg);
+
 #endif
 //--- end of file ---//
 

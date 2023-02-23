@@ -25,9 +25,9 @@
 // volatile unsigned short adc_ch [2];
 // volatile unsigned char usart1_have_data = 0;
 unsigned short comms_messages_rpi = 0;
-volatile unsigned short secs_in_treatment = 0;
-unsigned short secs_end_treatment = 0;
-unsigned short secs_elapsed_up_to_now = 0;
+extern volatile unsigned short secs_in_treatment;
+extern unsigned short secs_end_treatment;
+extern unsigned short secs_elapsed_up_to_now;
 
 
 // Globals ---------------------------------------------------------------------
@@ -111,7 +111,7 @@ void Test_Treatment_Module (void)
     
     printf("Testing Treatment Module: ");
 
-    signal_type_t signal = SQUARE_SIGNAL;
+    signal_type_e signal = SQUARE_SIGNAL;
     resp = Treatment_SetSignalType (signal);
     signal = Treatment_GetSignalType();
     if ((resp != resp_ok) || (signal != SQUARE_SIGNAL))
@@ -423,6 +423,22 @@ void UpdateBuzzer (void)
 
 void UpdateRaspberryMessages (void)
 {
+}
+
+void Signals_Stop_All_Channels (void)
+{
+    printf("stopping all channels\n");
+}
+
+
+void Signals_Setup_All_Channels (void)
+{
+    printf("setup in all channels\n");
+}
+
+void Signals_Generate_All_Channels (void)
+{
+    printf("generate all channels\n");
 }
 
 //--- end of file ---//

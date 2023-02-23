@@ -11,15 +11,16 @@
 #define _SIGNALS_H_
 // #include "comm.h"		//para respuestas
 #include "hard.h"
+#include "signals_defs.h"
 
 
-//--- Exported types ---//
-typedef enum {
-	SQUARE_SIGNAL = 0,
-	TRIANGULAR_SIGNAL,
-	SINUSOIDAL_SIGNAL
+// Module Exported Types Constants and Macros ----------------------------------
+// typedef enum {
+// 	SQUARE_SIGNAL = 0,
+// 	TRIANGULAR_SIGNAL,
+// 	SINUSOIDAL_SIGNAL
 
-} signal_type_e;
+// } signal_type_e;
 
 typedef enum {
 	ZERO_DEG_OFFSET = 0,

@@ -15,6 +15,7 @@
 #include "dsp.h"
 #include "adc.h"
 #include "pwm.h"
+#include "channels_defs.h"
 
 // #include "uart.h"
 // #include "gpio.h"
@@ -22,10 +23,6 @@
 
 
 // Module Private Types Constants and Macros -----------------------------------
-#define CH1    0
-#define CH2    1
-#define CH3    2
-#define CH4    3
 
 #define USE_SOFT_NO_CURRENT
 #define USE_SOFT_OVERCURRENT
