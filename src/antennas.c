@@ -1,5 +1,4 @@
 //---------------------------------------------------------
-// #### PROYECTO MAGNETO GAUSSTEK - MotherBoard ###########
 // ##
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags
@@ -204,10 +203,10 @@ unsigned char antenna_send_info_with_timer = 0;
 
 
 // Module Private Functions ----------------------------------------------------
-void AntennaBackupParams (antenna_st *, antenna_complete_st *);
+// void AntennaBackupParams (antenna_st *, antenna_complete_st *);
 void AntennaSendKnowParams (void);
 
-void AntennaFlushParamsInLock (antenna_st *);
+// void AntennaFlushParamsInLock (antenna_st *);
 void AntennaFlushParams (unsigned char);
 
 static void AntennaUpdateInStandByCh1_SM (void);
@@ -1142,29 +1141,29 @@ void AntennaEndTreatment (unsigned char ch)
         AntennaUnlockCh4;
 }
 
-void AntennaBackupParams (antenna_st *plock_in, antenna_complete_st *psession)
-{
-    plock_in->resistance_int = psession->ant_resistance_int;
-    plock_in->resistance_dec = psession->ant_resistance_dec;
-    plock_in->inductance_int = psession->ant_inductance_int;
-    plock_in->inductance_dec = psession->ant_inductance_dec;
-    plock_in->current_limit_int = psession->ant_current_limit_int;
-    plock_in->current_limit_dec = psession->ant_current_limit_dec;
-    plock_in->temp_max_int = psession->ant_temp_max_int;
-    plock_in->temp_max_dec = psession->ant_temp_max_dec;    
-}
+// void AntennaBackupParams (antenna_st *plock_in, antenna_complete_st *psession)
+// {
+//     plock_in->resistance_int = psession->ant_resistance_int;
+//     plock_in->resistance_dec = psession->ant_resistance_dec;
+//     plock_in->inductance_int = psession->ant_inductance_int;
+//     plock_in->inductance_dec = psession->ant_inductance_dec;
+//     plock_in->current_limit_int = psession->ant_current_limit_int;
+//     plock_in->current_limit_dec = psession->ant_current_limit_dec;
+//     plock_in->temp_max_int = psession->ant_temp_max_int;
+//     plock_in->temp_max_dec = psession->ant_temp_max_dec;    
+// }
 
-void AntennaFlushParamsInLock (antenna_st * plock_in)
-{
-    plock_in->resistance_int = 0;
-    plock_in->resistance_dec = 0;
-    plock_in->inductance_int = 0;
-    plock_in->inductance_dec = 0;
-    plock_in->current_limit_int = 0;
-    plock_in->current_limit_dec = 0;
-    plock_in->temp_max_int = 0;
-    plock_in->temp_max_dec = 0;    
-}
+// void AntennaFlushParamsInLock (antenna_st * plock_in)
+// {
+//     plock_in->resistance_int = 0;
+//     plock_in->resistance_dec = 0;
+//     plock_in->inductance_int = 0;
+//     plock_in->inductance_dec = 0;
+//     plock_in->current_limit_int = 0;
+//     plock_in->current_limit_dec = 0;
+//     plock_in->temp_max_int = 0;
+//     plock_in->temp_max_dec = 0;    
+// }
 
 void AntennaFlushParams (unsigned char ch)
 {

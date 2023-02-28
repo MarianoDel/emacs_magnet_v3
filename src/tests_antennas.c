@@ -10,6 +10,7 @@
 // Includes Modules for tests --------------------------------------------------
 #include "antennas.h"
 #include "channels_defs.h"
+#include "answers_defs.h"
 // #include "tim.h"
 // #include "dsp.h"
 
@@ -50,6 +51,9 @@ void Test_Antenna_Ch1_Connection (void);
 void Test_Antenna_All_Ch_Connection (void);
 void Test_Antenna_All_Ch_No_Connection (void);
 void Test_Antenna_All_Ch_Name (void);
+void Test_Antenna_Comms_Callbacks (void);
+void Test_Temp_Comms_Callbacks (void);
+void Test_Antenna_Veriry_For_Treatment (void);
 
 
 // Module Auxiliary Functions --------------------------------------------------
@@ -66,6 +70,9 @@ int main (int argc, char *argv[])
     Test_Antenna_All_Ch_No_Connection ();
     Test_Antenna_All_Ch_Connection ();
     Test_Antenna_All_Ch_Name ();
+    Test_Antenna_Comms_Callbacks ();
+    Test_Temp_Comms_Callbacks ();
+    Test_Antenna_Veriry_For_Treatment ();
 
     return 0;
 }
@@ -223,7 +230,144 @@ void Test_Antenna_All_Ch_Name (void)
 }
 
 
+extern unsigned char ch1_ant_conn_status;
+extern unsigned char ch2_ant_conn_status;
+extern unsigned char ch3_ant_conn_status;
+extern unsigned char ch4_ant_conn_status;
+void Test_Antenna_Comms_Callbacks (void)
+{
+    int error = 0;
+    antenna_st my_ant = { .resistance_int = 10,
+                          .resistance_dec = 10,
+                          .inductance_int = 10,
+                          .inductance_dec = 10,
+                          .current_limit_int = 3,
+                          .current_limit_dec = 50,
+                          .temp_max_int = 55,
+                          .temp_max_dec = 0 };
+    
+    printf("test antenna set and get params: ");
+    for (int i = CH1; i <= CH4; i++)
+    {
+        AntennaSetParamsStruct (i, &my_ant);
+    }
 
+    antenna_st saved_ant;
+    for (int i = CH1; i <= CH4; i++)
+    {
+        AntennaGetParamsStruct (i, &saved_ant);
+        if ((saved_ant.resistance_int != my_ant.resistance_int) ||
+            (saved_ant.resistance_dec != my_ant.resistance_dec) ||
+            (saved_ant.inductance_int != my_ant.inductance_int) ||
+            (saved_ant.inductance_dec != my_ant.inductance_dec) ||
+            (saved_ant.current_limit_int != my_ant.current_limit_int) ||
+            (saved_ant.current_limit_dec != my_ant.current_limit_dec) ||
+            (saved_ant.temp_max_int != my_ant.temp_max_int) ||
+            (saved_ant.temp_max_dec != my_ant.temp_max_dec))
+        {
+            error = i;
+        }
+    }
+
+    if (!error)
+        PrintOK();
+    else
+    {
+        PrintERR();
+        printf("  error on ch%d\n", error);
+    }
+
+
+    error = 0;
+    printf("test antenna set name with return: ");
+    char my_name [] = { "Tunnel\r" };
+    for (int i = CH1; i <= CH4; i++)
+    {
+        AntennaSetName (i, my_name);
+    }
+
+    //AntennaCheckNameCh1 to Ch4
+    if (!(ch1_ant_conn_status & 0x20))
+        error = 1;
+
+    if (!(ch2_ant_conn_status & 0x20))
+        error = 2;
+
+    if (!(ch3_ant_conn_status & 0x20))
+        error = 3;
+
+    if (!(ch4_ant_conn_status & 0x20))
+        error = 4;
+    
+    if (!error)
+        PrintOK();
+    else
+    {
+        PrintERR();
+        printf("  error on ch%d\n", error);
+    }
+    
+    
+}
+
+
+void Test_Temp_Comms_Callbacks (void)
+{
+    int error = 0;
+
+    printf("test antenna set and get temp: ");
+    unsigned char ti = 50;
+    unsigned char td = 55;
+    unsigned char tcurrent = 0;
+    
+    for (int i = CH1; i <= CH4; i++)
+    {
+        AntennaSetCurrentTemp (i, ti, td);
+    }
+
+    for (int i = CH1; i <= CH4; i++)
+    {
+        tcurrent = AntennaGetCurrentTemp (i);
+        if (tcurrent != ti)
+            error = i;
+
+    }
+
+    if (!error)
+        PrintOK();
+    else
+    {
+        PrintERR();
+        printf("  error on ch%d\n", error);
+    }
+}
+
+
+void Test_Antenna_Veriry_For_Treatment (void)
+{
+    int error = 0;
+    resp_e resp = resp_error;
+
+    printf("test antenna verify for treatment: ");
+
+    for (int i = CH1; i <= CH4; i++)
+    {
+        resp = AntennaVerifyForTreatment (i);
+        if (resp != resp_ok)
+            error = i;
+    }
+
+    if (!error)
+        PrintOK();
+    else
+    {
+        PrintERR();
+        printf("  error on ch%d\n", error);
+    }
+}
+
+
+// Module Mocked Functions -----------------------------------------------------
 void RPI_Send (char * a)
 {
     Usart1Send(a);
