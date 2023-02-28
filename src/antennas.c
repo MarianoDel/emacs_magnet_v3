@@ -178,7 +178,7 @@ antenna_complete_st antenna_conn_ch3;
 antenna_complete_st antenna_conn_ch4;
 
 
-antenna_state_t antenna_state;
+antenna_state_e antenna_state;
 
 unsigned char ch1_ant_current_temp_int = 0;
 unsigned char ch1_ant_current_temp_dec = 0;

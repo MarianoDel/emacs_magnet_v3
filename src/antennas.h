@@ -28,7 +28,7 @@ typedef enum {
     ANTENNA_IN_TREATMENT,
     ANTENNA_IN_PAUSE
 
-} antenna_state_t;
+} antenna_state_e;
 
 enum Session_Channel_1_Verify_Antenna_states
 {
@@ -66,19 +66,19 @@ enum Session_Channel_4_Verify_Antenna_states
 //--- Exported functions ---//
 void AntennaUpdateStates (void);
 
-void AntennaSetCurrentTemp (unsigned char, unsigned char, unsigned char);
-unsigned char AntennaGetCurrentTemp (unsigned char);
+void AntennaSetCurrentTemp (unsigned char channel, unsigned char tint, unsigned char tdec);
+unsigned char AntennaGetCurrentTemp (unsigned char channel);
 
-void AntennaSetParamsStruct (unsigned char, antenna_st *);
-void AntennaGetParamsStruct (unsigned char, antenna_st *);
+void AntennaSetParamsStruct (unsigned char channel, antenna_st * pant);
+void AntennaGetParamsStruct (unsigned char channel, antenna_st * pant);
 
 unsigned char AntennaVerifyForTreatment (unsigned char);
 unsigned char AntennaGetConnection (unsigned char);
 
-void AntennaIsAnswering (unsigned char);
-void AntennaEndTreatment (unsigned char);
+void AntennaIsAnswering (unsigned char channel);
+void AntennaEndTreatment (unsigned char channel);
 void AntennaSendKnowInfoWithTimer (void);
-void AntennaSetName (unsigned char, char *);
+void AntennaSetName (unsigned char channel, char * pname);
 
 void AntennaTimeouts (void);
     

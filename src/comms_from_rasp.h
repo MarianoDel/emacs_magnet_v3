@@ -31,12 +31,12 @@
 // #define COMM_NO_COMM_CH2    0x0200
 // #define COMM_NO_COMM_CH3    0x0400
 
-//canales
-#define CH0		0
-#define CH1		1
-#define CH2		2
-#define CH3		3
-#define CH4		4
+// //canales
+// #define CH0		0
+// #define CH1		1
+// #define CH2		2
+// #define CH3		3
+// #define CH4		4
 
 
 

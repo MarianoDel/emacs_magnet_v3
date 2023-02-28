@@ -11,18 +11,19 @@
 
 
 // Module Exported Types Constants and Macros ----------------------------------
-typedef struct {
+// typedef struct {
 
-    unsigned short resistance_int;
-    unsigned char resistance_dec;
-    unsigned short inductance_int;
-    unsigned char inductance_dec;
-    unsigned char current_limit_int;
-    unsigned char current_limit_dec;
-    unsigned char temp_max_int;
-    unsigned char temp_max_dec;
+//     unsigned short resistance_int;
+//     unsigned char resistance_dec;
+//     unsigned short inductance_int;
+//     unsigned char inductance_dec;
+//     unsigned char current_limit_int;
+//     unsigned char current_limit_dec;
+//     unsigned char temp_max_int;
+//     unsigned char temp_max_dec;
 
-} antenna_st;
+// } antenna_st;
+#include "antennas_defs.h"
 
 
 // Module Exported Functions ---------------------------------------------------

@@ -209,6 +209,20 @@ tests_treatment:
 	# process coverage
 	gcov treatment.c -m
 
+tests_comms_channels:
+	# compile first modules in this test
+	# first module objects to test
+	gcc -c --coverage src/comms_channels.c -I. $(INCDIR) $(DDEFS)
+	gcc -c src/utils.c -I. $(INCDIR) $(DDEFS)
+	# second auxiliary helper modules
+	gcc -c src/tests_ok.c -I $(INCDIR)
+	gcc -c src/tests_mock_usart.c -I $(INCDIR)
+	gcc --coverage src/tests_comms_channels.c comms_channels.o utils.o tests_ok.o tests_mock_usart.o -I $(INCDIR) $(DDEFS)
+	./a.out
+	# process coverage
+	gcov comms_channels.c -m
+
+
 tests_signals:
 	# compile first modules in this test
 	# first module objects to test
@@ -244,8 +258,9 @@ tests_antennas:
 	# second auxiliary helper modules
 	gcc -c src/tests_ok.c -I $(INCDIR)
 	gcc -c src/tests_mock_usart.c -I $(INCDIR)
+	gcc -c src/tests_know_antennas.c -I $(INCDIR)
 	# gcc -c src/tests_vector_utils.c -I $(INCDIR)
-	gcc --coverage src/tests_antennas.c antennas.o tests_ok.o tests_mock_usart.o -I $(INCDIR) $(DDEFS)
+	gcc --coverage src/tests_antennas.c antennas.o tests_ok.o tests_mock_usart.o tests_know_antennas.o -I $(INCDIR) $(DDEFS)
 	./a.out
 	# process coverage
 	gcov antennas.c -m
