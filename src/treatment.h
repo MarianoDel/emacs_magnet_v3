@@ -12,8 +12,9 @@
 // Define to prevent recursive inclusion ---------------------------------------
 #ifndef __TREATMENT_H_
 #define __TREATMENT_H_
-#include "hard.h"    //para respuestas
+// #include "hard.h"    //para respuestas
 #include "signals_defs.h"
+#include "answers_defs.h"
 
 
 // Module Exported Types Constants and Macros ----------------------------------
@@ -117,20 +118,21 @@ void Treatment_SetChannelsFlag (unsigned char);
 unsigned char Treatment_GetChannelsFlag (void);
 
 void Treatment_Manager (void);
-resp_t Treatment_SetSignalType (signal_type_t);
+resp_e Treatment_SetSignalType (signal_type_e);
 signal_type_e Treatment_GetSignalType (void);
-resp_t Treatment_SetFrequency (unsigned char, unsigned char);
+resp_e Treatment_SetFrequency (unsigned char, unsigned char);
 void Treatment_GetFrequency (unsigned char *, unsigned char *);
-resp_t Treatment_SetPower (unsigned char);
+resp_e Treatment_SetPower (unsigned char);
 unsigned char Treatment_GetPower (void);
-resp_t Treatment_SetTime (unsigned char, unsigned char, unsigned char);
-resp_t Treatment_SetTimeinMinutes (unsigned short);
+resp_e Treatment_SetTime (unsigned char, unsigned char, unsigned char);
+resp_e Treatment_SetTimeinMinutes (unsigned short);
 unsigned short Treatment_GetTime (void);
 void Treatment_GetAllConf (char * tosend);
-resp_t Treatment_AssertParams (void);
+resp_e Treatment_AssertParams (void);
 // unsigned char Treatment_GetState (void);
 void Treatment_Timeouts (void);
 
 
 #endif
-//--- END OF FILE ---//
+
+//--- end of file ---//

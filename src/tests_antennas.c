@@ -43,17 +43,20 @@ extern unsigned char standby_ch4;
 
 
 // Globals ---------------------------------------------------------------------
+int answer_params = 0;
+int answer_keepalive = 0;
+int answer_name = 0;
 
 
 // Module Functions to Test ----------------------------------------------------
 void Test_Antennas_Standby (void);
-void Test_Antenna_Ch1_Connection (void);
 void Test_Antenna_All_Ch_Connection (void);
 void Test_Antenna_All_Ch_No_Connection (void);
 void Test_Antenna_All_Ch_Name (void);
 void Test_Antenna_Comms_Callbacks (void);
 void Test_Temp_Comms_Callbacks (void);
 void Test_Antenna_Veriry_For_Treatment (void);
+void Test_Antenna_All_Ch_In_Treatment (void);
 
 
 // Module Auxiliary Functions --------------------------------------------------
@@ -66,13 +69,14 @@ void Test_Antenna_Veriry_For_Treatment (void);
 int main (int argc, char *argv[])
 {
     Test_Antennas_Standby ();
-    Test_Antenna_Ch1_Connection ();
     Test_Antenna_All_Ch_No_Connection ();
     Test_Antenna_All_Ch_Connection ();
     Test_Antenna_All_Ch_Name ();
     Test_Antenna_Comms_Callbacks ();
     Test_Temp_Comms_Callbacks ();
     Test_Antenna_Veriry_For_Treatment ();
+    Test_Antenna_All_Ch_In_Treatment ();
+    
 
     return 0;
 }
@@ -88,24 +92,6 @@ void Test_Antennas_Standby (void)
 
     printf("test antenna stand by: ");
     if (antenna_state == ANTENNA_IN_STANDBY)
-        PrintOK();
-    else
-        PrintERR();    
-    
-}
-
-
-void Test_Antenna_Ch1_Connection (void)
-{
-    for (int i = 0; i < 5000; i++)
-    {
-        AntennaUpdateStates ();
-        AntennaTimeouts ();
-    }
-
-    printf("test antenna ch1 conn: ");
-    if ((antenna_state == ANTENNA_IN_STANDBY) &&
-        (standby_ch1 == IN_STANDBY))
         PrintOK();
     else
         PrintERR();    
@@ -138,13 +124,12 @@ void Test_Antenna_All_Ch_No_Connection (void)
                standby_ch3,
                standby_ch4);
     }
-    
 }
 
 
-int answer_keepalive = 0;
 void Test_Antenna_All_Ch_Connection (void)
 {
+    answer_params = 1;
     answer_keepalive = 1;
     for (int i = 0; i < 20000; i++)
     {
@@ -173,7 +158,6 @@ void Test_Antenna_All_Ch_Connection (void)
 }
 
 
-int answer_name = 0;
 void Test_Antenna_All_Ch_Name (void)
 {
     answer_keepalive = 0;
@@ -211,6 +195,122 @@ void Test_Antenna_All_Ch_Name (void)
 
     printf("test antenna all channels name & conn: ");
     if ((antenna_state == ANTENNA_IN_STANDBY) &&
+        (standby_ch1 == IN_STANDBY) &&
+        (standby_ch2 == IN_STANDBY) &&
+        (standby_ch3 == IN_STANDBY) &&
+        (standby_ch4 == IN_STANDBY))
+        PrintOK();
+    else
+    {
+        PrintERR();
+        printf("antenna_state: %d ch1: %d ch2: %d ch3: %d ch4: %d\n",
+               antenna_state,
+               standby_ch1,
+               standby_ch2,
+               standby_ch3,
+               standby_ch4);
+    }
+    
+}
+
+
+void Test_Antenna_All_Ch_In_Treatment (void)
+{
+    int error = 0;
+
+    printf("\ntest antenna force drop down connection\n");
+    for (int i = CH1; i <= CH4; i++)
+        AntennaEndTreatment (i);
+
+    answer_params = 0;
+    answer_keepalive = 0;
+    answer_name = 0;
+    for (int i = 0; i < 20000; i++)
+    {
+        AntennaUpdateStates ();
+        AntennaTimeouts ();
+    }
+
+    printf("  antenna all channels no conn: ");
+    if ((antenna_state == ANTENNA_IN_STANDBY) &&
+        (standby_ch1 == NO_CONN) &&
+        (standby_ch2 == NO_CONN) &&
+        (standby_ch3 == NO_CONN) &&
+        (standby_ch4 == NO_CONN))
+        PrintOK();
+    else
+    {
+        PrintERR();
+        printf("antenna_state: %d ch1: %d ch2: %d ch3: %d ch4: %d\n",
+               antenna_state,
+               standby_ch1,
+               standby_ch2,
+               standby_ch3,
+               standby_ch4);
+    }
+
+    answer_params = 1;
+    answer_keepalive = 1;
+    for (int i = 0; i < 20000; i++)
+    {
+        AntennaUpdateStates ();
+        AntennaTimeouts ();
+    }
+    
+    printf("  antenna all channels conn: ");
+    if ((antenna_state == ANTENNA_IN_STANDBY) &&
+        (standby_ch1 == IN_STANDBY) &&
+        (standby_ch2 == IN_STANDBY) &&
+        (standby_ch3 == IN_STANDBY) &&
+        (standby_ch4 == IN_STANDBY))
+        PrintOK();
+    else
+    {
+        PrintERR();
+        printf("antenna_state: %d ch1: %d ch2: %d ch3: %d ch4: %d\n",
+               antenna_state,
+               standby_ch1,
+               standby_ch2,
+               standby_ch3,
+               standby_ch4);
+    }
+
+    printf("  antenna verify for treatment: ");
+    for (int i = CH1; i <= CH4; i++)
+    {
+        if (AntennaVerifyForTreatment (i) == resp_error)
+            error = i;
+    }
+
+    // //AntennaCheckNameCh1 to Ch4
+    // if (!(ch1_ant_conn_status & 0x20))
+    //     error = 1;
+
+    // if (!(ch2_ant_conn_status & 0x20))
+    //     error = 2;
+
+    // if (!(ch3_ant_conn_status & 0x20))
+    //     error = 3;
+
+    // if (!(ch4_ant_conn_status & 0x20))
+    //     error = 4;
+    
+    if (!error)
+        PrintOK();
+    else
+    {
+        PrintERR();
+        printf("  error on ch%d\n", error);
+    }
+    
+    for (int i = 0; i < 1000; i++)
+    {
+        AntennaUpdateStates ();
+        AntennaTimeouts ();
+    }
+
+    printf("  antenna in treatment: ");
+    if ((antenna_state == ANTENNA_IN_TREATMENT) &&
         (standby_ch1 == IN_STANDBY) &&
         (standby_ch2 == IN_STANDBY) &&
         (standby_ch3 == IN_STANDBY) &&
@@ -377,7 +477,8 @@ void UART_CH1_Send (char * a)
 {
     Usart2Send(a);
 
-    if (!strncmp(a, "get_params", sizeof("get_params") - 1))
+    if ((answer_params) &&
+        (!strncmp(a, "get_params", sizeof("get_params") - 1)))
     {
         const char s_antena [] = { "ant0,012.27,087.90,001.80,065.00\r\n" };
         Usart2FillRxBuffer(s_antena);
@@ -407,7 +508,8 @@ void UART_CH2_Send (char * a)
 {
     Usart3Send(a);
 
-    if (!strncmp(a, "get_params", sizeof("get_params") - 1))
+    if ((answer_params) &&
+        (!strncmp(a, "get_params", sizeof("get_params") - 1)))
     {
         // const char s_antena [] = { "ant1,023.85,141.60,001.30,065.00\r\n" };
         // Usart3FillRxBuffer(s_antena);
@@ -437,7 +539,8 @@ void UART_CH3_Send (char * a)
 {
     Uart4Send(a);
 
-    if (!strncmp(a, "get_params", sizeof("get_params") - 1))
+    if ((answer_params) &&
+        (!strncmp(a, "get_params", sizeof("get_params") - 1)))
     {
         // const char s_antena [] = { "ant1,017.00,120.00,001.30,065.00\r\n" };
         // Uart4FillRxBuffer(s_antena);
@@ -467,7 +570,8 @@ void UART_CH4_Send (char * a)
 {
     Uart5Send(a);
 
-    if (!strncmp(a, "get_params", sizeof("get_params") - 1))
+    if ((answer_params) &&
+        (!strncmp(a, "get_params", sizeof("get_params") - 1)))
     {
         // const char s_antena [] = { "ant2,005.70,011.10,002.80,065.00\r\n" };
         // Uart5FillRxBuffer(s_antena);

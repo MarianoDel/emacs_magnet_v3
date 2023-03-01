@@ -11,6 +11,7 @@
 // Includes --------------------------------------------------------------------
 #include "treatment.h"
 #include "comms.h"
+#include "hard.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -249,7 +250,7 @@ void Treatment_Manager (void)
 }
 
 
-resp_t Treatment_SetSignalType (signal_type_e a)
+resp_e Treatment_SetSignalType (signal_type_e a)
 {
     if ((a == SQUARE_SIGNAL) ||
         (a == TRIANGULAR_SIGNAL) ||
@@ -269,9 +270,9 @@ signal_type_e Treatment_GetSignalType (void)
 }
 
 
-resp_t Treatment_SetFrequency (unsigned char freq_int, unsigned char freq_dec)
+resp_e Treatment_SetFrequency (unsigned char freq_int, unsigned char freq_dec)
 {
-    resp_t resp = resp_error;
+    resp_e resp = resp_error;
     unsigned int calc = 1000000;
     unsigned int freq = 0;
 
@@ -310,7 +311,7 @@ unsigned char Treatment_GetChannelsFlag (void)
     return (treatment_conf.channels_in_treatment & CHX_MASK);
 }
 
-// resp_t TreatmentChannelFlags (ch_in_treatment_t a)
+// resp_e TreatmentChannelFlags (ch_in_treatment_t a)
 // {
 //     if (a == CH1_ENABLE)
 //         treatment_conf.ch1_enable = 1;
@@ -340,7 +341,7 @@ void Treatment_GetFrequency (unsigned char * f_int, unsigned char * f_dec)
 }
 
 
-resp_t Treatment_SetPower (unsigned char a)
+resp_e Treatment_SetPower (unsigned char a)
 {
     if (a > 100)
         treatment_conf.treatment_signal.power = 100;
@@ -359,7 +360,7 @@ unsigned char Treatment_GetPower (void)
 }
 
 
-resp_t Treatment_SetTime (unsigned char h, unsigned char m, unsigned char s)
+resp_e Treatment_SetTime (unsigned char h, unsigned char m, unsigned char s)
 {
     if ((h > 1) || (m > 60) || (s > 60))
         return resp_error;
@@ -372,7 +373,7 @@ resp_t Treatment_SetTime (unsigned char h, unsigned char m, unsigned char s)
 }
 
 
-resp_t Treatment_SetTimeinMinutes (unsigned short m)
+resp_e Treatment_SetTimeinMinutes (unsigned short m)
 {
     if (m > 120)
         return resp_error;
@@ -437,9 +438,9 @@ void Treatment_GetAllConf (char * tosend)
 
 
 //verifica que se cumplan con todos los parametros para poder enviar una senial coherente
-resp_t Treatment_AssertParams (void)
+resp_e Treatment_AssertParams (void)
 {
-    resp_t resp = resp_error;
+    resp_e resp = resp_error;
 
     if ((treatment_conf.treatment_signal.power > 100) || (treatment_conf.treatment_signal.power < 10))
         return resp;

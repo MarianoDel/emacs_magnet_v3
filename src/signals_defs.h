@@ -9,7 +9,6 @@
 //------------------------------------------------
 #ifndef _SIGNALS_DEFS_H_
 #define _SIGNALS_DEFS_H_
-#include "hard.h"    // for answers
 
 
 // Exported Types --------------------------------------------------------------

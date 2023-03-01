@@ -21,7 +21,6 @@
 
 #include "treatment.h"
 #include "comms_from_rasp.h"
-#include "comms_from_power.h"
 #include "comms.h"
 #include "test_functions.h"
 

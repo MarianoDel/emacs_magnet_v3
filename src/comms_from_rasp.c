@@ -15,6 +15,7 @@
 
 #include "comms_from_rasp.h"
 #include "comms.h"
+#include "channels_defs.h"
 #include "usart.h"
 #include "treatment.h"
 #include "utils.h"
@@ -213,7 +214,7 @@ static void Raspberry_Messages (char * msg)
                       (const char *)"stretcher autoup on",
                       (sizeof("stretcher autoup on") - 1)))
     {
-        TreatmentSetUpDwn(UPDWN_AUTO);
+        // TreatmentSetUpDwn(UPDWN_AUTO);
         RpiSend(s_ok);        
     }
 
@@ -221,7 +222,7 @@ static void Raspberry_Messages (char * msg)
                       (const char *)"stretcher autoup off",
                       (sizeof("stretcher autoup off") - 1)))
     {
-        TreatmentSetUpDwn(UPDWN_MANUAL);
+        // TreatmentSetUpDwn(UPDWN_MANUAL);
         RpiSend(s_ok);        
     }
     

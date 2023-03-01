@@ -75,13 +75,6 @@
 
 
 // Exported Types --------------------------------------------------------------
-typedef enum {
-	resp_ok = 0,
-	resp_not_own,
-	resp_error
-
-} resp_t;
-
 enum resultados
 {
 	NO_INIT = 0,

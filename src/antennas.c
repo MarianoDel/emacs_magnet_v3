@@ -207,7 +207,7 @@ unsigned char antenna_send_info_with_timer = 0;
 void AntennaSendKnowParams (void);
 
 // void AntennaFlushParamsInLock (antenna_st *);
-void AntennaFlushParams (unsigned char);
+// void AntennaFlushParams (unsigned char);
 
 static void AntennaUpdateInStandByCh1_SM (void);
 static void AntennaUpdateInStandByCh2_SM (void);
@@ -1165,55 +1165,55 @@ void AntennaEndTreatment (unsigned char ch)
 //     plock_in->temp_max_dec = 0;    
 // }
 
-void AntennaFlushParams (unsigned char ch)
-{
-    switch (ch)
-    {
-    case CH1:
-        antenna_conn_ch1.ant_resistance_int = 0;
-        antenna_conn_ch1.ant_resistance_dec = 0;
-        antenna_conn_ch1.ant_inductance_int = 0;
-        antenna_conn_ch1.ant_inductance_dec = 0;
-        antenna_conn_ch1.ant_current_limit_int = 0;
-        antenna_conn_ch1.ant_current_limit_dec = 0;
-        antenna_conn_ch1.ant_temp_max_int = 0;
-        antenna_conn_ch1.ant_temp_max_dec = 0;
-        break;
+// void AntennaFlushParams (unsigned char ch)
+// {
+//     switch (ch)
+//     {
+//     case CH1:
+//         antenna_conn_ch1.ant_resistance_int = 0;
+//         antenna_conn_ch1.ant_resistance_dec = 0;
+//         antenna_conn_ch1.ant_inductance_int = 0;
+//         antenna_conn_ch1.ant_inductance_dec = 0;
+//         antenna_conn_ch1.ant_current_limit_int = 0;
+//         antenna_conn_ch1.ant_current_limit_dec = 0;
+//         antenna_conn_ch1.ant_temp_max_int = 0;
+//         antenna_conn_ch1.ant_temp_max_dec = 0;
+//         break;
 
-    case CH2:
-        antenna_conn_ch2.ant_resistance_int = 0;
-        antenna_conn_ch2.ant_resistance_dec = 0;
-        antenna_conn_ch2.ant_inductance_int = 0;
-        antenna_conn_ch2.ant_inductance_dec = 0;
-        antenna_conn_ch2.ant_current_limit_int = 0;
-        antenna_conn_ch2.ant_current_limit_dec = 0;
-        antenna_conn_ch2.ant_temp_max_int = 0;
-        antenna_conn_ch2.ant_temp_max_dec = 0;
-        break;
+//     case CH2:
+//         antenna_conn_ch2.ant_resistance_int = 0;
+//         antenna_conn_ch2.ant_resistance_dec = 0;
+//         antenna_conn_ch2.ant_inductance_int = 0;
+//         antenna_conn_ch2.ant_inductance_dec = 0;
+//         antenna_conn_ch2.ant_current_limit_int = 0;
+//         antenna_conn_ch2.ant_current_limit_dec = 0;
+//         antenna_conn_ch2.ant_temp_max_int = 0;
+//         antenna_conn_ch2.ant_temp_max_dec = 0;
+//         break;
 
-    case CH3:
-        antenna_conn_ch3.ant_resistance_int = 0;
-        antenna_conn_ch3.ant_resistance_dec = 0;
-        antenna_conn_ch3.ant_inductance_int = 0;
-        antenna_conn_ch3.ant_inductance_dec = 0;
-        antenna_conn_ch3.ant_current_limit_int = 0;
-        antenna_conn_ch3.ant_current_limit_dec = 0;
-        antenna_conn_ch3.ant_temp_max_int = 0;
-        antenna_conn_ch3.ant_temp_max_dec = 0;
-        break;
+//     case CH3:
+//         antenna_conn_ch3.ant_resistance_int = 0;
+//         antenna_conn_ch3.ant_resistance_dec = 0;
+//         antenna_conn_ch3.ant_inductance_int = 0;
+//         antenna_conn_ch3.ant_inductance_dec = 0;
+//         antenna_conn_ch3.ant_current_limit_int = 0;
+//         antenna_conn_ch3.ant_current_limit_dec = 0;
+//         antenna_conn_ch3.ant_temp_max_int = 0;
+//         antenna_conn_ch3.ant_temp_max_dec = 0;
+//         break;
 
-    case CH4:
-        antenna_conn_ch4.ant_resistance_int = 0;
-        antenna_conn_ch4.ant_resistance_dec = 0;
-        antenna_conn_ch4.ant_inductance_int = 0;
-        antenna_conn_ch4.ant_inductance_dec = 0;
-        antenna_conn_ch4.ant_current_limit_int = 0;
-        antenna_conn_ch4.ant_current_limit_dec = 0;
-        antenna_conn_ch4.ant_temp_max_int = 0;
-        antenna_conn_ch4.ant_temp_max_dec = 0;
-        break;
-    }        
-}
+//     case CH4:
+//         antenna_conn_ch4.ant_resistance_int = 0;
+//         antenna_conn_ch4.ant_resistance_dec = 0;
+//         antenna_conn_ch4.ant_inductance_int = 0;
+//         antenna_conn_ch4.ant_inductance_dec = 0;
+//         antenna_conn_ch4.ant_current_limit_int = 0;
+//         antenna_conn_ch4.ant_current_limit_dec = 0;
+//         antenna_conn_ch4.ant_temp_max_int = 0;
+//         antenna_conn_ch4.ant_temp_max_dec = 0;
+//         break;
+//     }        
+// }
 
 void AntennaSendKnowParams (void)
 {
