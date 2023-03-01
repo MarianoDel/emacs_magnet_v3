@@ -236,4 +236,8 @@ void HARD_Timers_Update (void);
 void HARD_L1_ON (void);
 void HARD_L1_OFF (void);
 
+unsigned char Led1_Is_On (void);
+void Led1_On (void);
+void Led1_Off (void);
+
 #endif

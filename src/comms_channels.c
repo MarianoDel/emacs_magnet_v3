@@ -14,6 +14,7 @@
 #include "antennas.h"
 #include "utils.h"
 
+
 #include <string.h>
 #include <stdio.h>
 
@@ -48,11 +49,7 @@ void Comms_Channel1 (void)
         
         Usart2ReadBuffer (buff, SIZEOF_RXDATA);
 
-        if(ParseCommsWithChannels((char *) buff, CH1) == resp_ok)
-            Usart2Send (s_ok);
-        else
-            Usart2Send(s_nok);
-            
+        ParseCommsWithChannels((char *) buff, CH1);            
     }
 }
 
@@ -66,11 +63,7 @@ void Comms_Channel2 (void)
         
         Usart3ReadBuffer (buff, SIZEOF_RXDATA);
 
-        if (ParseCommsWithChannels((char *) buff, CH2) == resp_ok)
-            Usart3Send(s_ok);
-        else
-            Usart3Send(s_nok);
-
+        ParseCommsWithChannels((char *) buff, CH2);
     }
 }
 
@@ -84,11 +77,7 @@ void Comms_Channel3 (void)
         
         Uart4ReadBuffer (buff, SIZEOF_RXDATA);
 
-        if (ParseCommsWithChannels((char *) buff, CH3) == resp_ok)
-            Uart4Send(s_ok);
-        else
-            Uart4Send(s_nok);
-            
+        ParseCommsWithChannels((char *) buff, CH3);
     }
 }
 
@@ -102,11 +91,11 @@ void Comms_Channel4 (void)
         
         Uart5ReadBuffer (buff, SIZEOF_RXDATA);
 
-        if (ParseCommsWithChannels((char *) buff, CH4) == resp_ok)
-            Uart5Send (s_ok);
-        else
-            Uart5Send (s_nok);
-            
+        ParseCommsWithChannels((char *) buff, CH4);
+        
+        // char buff2 [100] = { 0 };
+        // sprintf(buff2, "<- %s\n", buff);
+        // Usart1Send(buff2);
     }
 }
 
@@ -159,7 +148,7 @@ resp_e ParseCommsWithChannels (char * str, unsigned char channel)
     }
 
     //respuesta al keepalive
-    else if (!strncmp(str, (const char *)"ok\r", (sizeof("ok\r") - 1)))
+    else if (!strncmp(str, (const char *)"ok", (sizeof("ok") - 1)))
     {
         AntennaIsAnswering(channel);
         resp = resp_ok;

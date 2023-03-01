@@ -241,6 +241,23 @@ void HARD_L1_OFF (void)
     LED1_OFF;
 }
 
+unsigned char Led1_Is_On (void)
+{
+    return LED1;
+}
+
+
+void Led1_On (void)
+{
+    LED1_ON;
+}
+
+
+void Led1_Off (void)
+{
+    LED1_OFF;
+}
+
 
 #ifdef MAGNETO_ESPECIAL_1CH
 #define SWITCHES_TIMER_RELOAD    5

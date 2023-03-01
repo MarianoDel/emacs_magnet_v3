@@ -78,6 +78,10 @@ SRC += ./src/treatment.c
 SRC += ./src/utils.c
 SRC += ./src/test_functions.c
 
+SRC += ./src/comms_channels.c
+SRC += ./src/antennas.c
+
+
 ## Core Support
 SRC += ./startup_src/syscalls.c
 SRC += ./startup_src/startup_clocks.c

@@ -41,8 +41,8 @@ const char s_getall [] = {"get all conf"};
 const char s_buzzer_short [] = {"buzzer short"};
 const char s_buzzer_half [] = {"buzzer half"};
 const char s_buzzer_long [] = {"buzzer long"};
-char s_ok [] = {"OK\r\n"};
-char s_nok [] = {"ERROR\r\n"};
+char s_ans_ok [] = {"OK\r\n"};
+char s_ans_nok [] = {"ERROR\r\n"};
     
 
 // Module Private Functions ----------------------------------------------------
@@ -67,7 +67,7 @@ void UpdateRaspberryMessages (void)
 
 static void Raspberry_Messages (char * msg)
 {
-    resp_t resp = resp_ok;
+    resp_e resp = resp_ok;
 
     const char s_frequency [] = {"frequency"};
     unsigned short new_freq_int = 0;
@@ -79,19 +79,19 @@ static void Raspberry_Messages (char * msg)
     if (!strncmp(msg, (const char *)"signal triangular", (sizeof("signal triangular") - 1)))
     {
         TreatmentSetSignalType(TRIANGULAR_SIGNAL);
-        RpiSend(s_ok);
+        RpiSend(s_ans_ok);
     }
 
     else if (!strncmp(msg, (const char *)"signal square", (sizeof("signal square") - 1)))
     {
         TreatmentSetSignalType(SQUARE_SIGNAL);
-        RpiSend(s_ok);
+        RpiSend(s_ans_ok);
     }
 
     else if (!strncmp(msg, (const char *)"signal sinusoidal", (sizeof("signal sinusoidal") - 1)))
     {
         TreatmentSetSignalType(SINUSOIDAL_SIGNAL);
-        RpiSend(s_ok);
+        RpiSend(s_ans_ok);
     }
 
     else if (!strncmp(msg, (const char *)"power", (sizeof("power") - 1)))
@@ -117,9 +117,9 @@ static void Raspberry_Messages (char * msg)
         }
             
         if (resp == resp_ok)
-            RpiSend(s_ok);
+            RpiSend(s_ans_ok);
         else
-            RpiSend(s_nok);
+            RpiSend(s_ans_nok);
     }
 
     //-- Frequency Setting
@@ -148,9 +148,9 @@ static void Raspberry_Messages (char * msg)
         }
 
         if (resp == resp_ok)
-            RpiSend(s_ok);
+            RpiSend(s_ans_ok);
         else
-            RpiSend(s_nok);
+            RpiSend(s_ans_nok);
     }
 
     else if (!strncmp(msg, (const char *)"enable channel ", (sizeof("enable channel ") - 1)))
@@ -158,23 +158,23 @@ static void Raspberry_Messages (char * msg)
         if (*(msg + 15) == '1')
         {
             TreatmentSetChannelsFlag(ENABLE_CH1_FLAG);
-            RpiSend(s_ok);
+            RpiSend(s_ans_ok);
         }
 
         else if (*(msg + 15) == '2')
         {
             TreatmentSetChannelsFlag(ENABLE_CH2_FLAG);
-            RpiSend(s_ok);
+            RpiSend(s_ans_ok);
         }
 
         else if (*(msg + 15) == '3')
         {
             TreatmentSetChannelsFlag(ENABLE_CH3_FLAG);
-            RpiSend(s_ok);
+            RpiSend(s_ans_ok);
         }
 
         else
-            RpiSend(s_nok);
+            RpiSend(s_ans_nok);
 
         
     }
@@ -184,30 +184,30 @@ static void Raspberry_Messages (char * msg)
         if (*(msg + 16) == '1')
         {
             TreatmentSetChannelsFlag(DISABLE_CH1_FLAG);
-            RpiSend(s_ok);
+            RpiSend(s_ans_ok);
         }
 
         else if (*(msg + 16) == '2')
         {
             TreatmentSetChannelsFlag(DISABLE_CH2_FLAG);
-            RpiSend(s_ok);
+            RpiSend(s_ans_ok);
         }
 
         else if (*(msg + 16) == '3')
         {
             TreatmentSetChannelsFlag(DISABLE_CH3_FLAG);
-            RpiSend(s_ok);
+            RpiSend(s_ans_ok);
         }
 
         else
-            RpiSend(s_nok);
+            RpiSend(s_ans_nok);
             
     }
 
     else if (!strncmp(msg, (const char *)"stretcher up", (sizeof("stretcher up") - 1)))
     {
         comms_messages_rpi |= COMM_STRETCHER_UP;
-        RpiSend(s_ok);        
+        RpiSend(s_ans_ok);        
     }
 
     else if (!strncmp(msg,
@@ -215,7 +215,7 @@ static void Raspberry_Messages (char * msg)
                       (sizeof("stretcher autoup on") - 1)))
     {
         // TreatmentSetUpDwn(UPDWN_AUTO);
-        RpiSend(s_ok);        
+        RpiSend(s_ans_ok);        
     }
 
     else if (!strncmp(msg,
@@ -223,7 +223,7 @@ static void Raspberry_Messages (char * msg)
                       (sizeof("stretcher autoup off") - 1)))
     {
         // TreatmentSetUpDwn(UPDWN_MANUAL);
-        RpiSend(s_ok);        
+        RpiSend(s_ans_ok);        
     }
     
     else if (!strncmp(msg, "goto bridge mode", sizeof("goto bridge mode") - 1))
@@ -280,7 +280,7 @@ static void Raspberry_Messages (char * msg)
         if (decimales == 1)
         {
             BuzzerCommands(BUZZER_SHORT_CMD, (unsigned char) bips_qtty);
-            RpiSend(s_ok);
+            RpiSend(s_ans_ok);
         }
         else
             resp = resp_error;
@@ -297,10 +297,10 @@ static void Raspberry_Messages (char * msg)
         if (decimales == 1)
         {
             BuzzerCommands(BUZZER_HALF_CMD, (unsigned char) bips_qtty);
-            RpiSend(s_ok);
+            RpiSend(s_ans_ok);
         }
         else
-            RpiSend(s_nok);
+            RpiSend(s_ans_nok);
 
     }
 
@@ -320,7 +320,7 @@ static void Raspberry_Messages (char * msg)
 
     else if (!strncmp(msg, (const char *)"keepalive,", (sizeof("keepalive,") - 1)))
     {
-        RpiSend(s_ok);
+        RpiSend(s_ans_ok);
     }
 
     else if (!strncmp(msg, (const char *)"duration,", (sizeof("duration,") - 1)))
@@ -335,14 +335,14 @@ static void Raspberry_Messages (char * msg)
         {
             if (TreatmentSetTimeinMinutes(new_time) == resp_ok)
             {
-                RpiSend(s_ok);
+                RpiSend(s_ans_ok);
                 comms_messages_rpi |= COMM_CONF_CHANGE;
             }
             else
-                RpiSend(s_nok);
+                RpiSend(s_ans_nok);
         }
         else
-            RpiSend(s_nok);
+            RpiSend(s_ans_nok);
     }
 
     else if (!strncmp((const char *)msg, (const char *)"serial num", (sizeof("serial num") - 1)))
@@ -379,21 +379,21 @@ static void Raspberry_Messages (char * msg)
         {
         case '1':
             // UART_CH1_Send("get_temp\r\n");
-            RpiSend(s_ok);
+            RpiSend(s_ans_ok);
             break;
 
         case '2':
             // UART_CH2_Send("get_temp\r\n");
-            RpiSend(s_ok);
+            RpiSend(s_ans_ok);
             break;
 
         case '3':
             // UART_CH3_Send("get_temp\r\n");
-            RpiSend(s_ok);
+            RpiSend(s_ans_ok);
             break;
 
         default:
-            RpiSend(s_nok);
+            RpiSend(s_ans_nok);
             break;
         }
     }
@@ -421,7 +421,7 @@ static void Raspberry_Messages (char * msg)
         SendStatus();
     
     else
-        RpiSend(s_nok);
+        RpiSend(s_ans_nok);
 
 
 //     //--- end ---//

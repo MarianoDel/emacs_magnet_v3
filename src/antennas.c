@@ -11,12 +11,21 @@
 #include "antennas.h"
 #include "channels_defs.h"
 #include "answers_defs.h"
+#include "usart.h"
 
 #include <stdio.h>
 #include <string.h>
 
 
 // Module Private Types Constants and Macros -----------------------------------
+// -- for module config ---------
+#define RPI_Send(X)    Usart1Send(X)
+#define UART_CH1_Send(X)    Usart2Send(X)
+#define UART_CH2_Send(X)    Usart3Send(X)
+#define UART_CH3_Send(X)    Uart4Send(X)
+#define UART_CH4_Send(X)    Uart5Send(X)
+
+
 #define SIZEOF_ANTENNA_NAME    21
 
 typedef struct {
@@ -34,12 +43,6 @@ typedef struct {
 } antenna_complete_st;
 
 
-// typedef struct {
-//     char connected_ant_name [21];    //20 chars and 0 termination
-
-//     antenna_st a;
-    
-// } antenna_complete_st;
 
 
 //--- Used for Antenna Sync - Time base ---//

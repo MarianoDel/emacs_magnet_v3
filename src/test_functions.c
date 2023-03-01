@@ -21,6 +21,9 @@
 
 #include "comms_from_rasp.h"
 
+#include "comms_channels.h"
+#include "antennas.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -74,6 +77,8 @@ short TF_PI_roof (short setpoint, short sample, short last_d);
 void TF_PI_roof_Set (short p, short i, short ez1);
 void TF_PI_roof_Flush (void);
 
+void TF_Antennas_Connection (void);
+
 // Module Functions ------------------------------------------------------------
 void TF_Hardware_Tests (void)
 {
@@ -109,7 +114,9 @@ void TF_Hardware_Tests (void)
     // TF_Signal_PWM_Channel1 ();
     // TF_Signal_PWM_Channel2 ();
     // TF_Signal_PWM_Channel3 ();
-    TF_Signal_PWM_Channel4 ();
+    // TF_Signal_PWM_Channel4 ();
+
+    TF_Antennas_Connection ();
 }
 
 
@@ -1386,6 +1393,7 @@ void TF_Uart5_connect (void)
         {
             LED1_ON;
             Uart5Send("keepalive\n");
+            // Uart5Send("get_params\n");            
             wait_ms_var = 100;
             timer_standby = 2000;
         }
@@ -1410,5 +1418,38 @@ void TF_Uart5_connect (void)
     }
 }
 
+
+void TF_Antennas_Connection (void)
+{
+    char buff [128] = { 0 };
+
+    Usart1Config ();    
+    Usart1Send("Testing antennas connection\n");
+
+    // start channels usarts
+    Usart2Config ();
+    Usart3Config ();
+    Uart4Config ();
+    Uart5Config ();    
+
+    while (1)
+    {
+        // update the antennas module state        
+        AntennaUpdateStates ();
+
+        // update the channels comms
+        Comms_Channel1 ();
+        Comms_Channel2 ();
+        Comms_Channel3 ();
+        Comms_Channel4 ();
+        
+        // 1ms timer update
+        if (!timer_standby)
+        {
+            timer_standby = 1;
+            AntennaTimeouts ();            
+        }
+    }
+}
 
 //--- end of file ---//
