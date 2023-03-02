@@ -24,6 +24,8 @@
 #include "comms_channels.h"
 #include "antennas.h"
 
+#include "treatment.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -78,6 +80,8 @@ void TF_PI_roof_Set (short p, short i, short ez1);
 void TF_PI_roof_Flush (void);
 
 void TF_Antennas_Connection (void);
+void TF_Treatment_And_Antennas_Connection (void);
+
 
 // Module Functions ------------------------------------------------------------
 void TF_Hardware_Tests (void)
@@ -116,7 +120,8 @@ void TF_Hardware_Tests (void)
     // TF_Signal_PWM_Channel3 ();
     // TF_Signal_PWM_Channel4 ();
 
-    TF_Antennas_Connection ();
+    // TF_Antennas_Connection ();
+    TF_Treatment_And_Antennas_Connection ();
 }
 
 
@@ -1421,8 +1426,6 @@ void TF_Uart5_connect (void)
 
 void TF_Antennas_Connection (void)
 {
-    char buff [128] = { 0 };
-
     Usart1Config ();    
     Usart1Send("Testing antennas connection\n");
 
@@ -1448,6 +1451,43 @@ void TF_Antennas_Connection (void)
         {
             timer_standby = 1;
             AntennaTimeouts ();            
+        }
+    }
+}
+
+
+void TF_Treatment_And_Antennas_Connection (void)
+{
+    Usart1Config ();    
+    Usart1Send("Testing antennas connection\n");
+
+    // start channels usarts
+    Usart2Config ();
+    Usart3Config ();
+    Uart4Config ();
+    Uart5Config ();
+    
+
+    while (1)
+    {
+        // update the antennas module state        
+        AntennaUpdateStates ();
+
+        // update the channels comms
+        Comms_Channel1 ();
+        Comms_Channel2 ();
+        Comms_Channel3 ();
+        Comms_Channel4 ();
+
+        // update treatment state
+        Treatment_Manager();
+        
+        // 1ms timer update
+        if (!timer_standby)
+        {
+            timer_standby = 1;
+            AntennaTimeouts ();
+            Treatment_Timeouts ();
         }
     }
 }

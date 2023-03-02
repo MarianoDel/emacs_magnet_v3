@@ -19,6 +19,32 @@
 // #include <math.h>
 
 // Types Constants and Macros --------------------------------------------------
+//ESTADOS DEL BUZZER copied from hard.h
+typedef enum
+{    
+    BUZZER_INIT = 0,
+    BUZZER_TO_STOP,
+
+    BUZZER_MULTIPLE_LONG,
+    BUZZER_MULTIPLE_LONGA,
+    BUZZER_MULTIPLE_LONGB,
+
+    BUZZER_MULTIPLE_HALF,
+    BUZZER_MULTIPLE_HALFA,
+    BUZZER_MULTIPLE_HALFB,
+
+    BUZZER_MULTIPLE_SHORT,
+    BUZZER_MULTIPLE_SHORTA,
+    BUZZER_MULTIPLE_SHORTB
+    
+} buzzer_state_t;
+
+//COMANDOS DEL BUZZER	(tienen que ser los del estado de arriba)
+// copied from hard.h
+#define BUZZER_STOP_CMD		BUZZER_TO_STOP
+#define BUZZER_LONG_CMD		BUZZER_MULTIPLE_LONG
+#define BUZZER_HALF_CMD		BUZZER_MULTIPLE_HALF
+#define BUZZER_SHORT_CMD	BUZZER_MULTIPLE_SHORT
 
 
 // Externals -------------------------------------------------------------------
@@ -49,8 +75,7 @@ void Test_Treatment_Manager (void);
 // Module Functions ------------------------------------------------------------
 int main (int argc, char *argv[])
 {
-    // Test_Functions ();
-    // Test_Utils_Module();
+
     Test_Treatment_Module();
     Test_Treatment_Manager();    
 
@@ -58,56 +83,10 @@ int main (int argc, char *argv[])
 }
 
 
-// void Test_Utils_Module (void)
-// {
-//     int some_err = 0;
-//     unsigned short new_number;
-//     unsigned char cnt;
-
-//     char num0 [] = "000";
-//     char num1 [] = "999";
-
-//     printf("Testing Utils Module: ");
-    
-//     new_number = 0;
-//     cnt = 0;
-//     cnt = StringIsANumber(num1, &new_number);    
-//     if ((cnt != 3) || (new_number != 999))
-//     {
-//         printf("\nStringIs error with number %s ", num1);
-//         some_err = 1;
-//     }
-
-//     new_number = 0;
-//     cnt = 0;
-//     cnt = StringIsANumber(num0, &new_number);    
-//     if ((cnt != 3) || (new_number != 0))
-//     {
-//         printf("\nStringIs error with number %s ", num0);
-//         some_err = 1;
-//     }
-
-
-//     char num2 [] = "1111,99";
-//     new_number = GetValue(num2, ',');    
-//     if (new_number != 1111)
-//     {
-//         printf("\nGetValue error with number %s ", num2);
-//         some_err = 1;
-//     }
-
-//     if (some_err)
-//         PrintERR();
-//     else
-//         PrintOK();
-    
-// }
-
-
 void Test_Treatment_Module (void)
 {
     int some_err = 0;    
-    resp_t resp = resp_ok;
+    resp_e resp = resp_ok;
     
     printf("Testing Treatment Module: ");
 
@@ -254,7 +233,7 @@ extern unsigned char treat_state;
 void Test_Treatment_Manager (void)
 {
     int some_err = 0;    
-    resp_t resp = resp_ok;
+    resp_e resp = resp_ok;
 
     printf("-- treat in standby\n");
     for (int i = 0; i < 20; i++)
@@ -319,7 +298,7 @@ void Test_Treatment_Manager (void)
         
     }
 
-    printf("-- treat to running\n");    
+    printf("-- treat to running double START sended\n");    
     if (!some_err)
     {
         comms_messages_rpi |= COMM_START_TREAT;
@@ -425,20 +404,36 @@ void UpdateRaspberryMessages (void)
 {
 }
 
+#define STOP_SIGNAL    1
+#define SETUP_SIGNAL    2
+#define GENERATE_SIGNAL    3
+int last_signal_state = 0;
 void Signals_Stop_All_Channels (void)
 {
-    printf("stopping all channels\n");
+    if (last_signal_state != STOP_SIGNAL)
+    {
+        printf("stopping all channels\n");
+        last_signal_state = STOP_SIGNAL;
+    }
 }
 
 
 void Signals_Setup_All_Channels (void)
 {
-    printf("setup in all channels\n");
+    if (last_signal_state != SETUP_SIGNAL)
+    {
+        printf("setup in all channels\n");
+        last_signal_state = SETUP_SIGNAL;
+    }
 }
 
 void Signals_Generate_All_Channels (void)
 {
-    printf("generate all channels\n");
+    if (last_signal_state != GENERATE_SIGNAL)
+    {
+        printf("generate all channels\n");
+        last_signal_state = GENERATE_SIGNAL;
+    }
 }
 
 //--- end of file ---//

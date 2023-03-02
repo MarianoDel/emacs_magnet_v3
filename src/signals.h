@@ -12,6 +12,7 @@
 // #include "comm.h"		//para respuestas
 #include "hard.h"
 #include "signals_defs.h"
+#include "answers_defs.h"
 
 
 // Module Exported Types Constants and Macros ----------------------------------
@@ -141,14 +142,14 @@ typedef enum
 #endif
 
 //--- Exported functions ---//
-// resp_t SetSignalType (signals_struct_t *, signal_type_t);
-resp_t SetSignalTypeAndOffset (signal_type_e, signal_offset_e);
-resp_t SetFrequency (unsigned char, unsigned char);
-resp_t SetPower (unsigned char);
+// resp_e SetSignalType (signals_struct_t *, signal_type_t);
+resp_e SetSignalTypeAndOffset (signal_type_e, signal_offset_e);
+resp_e SetFrequency (unsigned char, unsigned char);
+resp_e SetPower (unsigned char);
 void GenerateSignalReset (void);
 
-resp_t AssertTreatmentParams (void);
-resp_t StartTreatment (void);
+resp_e AssertTreatmentParams (void);
+resp_e StartTreatment (void);
 void StopTreatment (void);
 error_e GetErrorStatus (void);
 void SetErrorStatus (error_e);

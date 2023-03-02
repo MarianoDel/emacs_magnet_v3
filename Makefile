@@ -81,6 +81,8 @@ SRC += ./src/test_functions.c
 SRC += ./src/comms_channels.c
 SRC += ./src/antennas.c
 
+# SRC += ./src/signals.c
+
 
 ## Core Support
 SRC += ./startup_src/syscalls.c

@@ -266,9 +266,9 @@ const unsigned short square_table_outphase [] = {0,0,0,0,0,0,0,0,0,0,
 
 // Module Private Functions ----------------------------------------------------
 void Signal_UpdatePointerReset (void);
-resp_t Signal_UpdatePointer (void);
+resp_e Signal_UpdatePointer (void);
 void Signal_DrawingReset (void);
-resp_t Signal_Drawing (void);
+resp_e Signal_Drawing (void);
 void Signal_OffsetCalculate (void);
 
 void Signal_Generate_Phase_0_90_120 (void);
@@ -319,7 +319,7 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
 
 // //recibe tipo de senial
 // //setea senial y offset
-// resp_t SetSignalTypeAndOffset (signal_type_t a, signal_offset_t offset)
+// resp_e SetSignalTypeAndOffset (signal_type_t a, signal_offset_t offset)
 // {
 //     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
 //         return resp_error;
@@ -380,7 +380,7 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
 
 //recibe referencia a la estructura de senial
 //recibe tipo de senial
-// resp_t SetSignalType (signals_struct_t * s, signal_type_t a)
+// resp_e SetSignalType (signals_struct_t * s, signal_type_t a)
 // {
 //     //TODO: despues cargar directamente los k
 //     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
@@ -408,7 +408,7 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
 
 //setea la frecuencia y el timer con el que se muestrea
 //por default o error es simepre de 1500Hz -> seniales de 10Hz
-// resp_t SetFrequency (unsigned char entero, unsigned char decimal)
+// resp_e SetFrequency (unsigned char entero, unsigned char decimal)
 // {
 //     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
 //         return resp_error;
@@ -425,7 +425,7 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
 //     return resp_ok;
 // }
 
-// resp_t SetPower (unsigned char a)
+// resp_e SetPower (unsigned char a)
 // {
 //     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
 //         return resp_error;
@@ -441,9 +441,9 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
 // }
 
 // //verifica que se cumplan con todos los parametros para poder enviar una senial coherente
-// resp_t AssertTreatmentParams (void)
+// resp_e AssertTreatmentParams (void)
 // {
-//     resp_t resp = resp_error;
+//     resp_e resp = resp_error;
 
 //     if ((signal_to_gen.power > 100) || (signal_to_gen.power < 10))
 //         return resp;
@@ -915,9 +915,9 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
 
 // //llamar para cada punto a dibujar
 // //calculo PID con puntero anterior y actualizo el puntero
-// resp_t Signal_Drawing (void)
+// resp_e Signal_Drawing (void)
 // {
-//     resp_t resp = resp_continue;
+//     resp_e resp = resp_continue;
     
 //     switch (drawing_state)
 //     {
@@ -1018,9 +1018,9 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
 //     p_signal_running = p_signal;
 // }
 
-// resp_t Signal_UpdatePointer (void)
+// resp_e Signal_UpdatePointer (void)
 // {
-//     resp_t resp = resp_continue;
+//     resp_e resp = resp_continue;
 //     //si la senial esta corriendo hago update de senial y un par de chequeos
 //     //senial del adc cuando convierte la secuencia disparada por TIM1 a 2000Hz 6000Hz o 12000Hz
 

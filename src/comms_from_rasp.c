@@ -78,19 +78,19 @@ static void Raspberry_Messages (char * msg)
     //mensajes nuevos
     if (!strncmp(msg, (const char *)"signal triangular", (sizeof("signal triangular") - 1)))
     {
-        TreatmentSetSignalType(TRIANGULAR_SIGNAL);
+        Treatment_SetSignalType(TRIANGULAR_SIGNAL);
         RpiSend(s_ans_ok);
     }
 
     else if (!strncmp(msg, (const char *)"signal square", (sizeof("signal square") - 1)))
     {
-        TreatmentSetSignalType(SQUARE_SIGNAL);
+        Treatment_SetSignalType(SQUARE_SIGNAL);
         RpiSend(s_ans_ok);
     }
 
     else if (!strncmp(msg, (const char *)"signal sinusoidal", (sizeof("signal sinusoidal") - 1)))
     {
-        TreatmentSetSignalType(SINUSOIDAL_SIGNAL);
+        Treatment_SetSignalType(SINUSOIDAL_SIGNAL);
         RpiSend(s_ans_ok);
     }
 
@@ -108,7 +108,7 @@ static void Raspberry_Messages (char * msg)
 
             if (power <= 100)
             {
-                if (TreatmentSetPower ((unsigned char) power) == resp_ok)
+                if (Treatment_SetPower ((unsigned char) power) == resp_ok)
                 {
                     resp = resp_ok;
                     comms_messages_rpi |= COMM_CONF_CHANGE;
@@ -141,7 +141,7 @@ static void Raspberry_Messages (char * msg)
 
             if ((decimales > 1) && (decimales < 3))
             {
-                resp = TreatmentSetFrequency ((unsigned char) new_freq_int, (unsigned char) new_freq_dec);
+                resp = Treatment_SetFrequency ((unsigned char) new_freq_int, (unsigned char) new_freq_dec);
                 if (resp == resp_ok)
                     comms_messages_rpi |= COMM_CONF_CHANGE;                
             }
@@ -157,19 +157,19 @@ static void Raspberry_Messages (char * msg)
     {
         if (*(msg + 15) == '1')
         {
-            TreatmentSetChannelsFlag(ENABLE_CH1_FLAG);
+            Treatment_SetChannelsFlag(ENABLE_CH1_FLAG);
             RpiSend(s_ans_ok);
         }
 
         else if (*(msg + 15) == '2')
         {
-            TreatmentSetChannelsFlag(ENABLE_CH2_FLAG);
+            Treatment_SetChannelsFlag(ENABLE_CH2_FLAG);
             RpiSend(s_ans_ok);
         }
 
         else if (*(msg + 15) == '3')
         {
-            TreatmentSetChannelsFlag(ENABLE_CH3_FLAG);
+            Treatment_SetChannelsFlag(ENABLE_CH3_FLAG);
             RpiSend(s_ans_ok);
         }
 
@@ -183,19 +183,19 @@ static void Raspberry_Messages (char * msg)
     {
         if (*(msg + 16) == '1')
         {
-            TreatmentSetChannelsFlag(DISABLE_CH1_FLAG);
+            Treatment_SetChannelsFlag(DISABLE_CH1_FLAG);
             RpiSend(s_ans_ok);
         }
 
         else if (*(msg + 16) == '2')
         {
-            TreatmentSetChannelsFlag(DISABLE_CH2_FLAG);
+            Treatment_SetChannelsFlag(DISABLE_CH2_FLAG);
             RpiSend(s_ans_ok);
         }
 
         else if (*(msg + 16) == '3')
         {
-            TreatmentSetChannelsFlag(DISABLE_CH3_FLAG);
+            Treatment_SetChannelsFlag(DISABLE_CH3_FLAG);
             RpiSend(s_ans_ok);
         }
 
@@ -333,7 +333,7 @@ static void Raspberry_Messages (char * msg)
         decimales = StringIsANumber(msg, &new_time);
         if (decimales == 3)
         {
-            if (TreatmentSetTimeinMinutes(new_time) == resp_ok)
+            if (Treatment_SetTimeinMinutes(new_time) == resp_ok)
             {
                 RpiSend(s_ans_ok);
                 comms_messages_rpi |= COMM_CONF_CHANGE;
@@ -527,7 +527,7 @@ void Raspberry_Report_Errors (unsigned char ch, unsigned short * errors)
 static void SendAllConf (void)
 {
     char b [128];
-    TreatmentGetAllConf(b);
+    Treatment_GetAllConf(b);
     RpiSend(b);
 }
 
@@ -536,9 +536,9 @@ static void SendStatus (void)
     char b [128];
     unsigned char st = 0;
     
-    st = TreatmentGetMainState();
-    sprintf(b, "Main State: %d\r\n", st);
-    RpiSend(b);
+    // st = Treatment_GetMainState();
+    // sprintf(b, "Main State: %d\r\n", st);
+    // RpiSend(b);
 }
 
 

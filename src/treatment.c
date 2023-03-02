@@ -19,6 +19,8 @@
 
 
 // Private Types Constants and Macros ------------------------------------------
+#define RPI_Send(X)    Usart1Send(X)
+
 typedef enum {
     TREATMENT_STANDBY = 0,
     TREATMENT_STARTING,
@@ -209,9 +211,10 @@ void Treatment_Manager (void)
         // sprintf (buff, "treat end, ch1: 0x%04x, ch2: 0x%04x, ch3: 0x%04x\r\n",
         //          comms_messages_1,
         //          comms_messages_2,
-        //          comms_messages_3);
-                    
-        RPI_Send(buff);
+        //          comms_messages_3);                    
+        // RPI_Send(buff);
+
+        RPI_Send("OK\r\n");
         treat_state = TREATMENT_STANDBY;
         ChangeLed(LED_TREATMENT_STANDBY);
         break;
