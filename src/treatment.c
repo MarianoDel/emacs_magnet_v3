@@ -458,8 +458,8 @@ resp_e Treatment_AssertParams (void)
         (treatment_conf.treatment_signal.signal != SINUSOIDAL_SIGNAL))
         return resp;
 
-    if (!(treatment_conf.channels_in_treatment & CHX_MASK))
-        return resp;
+    // if (!(treatment_conf.channels_in_treatment & CHX_MASK))
+    //     return resp;
 
     return resp_ok;
 }

@@ -49,6 +49,7 @@ char s_ans_nok [] = {"ERROR\r\n"};
 static void Raspberry_Messages (char *);
 static void SendAllConf (void);
 static void SendStatus (void);
+resp_e Comms_Signal_Old_Mode (char * m);
 
 
 // Module Functions ------------------------------------------------------------
@@ -210,21 +211,21 @@ static void Raspberry_Messages (char * msg)
         RpiSend(s_ans_ok);        
     }
 
-    else if (!strncmp(msg,
-                      (const char *)"stretcher autoup on",
-                      (sizeof("stretcher autoup on") - 1)))
-    {
-        // TreatmentSetUpDwn(UPDWN_AUTO);
-        RpiSend(s_ans_ok);        
-    }
+    // else if (!strncmp(msg,
+    //                   (const char *)"stretcher autoup on",
+    //                   (sizeof("stretcher autoup on") - 1)))
+    // {
+    //     // TreatmentSetUpDwn(UPDWN_AUTO);
+    //     RpiSend(s_ans_ok);        
+    // }
 
-    else if (!strncmp(msg,
-                      (const char *)"stretcher autoup off",
-                      (sizeof("stretcher autoup off") - 1)))
-    {
-        // TreatmentSetUpDwn(UPDWN_MANUAL);
-        RpiSend(s_ans_ok);        
-    }
+    // else if (!strncmp(msg,
+    //                   (const char *)"stretcher autoup off",
+    //                   (sizeof("stretcher autoup off") - 1)))
+    // {
+    //     // TreatmentSetUpDwn(UPDWN_MANUAL);
+    //     RpiSend(s_ans_ok);        
+    // }
     
     else if (!strncmp(msg, "goto bridge mode", sizeof("goto bridge mode") - 1))
     {
@@ -329,8 +330,26 @@ static void Raspberry_Messages (char * msg)
         
         msg += sizeof("duration,") - 1;		//normalizo al payload
 
-        //lo que viene son tres bytes con el tiempo de 1 a 120 se supone
-        decimales = StringIsANumber(msg, &new_time);
+        // check old or new conf string
+        //example.	duration,00,10,00,1
+        if ((*(msg + 2) == ',') &&
+            (*(msg + 5) == ',') &&
+            (*(msg + 8) == ','))
+        {
+            // old conf type
+            unsigned char hours = (*(msg + 0) - '0') * 10 + *(msg + 1) - '0';
+            unsigned char minutes = (*(msg + 3) - '0') * 10 + *(msg + 4) - '0';
+
+            decimales = 3;
+            new_time = hours * 60 + minutes;
+        }
+        else
+        {
+            // new conf type
+            //lo que viene son tres bytes con el tiempo de 1 a 120 se supone
+            decimales = StringIsANumber(msg, &new_time);
+        }
+        
         if (decimales == 3)
         {
             if (Treatment_SetTimeinMinutes(new_time) == resp_ok)
@@ -370,9 +389,9 @@ static void Raspberry_Messages (char * msg)
 #endif
     }
     
-    //fin mensajes nuevos
+    //-- end of new messages
     
-    //mensajes anteriores
+    //-- old type messages
     else if (!strncmp(msg, (const char *)"get_temp,", (sizeof("get_temp,") - 1)))
     {
         switch (*(msg+9))
@@ -420,11 +439,29 @@ static void Raspberry_Messages (char * msg)
     else if (strncmp(msg, (const char *) "get status", sizeof("get status") - 1) == 0)
         SendStatus();
     
+
+    //-- old type for signals and power
+    //example. signal,100,100,0000,0003,0003,0003,0006,0000,0000,1
+    else if (!strncmp((const char *)&msg[0], (const char *)"signal,", (sizeof("signal,") - 1)))
+    {
+        if (Comms_Signal_Old_Mode (msg) == resp_error)
+            RpiSend(s_ans_nok);
+        else
+            RpiSend(s_ans_ok);
+        
+    }
+
+    else if (!strncmp((const char *)&msg[0],
+                      (const char *)"state_of_stage,",
+                      (sizeof("state_of_stage,") - 1)))
+    {
+        // do nothing with this info
+    }
+
+
+    //-- end of old type messages
     else
         RpiSend(s_ans_nok);
-
-
-//     //--- end ---//
 
 }
 
@@ -542,6 +579,123 @@ static void SendStatus (void)
 }
 
 
+resp_e Comms_Signal_Old_Mode (char * m)
+{
+    // signals typedef
+    unsigned char initial_power;
+    unsigned char final_power;
+    // unsigned char sync_on;
+    // unsigned short step_number;
+
+    unsigned short rising_time;
+    unsigned short maintenance_time;
+    unsigned short falling_time;
+    unsigned short low_time;
+
+    // unsigned short burst_mode_on;
+    // unsigned short burst_mode_off;
+    
+    //example. signal,100,100,0000,0003,0003,0003,0006,0000,0000,1
+    // check the comma separated fields
+    if ((*(m + 10) != ',') ||
+        (*(m + 14) != ',') ||
+        (*(m + 19) != ',') ||
+        (*(m + 24) != ',') ||
+        (*(m + 29) != ',') ||
+        (*(m + 34) != ',') ||
+        (*(m + 39) != ',') ||
+        (*(m + 44) != ',') ||
+        (*(m + 49) != ','))
+    {
+        return resp_error;
+    }
+                
+    // check the stage (1 to 3 WM_UP MAINT CL_DW)
+    if (((*(m + 50) - '0') < 1) ||
+        ((*(m + 50) - '0') > 3))
+    {
+        return resp_error;
+    }
+        
+    initial_power = (m[7] - 48) * 100 + (m[8] - 48) * 10 + (m[9] - 48);
+    final_power = (m[11] - 48) * 100 + (m[12] - 48) * 10 + (m[13] - 48);
+    // sync_on = (m[18] - 48);
+
+    // get max power
+    if (final_power < initial_power)
+        final_power = initial_power;
+    else
+        initial_power = final_power;
+
+    // set the power
+    if (Treatment_SetPower (initial_power) != resp_ok)
+        return resp_error;
+
+    // check which signal will use
+    rising_time = (m[20] - 48) * 1000 +
+        (m[21] - 48) * 100 +
+        (m[22] - 48) * 10 +
+        (m[23] - 48);
+            
+    maintenance_time = (m[25] - 48) * 1000 +
+        (m[26] - 48) * 100 +
+        (m[27] - 48) * 10 +
+        (m[28] - 48);
+            
+    falling_time = (m[30] - 48) * 1000 +
+        (m[31] - 48) * 100 +
+        (m[32] - 48) * 10 +
+        (m[33] - 48);
+            
+    low_time = (m[35] - 48) * 1000 +
+        (m[36] - 48) * 100 +
+        (m[37] - 48) * 10 +
+        (m[38] - 48);
+
+    // square or sinusoidal
+    if (rising_time == falling_time)
+    {
+        if (rising_time == 1)
+            Treatment_SetSignalType(SQUARE_SIGNAL);
+        else
+            Treatment_SetSignalType(SINUSOIDAL_SIGNAL);
+    }
+    else
+    {
+        // triangular
+        Treatment_SetSignalType(TRIANGULAR_SIGNAL);
+    }
+
+    // set frequency
+    unsigned short period = rising_time + maintenance_time + falling_time + low_time;
+
+    if (period == 0)
+        return resp_error;
+
+    unsigned int freq = 0;
+    unsigned int freq_int = 0;
+    unsigned int freq_dec = 0;    
+
+    // check freq greater than 1Hz
+    freq = 100000 / period;
+    freq_int = freq / 100;
+    freq_dec = freq  - freq_int * 100;
+
+    if (Treatment_SetFrequency ((unsigned char) freq_int, (unsigned char) freq_dec) != resp_ok)
+        return resp_error;
+
+    // signal.burst_mode_on = (m[40] - 48) * 1000 +
+    //     (m[41] - 48) * 100 +
+    //     (m[42] - 48) * 10 +
+    //     (m[43] - 48);
+            
+    // signal.burst_mode_off = (m[45] - 48) * 1000 +
+    //     (m[46] - 48) * 100 +
+    //     (m[47] - 48) * 10 +
+    //     (m[48] - 48);
+
+    return resp_ok;
+}
 
 
 
