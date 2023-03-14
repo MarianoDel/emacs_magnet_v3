@@ -319,7 +319,8 @@ static void Raspberry_Messages (char * msg)
             resp = resp_error;
     }
 
-    else if (!strncmp(msg, (const char *)"keepalive,", (sizeof("keepalive,") - 1)))
+    // old is keepalive, new is keepalive alone
+    else if (!strncmp(msg, (const char *)"keepalive", (sizeof("keepalive") - 1)))
     {
         RpiSend(s_ans_ok);
     }
@@ -459,9 +460,21 @@ static void Raspberry_Messages (char * msg)
     }
 
 
+    else if (!strncmp((const char *)&msg[0],
+                      (const char *)"get_antenna,",
+                      (sizeof("get_antenna,") - 1)))
+    {
+        RpiSend(s_ans_ok);
+        AntennaSendKnowInfoWithTimer ();            
+    }
+    
     //-- end of old type messages
     else
+    {
+        // RpiSend(msg);
+        // RpiSend(" ");
         RpiSend(s_ans_nok);
+    }
 
 }
 

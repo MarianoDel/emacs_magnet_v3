@@ -40,7 +40,7 @@ volatile unsigned char switches_timer = 0;
 
 // Module Functions ------------------------------------------------------------
 // called from int timer on 1ms ticks
-void HARD_Timers_Update (void)
+void HARD_Timeouts (void)
 {
     if (timer_led)
         timer_led--;
@@ -48,10 +48,6 @@ void HARD_Timers_Update (void)
     if (buzzer_timeout)
         buzzer_timeout--;
 
-#ifdef MAGNETO_ESPECIAL_1CH
-    if (switches_timer)
-        switches_timer--;
-#endif
 }
 
 //cambia configuracion de bips del LED

@@ -232,7 +232,7 @@ void ChangeLed (unsigned char);
 void UpdateLed (void);
 void UpdateBuzzer (void);
 void BuzzerCommands(unsigned char , unsigned char );
-void HARD_Timers_Update (void);
+void HARD_Timeouts (void);
 void HARD_L1_ON (void);
 void HARD_L1_OFF (void);
 

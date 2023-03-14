@@ -1481,13 +1481,16 @@ void TF_Treatment_And_Antennas_Connection (void)
 
         // update treatment state
         Treatment_Manager();
-        
+
+        // the update of led and buzzer on Treatment_Manager()
+
         // 1ms timer update
         if (!timer_standby)
         {
             timer_standby = 1;
             AntennaTimeouts ();
             Treatment_Timeouts ();
+            HARD_Timeouts();
         }
     }
 }
