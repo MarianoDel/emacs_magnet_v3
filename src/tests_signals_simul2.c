@@ -23,8 +23,8 @@
 
 // Types Constants and Macros --------------------------------------------------
 // #define SIZEOF_SIGNALS    (256 * 6)    // six cycles
-// #define SIZEOF_SIGNALS    512    // two cycles
-#define SIZEOF_SIGNALS    256    // only one cycle
+#define SIZEOF_SIGNALS    512    // two cycles
+// #define SIZEOF_SIGNALS    256    // only one cycle
 
 #define CH1    0
 #define CH2    1
@@ -45,32 +45,12 @@ volatile unsigned char timer1_seq_ready = 0;
 
 
 // Globals ---------------------------------------------------------------------
-short v_duty_ch1 [SIZEOF_SIGNALS] = { 0 };
-short v_error_ch1 [SIZEOF_SIGNALS] = { 0 };
-short v_sp_ch1 [SIZEOF_SIGNALS] = { 0 };
-short v_adc_ch1 [SIZEOF_SIGNALS] = { 0 };
-short v_ref_ch1 [SIZEOF_SIGNALS] = { 0 };
-short v_signal_ch1 [SIZEOF_SIGNALS] = { 0 };
+short v_duty [SIZEOF_SIGNALS] = { 0 };
+short v_error [SIZEOF_SIGNALS] = { 0 };
+short v_sp [SIZEOF_SIGNALS] = { 0 };
+short v_adc [SIZEOF_SIGNALS] = { 0 };
 
-short v_duty_ch2 [SIZEOF_SIGNALS] = { 0 };
-short v_error_ch2 [SIZEOF_SIGNALS] = { 0 };
-short v_sp_ch2 [SIZEOF_SIGNALS] = { 0 };
-short v_adc_ch2 [SIZEOF_SIGNALS] = { 0 };
-
-short v_duty_ch3 [SIZEOF_SIGNALS] = { 0 };
-short v_error_ch3 [SIZEOF_SIGNALS] = { 0 };
-short v_sp_ch3 [SIZEOF_SIGNALS] = { 0 };
-short v_adc_ch3 [SIZEOF_SIGNALS] = { 0 };
-
-short v_duty_ch4 [SIZEOF_SIGNALS] = { 0 };
-short v_error_ch4 [SIZEOF_SIGNALS] = { 0 };
-short v_sp_ch4 [SIZEOF_SIGNALS] = { 0 };
-short v_adc_ch4 [SIZEOF_SIGNALS] = { 0 };
-
-recursive_filter_t plant_ch1;
-recursive_filter_t plant_ch2;
-recursive_filter_t plant_ch3;
-recursive_filter_t plant_ch4;
+recursive_filter_t plant;
 
 float max_antenna_current = 0.0;
 float fsampling = 7000.0;
@@ -103,12 +83,16 @@ unsigned short Adc10BitsConvertion (float sample);
 int main (int argc, char *argv[])
 {
     printf("Start of Analog simulations...\n");
+    printf("  simulations only for one channel\n");
 
-    // printf("testing plant step response...\n");
-    // printf("recursive reset on plant...\n");
-    // Plant_Out_Recursive_Reset (&plant_ch1);
-    // Test_Plant_Step_Response ();
-    // printf("end step response test\n");
+    printf("testing plant step response...\n");
+    printf(" recursive reset on plant with defaults values...\n");
+    Plant_Out_Recursive_Reset (&plant);
+    printf(" plant with selected antenna values...\n");
+    Plant_Out_Recursive_From_Single_Antenna_Reset (&plant, 2);
+    
+    Test_Plant_Step_Response ();
+    printf("end step response test\n");
     
     // printf("testing signals and simulation...\n");
     // printf("recursive reset on plant...\n");
@@ -128,14 +112,14 @@ int main (int argc, char *argv[])
     // Test_All_Signals_All_Antennas ();
     // printf("end generation test\n");    
 
-    printf("testing specific antenna with specific signal same freq on ch1...\n");
-    printf("recursive reset on plant...\n");
-    Plant_Out_Recursive_Reset (CH1, &plant_ch1);
-    Plant_Out_Recursive_Reset (CH2, &plant_ch2);
-    Plant_Out_Recursive_Reset (CH3, &plant_ch3);
-    Plant_Out_Recursive_Reset (CH4, &plant_ch4);
-    Test_Single_Signal_Single_Antenna ();
-    printf("end generation test\n");    
+    // printf("testing specific antenna with specific signal same freq on ch1...\n");
+    // printf("recursive reset on plant...\n");
+    // Plant_Out_Recursive_Reset (CH1, &plant_ch1);
+    // Plant_Out_Recursive_Reset (CH2, &plant_ch2);
+    // Plant_Out_Recursive_Reset (CH3, &plant_ch3);
+    // Plant_Out_Recursive_Reset (CH4, &plant_ch4);
+    // Test_Single_Signal_Single_Antenna ();
+    // printf("end generation test\n");    
 
     // printf("testing specific antenna with specific signal specific freq on ch1...\n");
     // printf("recursive reset on plant...\n");
@@ -144,24 +128,6 @@ int main (int argc, char *argv[])
     // Plant_Out_Recursive_Reset (CH3, &plant_ch3);
     // Plant_Out_Recursive_Reset (CH4, &plant_ch4);
     // Test_Single_Signal_Single_Antenna_Single_Freq ();
-    // printf("end generation test\n");    
-
-    // printf("testing all signals all antennas all frequencies on ch1...\n");
-    // printf("recursive reset on plant...\n");
-    // Plant_Out_Recursive_Reset (CH1, &plant_ch1);
-    // Plant_Out_Recursive_Reset (CH2, &plant_ch2);
-    // Plant_Out_Recursive_Reset (CH3, &plant_ch3);
-    // Plant_Out_Recursive_Reset (CH4, &plant_ch4);
-    // Test_All_Signals_All_Antennas_All_Freq ();
-    // printf("end generation test\n");    
-
-    // printf("testing specific antenna with specific signal specific freq on ch1...\n");
-    // printf("recursive reset on plant...\n");
-    // Plant_Out_Recursive_Reset (CH1, &plant_ch1);
-    // Plant_Out_Recursive_Reset (CH2, &plant_ch2);
-    // Plant_Out_Recursive_Reset (CH3, &plant_ch3);
-    // Plant_Out_Recursive_Reset (CH4, &plant_ch4);
-    // Test_Single_Signal_Single_Antenna_Single_Freq_OpenLoop ();
     // printf("end generation test\n");    
     
     printf("all simulations done!\n");
@@ -182,65 +148,19 @@ int main (int argc, char *argv[])
 // ch1 plant
 // float b_vector_ch1 [B_SIZE] = { 0.62806727 };
 // float a_vector_ch1 [A_SIZE] = { 1., -0.94942247 };
-float b_vector_ch1 [B_SIZE] = { 0.6445 };
-float a_vector_ch1 [A_SIZE] = { 1., -0.94809 };
-float ins_vector_ch1 [B_SIZE] = { 0.0 };
-float outs_vector_ch1 [A_SIZE] = { 0.0 };
-// ch2 plant
-float b_vector_ch2 [B_SIZE] = { 0.62806727 };
-float a_vector_ch2 [A_SIZE] = { 1., -0.94942247 };
-float ins_vector_ch2 [B_SIZE] = { 0.0 };
-float outs_vector_ch2 [A_SIZE] = { 0.0 };
-// ch3 plant
-float b_vector_ch3 [B_SIZE] = { 0.62806727 };
-float a_vector_ch3 [A_SIZE] = { 1., -0.94942247 };
-float ins_vector_ch3 [B_SIZE] = { 0.0 };
-float outs_vector_ch3 [A_SIZE] = { 0.0 };
-// ch4 plant
-float b_vector_ch4 [B_SIZE] = { 0.62806727 };
-float a_vector_ch4 [A_SIZE] = { 1., -0.94942247 };
-float ins_vector_ch4 [B_SIZE] = { 0.0 };
-float outs_vector_ch4 [A_SIZE] = { 0.0 };
-void Plant_Out_Recursive_Reset (int which_channel, recursive_filter_t * f)
+float b_vector [B_SIZE] = { 0.6445 };
+float a_vector [A_SIZE] = { 1., -0.94809 };
+float ins_vector [B_SIZE] = { 0.0 };
+float outs_vector [A_SIZE] = { 0.0 };
+
+void Plant_Out_Recursive_Reset (recursive_filter_t * f)
 {
-    switch (which_channel)
-    {
-    case CH1:
-        f->b_params = b_vector_ch1;
-        f->a_params = a_vector_ch1;
-        f->b_size = B_SIZE;
-        f->a_size = A_SIZE;
-        f->last_inputs = ins_vector_ch1;
-        f->last_outputs = outs_vector_ch1;    
-        break;
-
-    case CH2:
-        f->b_params = b_vector_ch2;
-        f->a_params = a_vector_ch2;
-        f->b_size = B_SIZE;
-        f->a_size = A_SIZE;
-        f->last_inputs = ins_vector_ch2;
-        f->last_outputs = outs_vector_ch2;    
-        break;
-
-    case CH3:
-        f->b_params = b_vector_ch3;
-        f->a_params = a_vector_ch3;
-        f->b_size = B_SIZE;
-        f->a_size = A_SIZE;
-        f->last_inputs = ins_vector_ch3;
-        f->last_outputs = outs_vector_ch3;    
-        break;
-
-    case CH4:
-        f->b_params = b_vector_ch4;
-        f->a_params = a_vector_ch4;
-        f->b_size = B_SIZE;
-        f->a_size = A_SIZE;
-        f->last_inputs = ins_vector_ch4;
-        f->last_outputs = outs_vector_ch4;    
-        break;
-    }
+    f->b_params = b_vector;
+    f->a_params = a_vector;
+    f->b_size = B_SIZE;
+    f->a_size = A_SIZE;
+    f->last_inputs = ins_vector;
+    f->last_outputs = outs_vector;    
     
     Recursive_Filter_Float_Reset(f);
 }
@@ -254,10 +174,6 @@ float Plant_Out_Recursive (recursive_filter_t * f, short duty)
 
 extern const unsigned short * p_table_inphase;
 extern const unsigned short * p_table_outphase;
-extern pi_data_obj_t pi_ch1;
-extern pi_data_obj_t pi_ch2;
-extern pi_data_obj_t pi_ch3;
-extern pi_data_obj_t pi_ch4;
 extern unsigned short signal_index;
 extern unsigned short phase_accum;
 void Test_Generate_All_Channels (void)
@@ -331,6 +247,50 @@ void Test_Generate_All_Channels (void)
     
 }
 
+
+float Vin = 192.0;
+float Rsense = 0.055;
+float Ao = 13.0;
+float La = 0.142;
+float Ra = 11.0;
+void Plant_Out_Recursive_From_Single_Antenna_Reset (recursive_filter_t * f, unsigned char antenna_index)
+{
+    antenna_st my_antenna;
+    
+    f->b_params = b_vector;
+    f->a_params = a_vector;
+    f->b_size = B_SIZE;
+    f->a_size = A_SIZE;
+    f->last_inputs = ins_vector;
+    f->last_outputs = outs_vector;
+
+    TSP_Get_Know_Single_Antenna (&my_antenna, antenna_index);
+
+    La = my_antenna.inductance_int + my_antenna.inductance_dec / 100.0;
+    La = La / 1000.0;    // convert mHy to Hy
+    Ra = my_antenna.resistance_int + my_antenna.resistance_dec / 100.0;
+    max_antenna_current = my_antenna.current_limit_int + my_antenna.current_limit_dec / 100.0;
+    
+    float b0 = Vin * Rsense * Ao;
+    b0 = b0 / (La * fsampling);
+
+    float a0 = 1.0;
+    float a1 = -1.0 + (Ra + Rsense)/(La * fsampling);
+
+    b_vector_ch1[0] = b0;
+    a_vector_ch1[0] = a0;
+    a_vector_ch1[1] = a1;        
+
+    for (int i = 0; i < B_SIZE; i++)
+        ins_vector[i] = 0.0;
+
+    for (int i = 0; i < A_SIZE; i++)
+        outs_vector[i] = 0.0;
+
+    printf("b params: %f\n", f->b_params[0]);
+    printf("a params: %f %f\n", f->a_params[0], f->a_params[1]);
+    
+}
 
 extern unsigned char treat_in_ch1;
 extern signals_struct_t global_signals;
@@ -470,142 +430,6 @@ void Test_All_Signals_All_Antennas (void)
 }
 
 
-float Vin = 192.0;
-float Rsense = 0.055;
-float Ao = 13.0;
-float La = 0.142;
-float Ra = 11.0;
-int Plant_Out_Recursive_From_Know_Antennas_Reset (recursive_filter_t * f)
-{
-    int more_antennas = 0;
-    antenna_st my_antenna;
-    
-    f->b_params = b_vector_ch1;
-    f->a_params = a_vector_ch1;
-    f->b_size = B_SIZE;
-    f->a_size = A_SIZE;
-    f->last_inputs = ins_vector_ch1;
-    f->last_outputs = outs_vector_ch1;
-
-    more_antennas = TSP_Get_Know_Antennas (&my_antenna);
-    if (more_antennas)
-    {
-        La = my_antenna.inductance_int + my_antenna.inductance_dec / 100.0;
-        La = La / 1000.0;    // convert mHy to Hy
-        Ra = my_antenna.resistance_int + my_antenna.resistance_dec / 100.0;
-        max_antenna_current = my_antenna.current_limit_int + my_antenna.current_limit_dec / 100.0;
-    
-        float b0 = Vin * Rsense * Ao;
-        b0 = b0 / (La * fsampling);
-
-        float a0 = 1.0;
-        float a1 = -1.0 + (Ra + Rsense)/(La * fsampling);
-
-        b_vector_ch1[0] = b0;
-        a_vector_ch1[0] = a0;
-        a_vector_ch1[1] = a1;        
-
-        for (int i = 0; i < B_SIZE; i++)
-            ins_vector_ch1[i] = 0.0;
-
-        for (int i = 0; i < A_SIZE; i++)
-            outs_vector_ch1[i] = 0.0;
-    }
-
-    printf("b params: %f\n", f->b_params[0]);
-    printf("a params: %f %f\n", f->a_params[0], f->a_params[1]);
-
-    // reset pi controller
-    Plant_Out_PI_Flush (CH1);
-    Plant_Out_PI_Flush (CH2);
-    Plant_Out_PI_Flush (CH3);
-    Plant_Out_PI_Flush (CH4);    
-
-    // reset pwm and adc
-    // reset pwm and adc
-    TIM8_Update_CH3(0);
-    TIM8_Update_CH4(0);
-
-    TIM8_Update_CH2 (0);
-    TIM8_Update_CH1 (0);
-    
-    TIM4_Update_CH2 (0);
-    TIM4_Update_CH3 (0);
-    
-    TIM5_Update_CH1 (0);
-    TIM5_Update_CH2 (0);
-    
-    IS_CH1 = 0;
-    IS_CH2 = 0;
-    IS_CH3 = 0;
-    IS_CH4 = 0;    
-    
-    return more_antennas;
-}
-
-
-void Plant_Out_Recursive_From_Single_Antenna_Reset (recursive_filter_t * f, unsigned char antenna_index)
-{
-    antenna_st my_antenna;
-    
-    f->b_params = b_vector_ch1;
-    f->a_params = a_vector_ch1;
-    f->b_size = B_SIZE;
-    f->a_size = A_SIZE;
-    f->last_inputs = ins_vector_ch1;
-    f->last_outputs = outs_vector_ch1;
-
-    TSP_Get_Know_Single_Antenna (&my_antenna, antenna_index);
-
-    La = my_antenna.inductance_int + my_antenna.inductance_dec / 100.0;
-    La = La / 1000.0;    // convert mHy to Hy
-    Ra = my_antenna.resistance_int + my_antenna.resistance_dec / 100.0;
-    max_antenna_current = my_antenna.current_limit_int + my_antenna.current_limit_dec / 100.0;
-    
-    float b0 = Vin * Rsense * Ao;
-    b0 = b0 / (La * fsampling);
-
-    float a0 = 1.0;
-    float a1 = -1.0 + (Ra + Rsense)/(La * fsampling);
-
-    b_vector_ch1[0] = b0;
-    a_vector_ch1[0] = a0;
-    a_vector_ch1[1] = a1;        
-
-    for (int i = 0; i < B_SIZE; i++)
-        ins_vector_ch1[i] = 0.0;
-
-    for (int i = 0; i < A_SIZE; i++)
-        outs_vector_ch1[i] = 0.0;
-
-    printf("b params: %f\n", f->b_params[0]);
-    printf("a params: %f %f\n", f->a_params[0], f->a_params[1]);
-
-    // reset pi controller
-    Plant_Out_PI_Flush (CH1);
-    Plant_Out_PI_Flush (CH2);
-    Plant_Out_PI_Flush (CH3);
-    Plant_Out_PI_Flush (CH4);    
-
-    // reset pwm and adc
-    TIM8_Update_CH3(0);
-    TIM8_Update_CH4(0);
-
-    TIM8_Update_CH2 (0);
-    TIM8_Update_CH1 (0);
-    
-    TIM4_Update_CH2 (0);
-    TIM4_Update_CH3 (0);
-    
-    TIM5_Update_CH1 (0);
-    TIM5_Update_CH2 (0);
-    
-    IS_CH1 = 0;
-    IS_CH2 = 0;
-    IS_CH3 = 0;
-    IS_CH4 = 0;    
-    
-}
 
 
 void Test_Single_Signal_Single_Antenna (void)
@@ -708,9 +532,9 @@ void Test_Single_Signal_Single_Antenna_Single_Freq (void)
 {
     unsigned char antenna_index = 0;    //check tests_know_antennas.c
 
-    unsigned char antenna_signal = TRIANGULAR_SIGNAL;
+    // unsigned char antenna_signal = TRIANGULAR_SIGNAL;
     // unsigned char antenna_signal = SQUARE_SIGNAL;
-    // unsigned char antenna_signal = SINUSOIDAL_SIGNAL;
+    unsigned char antenna_signal = SINUSOIDAL_SIGNAL;
 
     // float my_freq = 0.9;
     // float my_freq = 5.0;    
@@ -830,145 +654,6 @@ void Test_Single_Signal_Single_Antenna_Single_Freq (void)
     Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
     // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
     Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
-
-    printf("\nRun by hand python3 simul_outputs.py\n");
-    
-}
-
-
-extern short p_inphase_ch1 [];
-extern const unsigned short * p_table_inphase;
-void Test_Single_Signal_Single_Antenna_Single_Freq_OpenLoop (void)
-{
-    unsigned char antenna_index = 0;    //check tests_know_antennas.c
-
-    unsigned char antenna_signal = TRIANGULAR_SIGNAL;
-    // unsigned char antenna_signal = SQUARE_SIGNAL;
-    // unsigned char antenna_signal = SINUSOIDAL_SIGNAL;
-
-    // float my_freq = 0.9;
-    // float my_freq = 5.0;    
-    float my_freq = 11.5;
-    // float my_freq = 23.5;
-    // float my_freq = 44.0;
-    // float my_freq = 67.0;
-    // float my_freq = 60.9;
-    // float my_freq = 80.9;
-    // float my_freq = 100.0;
-
-    int current_ok = 1;
-
-    switch (antenna_signal)
-    {
-    case SINUSOIDAL_SIGNAL:
-        printf("\nemitting with SINUSOIDAL_SIGNAL\n");
-        global_signals.signal = SINUSOIDAL_SIGNAL;
-        break;
-    case TRIANGULAR_SIGNAL:
-        printf("\nemitting with TRIANGULAR_SIGNAL\n");
-        global_signals.signal = TRIANGULAR_SIGNAL;
-        break;
-    case SQUARE_SIGNAL:
-        printf("\nemitting with SQUARE_SIGNAL\n");
-        global_signals.signal = SQUARE_SIGNAL;
-        break;
-    }
-
-    // resolve this with fsampling and 256 signal points
-    float phase = my_freq * 256 * 256 / 7000.0;
-    phase_accum = (unsigned short) phase;
-    printf("freq ask: %f phase calc: %f phase_accum: %d\n",
-           my_freq,
-           phase,
-           phase_accum);        
-    
-    Plant_Out_Recursive_From_Single_Antenna_Reset (&plant_ch1, antenna_index);
-
-    // check the Tau for parameters correction
-    float Tau = La * Ra;
-    float DCgain = 192.0 / Ra;
-    printf("antenna La: %f Ra: %f Tau: %f DC gain: %f\n",
-           La,
-           Ra,
-           Tau,
-           DCgain);
-    
-    // empty signals buffers
-    for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
-    {
-        v_ref_ch1[i] = 0;
-        v_signal_ch1[i] = 0;
-        v_adc_ch1[i] = 0;
-    }
-            
-    // current sensed 1A -> 887 pts
-    global_signals.max_c_ch1 = (unsigned short) (max_antenna_current * 887);
-    printf("max_c_ch1: %d current: %f\n", global_signals.max_c_ch1, max_antenna_current);
-    Signals_Setup_All_Channels();
-
-    // printf("b params: %f\n", f->b_params[0]);
-    // printf("a params: %f %f\n", f->a_params[0], f->a_params[1]);
-    // setup de reference signal
-    // k = 0
-    float a1_pos = -a_vector_ch1[1];
-    // float calc = 16. * a1_pos / b_vector_ch1[0];
-    float calc = 0.4 * a1_pos / b_vector_ch1[0];    
-    
-    *p_inphase_ch1 = (short) calc;
-
-    // k = 1..n
-    for (int i = 1; i < 127; i++)
-    {
-        // calc = 8. / b_vector_ch1[0];
-        calc = 0.2 / b_vector_ch1[0];        
-        calc = calc * (i + a1_pos * (3*i + 1));
-        *(p_inphase_ch1 + i) = (short) calc;
-    }
-    
-    for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
-    {
-        timer1_seq_ready = 1;
-        Signals_Generate_Single_Channel_OpenLoop ();
-
-        // current setpoint
-        unsigned int csp = *(p_table_inphase + i) * global_signals.max_c_ch1;
-        csp >>= 10;    //compensate for max current 1024
-        
-        // save ch1 data
-        v_ref_ch1[i] = (short) csp;
-        v_signal_ch1[i] = *(p_inphase_ch1 + i);
-        v_adc_ch1[i] = IS_CH1;
-
-        if (treat_in_ch1 == 2)    //some error on channel!!!
-        {
-            printf("treat stopped on channel 1 in sequence: %d\n", i);
-            current_ok = 0;
-            break;
-        }
-    }
-
-    printf(" antenna emission ended: ");
-    if (current_ok)
-        PrintOK();
-    else
-        PrintERR();
-        
-
-    ///////////////////////////
-    // Backup Data to a file //
-    ///////////////////////////
-    FILE * file = fopen("data.txt", "w");
-
-    if (file == NULL)
-    {
-        printf("data file not created!\n");
-        return;
-    }
-
-    // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "signal_x", v_signal_ch1, SIZEOF_SIGNALS);    
-    Vector_Short_To_File (file, "setpoint1", v_ref_ch1, SIZEOF_SIGNALS);
 
     printf("\nRun by hand python3 simul_outputs.py\n");
     

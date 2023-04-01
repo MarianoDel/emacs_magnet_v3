@@ -20,8 +20,8 @@ from recursive_tf import RecursiveTF
 # Which graph to show... for speed reasons #
 ############################################
 Bode_Plant_Analog = False
-Bode_Plant_Digital = False
-Poles_Zeros_RM_Digital = False
+Bode_Plant_Digital = True
+Poles_Zeros_RM_Digital = True
 Poles_Zeros_CM_Digital = False
 
 Step_Plant_Digital = True
@@ -32,8 +32,8 @@ Step_Plant_Recursive_Digital = False
 s = Symbol('s')
 
 # Typical Magnet Antenna
-Rantenna = 11.0
-Lantenna = 142e-3
+Rantenna = 12.27
+Lantenna = 87.9e-3
 
 # Sense filters
 Rsense = 0.055
@@ -46,8 +46,8 @@ C2 = 56e-9
 Amp_gain = 13
 
 # VCC for low-signal graphics
-# Vinput = 1
-Vinput = 192
+Vinput = 1
+# Vinput = 192
 
 # reduced model
 #    ---L---+
@@ -144,7 +144,7 @@ if Bode_Plant_Analog == True:
 # Convert Plant at sampling frequency by zoh #
 # to keep poles and zeroes                   #
 ##############################################
-Fsampling = 1500
+Fsampling = 7000
 Tsampling = 1 / Fsampling
 
 filter_rm_dig_zoh_n, filter_rm_dig_zoh_d, td = cont2discrete((filter_rm_TF.num, filter_rm_TF.den), Tsampling, method='zoh')

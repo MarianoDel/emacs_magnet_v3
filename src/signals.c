@@ -1430,6 +1430,87 @@ void Signals_Generate_All_Channels (void)
     
 }    
 
+short p_inphase_ch1 [256] = { 0 };
+void Signals_Reference_Reset (void)
+{
+    for (int i = 0; i < 256; i++)
+        *(p_inphase_ch1 + i) = 0;
+    
+}
+
+void Signals_Generate_Single_Channel_OpenLoop (void)
+{
+    if (!timer1_seq_ready)
+        return;
+
+    timer1_seq_ready = 0;
+    // seq_ready_cnt++;
+    unsigned char signal_ended = 0;
+                
+    // get the current SP
+    unsigned char s_index = signal_index >> 8;
+    short ref_inphase = *(p_inphase_ch1 + s_index);
+
+    // index update (modulo 16?)
+    if (signal_index < 65535)
+        signal_index += phase_accum;
+    else
+    {
+        signal_index += phase_accum;    //modulo 16 roundup
+        signal_ended = 1;
+    }
+    
+    if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+        Signals_Generate_Channel_OpenLoop (CH1, ref_inphase);
+
+    // now check channels for errors
+#ifdef USE_SOFT_NO_CURRENT
+    if (signal_ended)
+    {
+        if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+        {
+            if (signal_integral_ch1 < signal_no_current_threshold_ch1)
+            {
+                if (signal_no_current_cnt_ch1 < NO_CURRENT_THRESHOLD_CNT)
+                    signal_no_current_cnt_ch1++;
+                else
+                {
+                    treat_in_ch1 = CHANNEL_DISCONNECT;
+                    ErrorSetStatus(ERROR_NO_CURRENT, CH1);
+                }
+            }
+        }
+        
+        signal_integral_ch1 = 0;
+    }
+    else
+    {
+        signal_integral_ch1 += IS_CH1;
+    }
+#endif    // USE_SOFT_NO_CURRENT
+
+#ifdef USE_SOFT_OVERCURRENT
+        if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+        {
+            unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch1, IS_CH1);
+            if (filter_c > signal_ovcp_threshold_ch1)
+            {
+                printf("ch1 current filtered: %d threshold: %d sample: %d index: %d\n",
+                       filter_c,
+                       signal_ovcp_threshold_ch1,
+                       IS_CH1,
+                       signal_index);
+
+                Signals_Stop_Single_Channel(CH1);
+                treat_in_ch1 = CHANNEL_DISCONNECT;
+                ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH1);
+            }
+        }
+#endif
+    // end of check channels errors
+    
+}    
+
 
 void (* pf_high_left) (unsigned short);
 void (* pf_low_right) (unsigned short);
@@ -1537,6 +1618,70 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
         }
         // set the roof on duty
         p_pi->last_d = duty;
+    }
+}
+
+
+void Signals_Generate_Channel_OpenLoop (unsigned char which_channel, short new_ref)
+{
+    switch (which_channel)
+    {
+    case CH1:
+        pf_high_left = TIM8_Update_CH3;
+        pf_low_right = TIM8_Update_CH4;
+        break;
+
+    case CH2:
+        pf_high_left = TIM8_Update_CH2;
+        pf_low_right = TIM8_Update_CH1;
+        break;
+
+    case CH3:
+        pf_high_left = TIM4_Update_CH2;
+        pf_low_right = TIM4_Update_CH3;
+        break;
+
+    case CH4:
+        pf_high_left = TIM5_Update_CH1;
+        pf_low_right = TIM5_Update_CH2;
+        break;
+    }
+
+    if (new_ref == 0)
+    {
+        //fast discharge
+        pf_high_left (DUTY_NONE);
+        pf_low_right (DUTY_NONE);
+    }
+    else
+    {
+        if (new_ref > 0)
+        {
+            if (new_ref > DUTY_95_PERCENT)
+                new_ref = DUTY_95_PERCENT;
+                        
+            pf_high_left (new_ref);
+            pf_low_right (DUTY_ALWAYS);
+        }
+        else if (new_ref == 0)
+        {
+            pf_high_left (DUTY_NONE);
+            pf_low_right (DUTY_ALWAYS);
+        }
+        else    // duty negative
+        {
+            // fixt duty
+            new_ref = -new_ref;
+                
+            if (new_ref > DUTY_95_PERCENT)
+                new_ref = DUTY_95_PERCENT;
+                                                
+            pf_high_left (DUTY_NONE);
+            pf_low_right (new_ref);                        
+                
+            // fixt duty
+            new_ref = -new_ref;
+        }
     }
 }
 

@@ -256,6 +256,35 @@ tests_signals_simul:
 	gcc src/tests_signals_simul.c signals.o dsp.o tests_ok.o tests_know_antennas.o tests_vector_utils.o tests_recursive_utils.o -I $(INCDIR) $(DDEFS)
 	./a.out
 
+
+tests_signals_simul2:
+	# compile first modules in this test
+	# first module objects to test
+	gcc -c src/signals.c -I. $(INCDIR) $(DDEFS)
+	gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
+	# second auxiliary helper modules
+	gcc -c src/tests_know_antennas.c -I $(INCDIR)
+	gcc -c src/tests_ok.c -I $(INCDIR)
+	gcc -c src/tests_vector_utils.c -I $(INCDIR)
+	gcc -c src/tests_recursive_utils.c -I $(INCDIR)
+	gcc src/tests_signals_simul2.c signals.o dsp.o tests_ok.o tests_know_antennas.o tests_vector_utils.o tests_recursive_utils.o -I $(INCDIR) $(DDEFS)
+	./a.out
+
+
+tests_signals_transform:
+	# compile first modules in this test
+	# first module objects to test
+	# gcc -c src/signals.c -I. $(INCDIR) $(DDEFS)
+	# gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
+	# second auxiliary helper modules
+	gcc -c src/tests_know_antennas.c -I $(INCDIR)
+	gcc -c src/tests_ok.c -I $(INCDIR)
+	gcc -c src/tests_vector_utils.c -I $(INCDIR)
+	gcc -c src/tests_recursive_utils.c -I $(INCDIR)
+	gcc src/tests_signals_transform.c -lm tests_ok.o tests_know_antennas.o tests_vector_utils.o tests_recursive_utils.o -I $(INCDIR) $(DDEFS)
+	./a.out
+
+
 tests_antennas:
 	# compile first modules in this test
 	# first module objects to test

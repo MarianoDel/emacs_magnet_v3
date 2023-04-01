@@ -167,6 +167,8 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
 void Signals_Stop_All_Channels (void);
 void Signals_Stop_Single_Channel (unsigned char which_channel);
 
+void Signals_Generate_Channel_OpenLoop (unsigned char which_channel, short new_ref);
+
 #endif    /* _SIGNALS_H_ */
 
 //--- end of file ---//
