@@ -89,8 +89,7 @@ int main (int argc, char *argv[])
     printf(" recursive reset on plant with defaults values...\n");
     Plant_Out_Recursive_Reset (&plant);
     printf(" plant with selected antenna values...\n");
-    Plant_Out_Recursive_From_Single_Antenna_Reset (&plant, 2);
-    
+    Plant_Out_Recursive_From_Single_Antenna_Reset (&plant, 2);    
     Test_Plant_Step_Response ();
     printf("end step response test\n");
     
@@ -803,7 +802,7 @@ void Test_All_Signals_All_Antennas_All_Freq (void)
         return;
     }
 
-    // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
     Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
     // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
     Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);

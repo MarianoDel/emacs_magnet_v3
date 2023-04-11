@@ -32,6 +32,7 @@ typedef enum {
 
 } signal_offset_e;
 
+
 typedef struct {
     // general all channels things
     signal_type_e signal;
@@ -56,7 +57,11 @@ typedef struct {
     unsigned short max_c_ch3;
     unsigned short max_c_ch4;
 
-
+    unsigned char treat_in_ch1;
+    unsigned char treat_in_ch2;
+    unsigned char treat_in_ch3;
+    unsigned char treat_in_ch4;
+    
 } signals_struct_t;
 
 typedef enum {
@@ -168,6 +173,7 @@ void Signals_Stop_All_Channels (void);
 void Signals_Stop_Single_Channel (unsigned char which_channel);
 
 void Signals_Generate_Channel_OpenLoop (unsigned char which_channel, short new_ref);
+void Signals_Set_Reset_Channel_For_Treatment (unsigned char which_channel, unsigned char state);
 
 #endif    /* _SIGNALS_H_ */
 

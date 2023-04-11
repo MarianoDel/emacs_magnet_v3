@@ -23,7 +23,8 @@
 
 typedef enum {
     TREATMENT_STANDBY = 0,
-    TREATMENT_STARTING,
+    TREATMENT_CHECK_ANTENNAS_CONNECTED,
+    TREATMENT_STARTING,    
     TREATMENT_RUNNING,
     TREATMENT_PAUSED,
     TREATMENT_WITH_ERRORS,
@@ -59,6 +60,8 @@ unsigned short secs_elapsed_up_to_now = 0;
 void Treatment_Manager (void)
 {
     char buff [100] = { 0 };
+    resp_e resp = resp_error;
+    unsigned char some_channel = 0;
     
     switch (treat_state)
     {
@@ -79,28 +82,54 @@ void Treatment_Manager (void)
             {
                 RPI_Send("OK\r\n");
                 // PowerSendConf();
-                treat_state = TREATMENT_STARTING;
+                treat_state = TREATMENT_CHECK_ANTENNAS_CONNECTED;
             }
         }
         RPI_Flush_Comms;
         break;
 
+    case TREATMENT_CHECK_ANTENNAS_CONNECTED:
+        strcpy(buff, "treat start, ");
+        
+        for (int i = 0; i < 4; i++)
+        {
+            resp = AntennaVerifyForTreatment(i);
+
+            if (resp == resp_ok)
+            {
+                char buff_ch [10];
+                
+                some_channel++;
+                Signals_Set_Reset_Channel_For_Treatment(i, 1);
+                Signals_Set_Channel_PI_Parameters (i);
+                sprintf(buff_ch, "ch%d ", i);
+                strcat(buff, buff_ch);
+            }
+            else
+                Signals_Set_Reset_Channel_For_Treatment(i, 0);
+            
+        }
+
+        if (some_channel)
+        {
+            treat_state = TREATMENT_STARTING;
+            
+            // show channels in treatment
+            strcat (buff, "\r\n");
+            RPI_Send(buff);
+        }
+        else
+        {
+            RPI_Send("ERROR no antenna connected\r\n");
+            treat_state = TREATMENT_STANDBY;
+        }
+        break;
+        
     case TREATMENT_STARTING:
         secs_end_treatment = Treatment_GetTime();
         secs_in_treatment = 1;    // a 1 here starts the timer
         secs_elapsed_up_to_now = 0;
 
-        // show channels in treatment
-        // PowerCommunicationStackReset();
-
-        // sprintf (buff, "treat start, ch1: 0x%04x, ch2: 0x%04x, ch3: 0x%04x\r\n",
-        //          comms_messages_1,
-        //          comms_messages_2,
-        //          comms_messages_3);
-                    
-        // RPI_Send(buff);
-
-        // PowerSendStart();
         treat_state = TREATMENT_RUNNING;
         ChangeLed(LED_TREATMENT_GENERATING);
 #ifdef USE_BUZZER_ON_START

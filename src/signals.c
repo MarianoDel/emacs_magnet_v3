@@ -1242,10 +1242,6 @@ void Signals_Setup_All_Channels (void)
 }
 
 
-unsigned char treat_in_ch1 = 1;
-unsigned char treat_in_ch2 = 1;
-unsigned char treat_in_ch3 = 1;
-unsigned char treat_in_ch4 = 1;
 #define CHANNEL_CONNECTED_GOOD    1
 #define CHANNEL_DISCONNECT    2
 void Signals_Generate_All_Channels (void)
@@ -1271,16 +1267,16 @@ void Signals_Generate_All_Channels (void)
         signal_ended = 1;
     }
     
-    if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+    if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
         Signals_Generate_Channel (CH1, sp_inphase);
 
-    if (treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
+    if (global_signals.treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
         Signals_Generate_Channel (CH2, sp_inphase);
 
-    if (treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
+    if (global_signals.treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
         Signals_Generate_Channel (CH3, sp_outphase);
 
-    if (treat_in_ch4 == CHANNEL_CONNECTED_GOOD)
+    if (global_signals.treat_in_ch4 == CHANNEL_CONNECTED_GOOD)
         Signals_Generate_Channel (CH4, sp_outphase);
 
     // now check channels for errors
@@ -1358,73 +1354,73 @@ void Signals_Generate_All_Channels (void)
 #endif    // USE_SOFT_NO_CURRENT
 
 #ifdef USE_SOFT_OVERCURRENT
-        if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+    if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+    {
+        unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch1, IS_CH1);
+        if (filter_c > signal_ovcp_threshold_ch1)
         {
-            unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch1, IS_CH1);
-            if (filter_c > signal_ovcp_threshold_ch1)
-            {
-                printf("ch1 current filtered: %d threshold: %d sample: %d index: %d\n",
-                       filter_c,
-                       signal_ovcp_threshold_ch1,
-                       IS_CH1,
-                       signal_index);
+            printf("ch1 current filtered: %d threshold: %d sample: %d index: %d\n",
+                   filter_c,
+                   signal_ovcp_threshold_ch1,
+                   IS_CH1,
+                   signal_index);
 
-                Signals_Stop_Single_Channel(CH1);
-                treat_in_ch1 = CHANNEL_DISCONNECT;
-                ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH1);
-            }
+            Signals_Stop_Single_Channel(CH1);
+            treat_in_ch1 = CHANNEL_DISCONNECT;
+            ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH1);
         }
+    }
 
-        if (treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
+    if (treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
+    {
+        unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch2, IS_CH2);
+        if (filter_c > signal_ovcp_threshold_ch2)
         {
-            unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch2, IS_CH2);
-            if (filter_c > signal_ovcp_threshold_ch2)
-            {
-                printf("ch2 current filtered: %d threshold: %d sample: %d index: %d\n",
-                       filter_c,
-                       signal_ovcp_threshold_ch2,
-                       IS_CH2,
-                       signal_index);
+            printf("ch2 current filtered: %d threshold: %d sample: %d index: %d\n",
+                   filter_c,
+                   signal_ovcp_threshold_ch2,
+                   IS_CH2,
+                   signal_index);
 
-                Signals_Stop_Single_Channel(CH2);                
-                treat_in_ch2 = CHANNEL_DISCONNECT;
-                ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH2);
-            }
+            Signals_Stop_Single_Channel(CH2);                
+            treat_in_ch2 = CHANNEL_DISCONNECT;
+            ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH2);
         }
+    }
 
-        if (treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
+    if (treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
+    {
+        unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch3, IS_CH3);
+        if (filter_c > signal_ovcp_threshold_ch3)
         {
-            unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch3, IS_CH3);
-            if (filter_c > signal_ovcp_threshold_ch3)
-            {
-                printf("ch3 current filtered: %d threshold: %d sample: %d index: %d\n",
-                       filter_c,
-                       signal_ovcp_threshold_ch3,
-                       IS_CH3,
-                       signal_index);
+            printf("ch3 current filtered: %d threshold: %d sample: %d index: %d\n",
+                   filter_c,
+                   signal_ovcp_threshold_ch3,
+                   IS_CH3,
+                   signal_index);
 
-                Signals_Stop_Single_Channel(CH3);                
-                treat_in_ch3 = CHANNEL_DISCONNECT;
-                ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH3);
-            }
+            Signals_Stop_Single_Channel(CH3);                
+            treat_in_ch3 = CHANNEL_DISCONNECT;
+            ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH3);
         }
+    }
 
-        if (treat_in_ch4 == CHANNEL_CONNECTED_GOOD)        
+    if (treat_in_ch4 == CHANNEL_CONNECTED_GOOD)        
+    {
+        unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch4, IS_CH4);
+        if (filter_c > signal_ovcp_threshold_ch4)
         {
-            unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch4, IS_CH4);
-            if (filter_c > signal_ovcp_threshold_ch4)
-            {
-                printf("ch4 current filtered: %d threshold: %d sample: %d index: %d\n",
-                       filter_c,
-                       signal_ovcp_threshold_ch4,
-                       IS_CH4,
-                       signal_index);
+            printf("ch4 current filtered: %d threshold: %d sample: %d index: %d\n",
+                   filter_c,
+                   signal_ovcp_threshold_ch4,
+                   IS_CH4,
+                   signal_index);
 
-                Signals_Stop_Single_Channel(CH4);
-                treat_in_ch4 = CHANNEL_DISCONNECT;
-                ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH4);
-            }
+            Signals_Stop_Single_Channel(CH4);
+            treat_in_ch4 = CHANNEL_DISCONNECT;
+            ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH4);
         }
+    }
 #endif
     // end of check channels errors
     
@@ -1686,6 +1682,67 @@ void Signals_Generate_Channel_OpenLoop (unsigned char which_channel, short new_r
 }
 
 
+//state = 1 set channel
+//state = 0 reset channel
+void Signals_Set_Reset_Channel_For_Treatment (unsigned char which_channel, unsigned char state)
+{
+    switch (which_channel)
+    {
+    case CH1:
+        if (state)
+            global_signals.treat_in_ch1 = CHANNEL_CONNECTED_GOOD;
+        else
+            global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
+        
+        break;
+
+    case CH2:
+        if (state)
+            global_signals.treat_in_ch2 = CHANNEL_CONNECTED_GOOD;
+        else
+            global_signals.treat_in_ch2 = CHANNEL_DISCONNECT;
+
+        break;
+
+    case CH3:
+        if (state)
+            global_signals.treat_in_ch3 = CHANNEL_CONNECTED_GOOD;
+        else
+            global_signals.treat_in_ch3 = CHANNEL_DISCONNECT;
+
+        break;
+
+    case CH4:
+        if (state)
+            global_signals.treat_in_ch4 = CHANNEL_CONNECTED_GOOD;
+        else
+            global_signals.treat_in_ch4 = CHANNEL_DISCONNECT;
+
+        break;
+            
+    }        
+}
+
+
+void Signals_Set_Channel_PI_Parameters (unsigned char which_channel)
+{
+    switch (which_channel)
+    {
+    case CH1:
+        break;
+
+    case CH2:
+        break;
+
+    case CH3:
+        break;
+
+    case CH4:
+        break;
+    }        
+}
+
+
 void Signals_Stop_All_Channels (void)
 {
     HIGH_LEFT_PWM_CH1(DUTY_NONE);
@@ -1728,5 +1785,6 @@ void Signals_Stop_Single_Channel (unsigned char which_channel)
             
     }    
 }
+
 
 //--- end of file ---//

@@ -63,7 +63,9 @@ float outs_vector_pre [A_SIZE_PRE] = { 0.0 };
 recursive_filter_t pre_filter;
 
 
+short v_signal [SIZEOF_SIGNALS] = { 0 };
 short v_pre [SIZEOF_SIGNALS] = { 0 };
+short v_pre_f [SIZEOF_SIGNALS] = { 0 };
 short v_input [SIZEOF_SIGNALS] = { 0 };
 short v_output [SIZEOF_SIGNALS] = { 0 };
 
@@ -71,6 +73,13 @@ float max_antenna_current = 0.0;
 float fsampling = 7000.0;
 
 #define CURRENT_TO_VOLTAGE_PTS    887    // current sensed 1A -> 887 pts
+
+float Vin = 192.0;
+float Rsense = 0.055;
+float Ao = 13.0;
+float La = 0.142;
+float Ra = 11.0;
+
 // Module Functions to Test ----------------------------------------------------
 // -- set recursive
 void Set_Recursive_From_Single_Antenna (recursive_filter_t * f, unsigned char antenna_index);
@@ -102,7 +111,6 @@ int main (int argc, char *argv[])
 }
 
 
-float Valim = 192.0;
 void Plant_Step_Response (void)
 {
     float signal_out = 0.0;
@@ -129,7 +137,7 @@ void Plant_Step_Response (void)
     for (int i = 0; i < SIZEOF_SIGNALS; i++)
     {
         duty = v_input[i];
-        signal_out = Recursive_Filter_Float (&plant, Valim * (float) duty / 1000.0);
+        signal_out = Recursive_Filter_Float (&plant, Vin * (float) duty / 1000.0);
         v_output[i] = Adc12BitsConvertion(signal_out);        
     }
 
@@ -157,65 +165,194 @@ void Plant_From_Input_Response (void)
     float signal_out = 0.0;
     short duty = 0;
     unsigned char antenna_index = 0;
+    // unsigned char antenna_index = 6;
+    // unsigned char antenna_index = 8;    
     
     printf("from input response\n");    
 
     printf(" setting plant from know antenna index: %d...\n", antenna_index);
     Set_Recursive_From_Single_Antenna (&plant, antenna_index);
+    float a1_pos = -a_vector_ch1[1];
+    printf(" a1_pos: %f\n", a1_pos);
 
     printf(" plant reset\n");
     Recursive_Filter_Float_Reset(&plant);
 
     printf(" setting input signal\n");
+    // all signals to 1000pts
     // step
-    // for (int i = 0; i < SIZEOF_SIGNALS / 2; i++)
-    // {
-    //     v_input[i] = 64;
-    // }
-    // for (int i = SIZEOF_SIGNALS / 2; i < SIZEOF_SIGNALS; i++)
-    // {
-    //     v_input[i] = 0;
-    // }
-    
-    // triangular
     for (int i = 0; i < SIZEOF_SIGNALS / 2; i++)
     {
-        v_input[i] = 0.5 * i;
+        v_signal[i] = 1000;
     }
     for (int i = SIZEOF_SIGNALS / 2; i < SIZEOF_SIGNALS; i++)
     {
-        v_input[i] = 0;
+        v_signal[i] = 0;
     }
+    // v_signal[0] = 200;
+    // v_signal[1] = 400;
+    // v_signal[2] = 600;
+    // v_signal[3] = 800;    
+    v_signal[127] = 500;
+    // end of step function
+    
+    // triangular
+    // for (int i = 0; i < SIZEOF_SIGNALS / 2; i++)
+    // {
+    //     v_signal[i] =  2 * i * 1000 / SIZEOF_SIGNALS ;
+    // }
+    // for (int i = SIZEOF_SIGNALS / 2; i < SIZEOF_SIGNALS; i++)
+    // {
+    //     v_signal[i] = 0;
+    // }
+    // end of triangular
 
     // sinusoidal
     // for (int i = 0; i < SIZEOF_SIGNALS / 2; i++)
     // {
-    //     v_input[i] = 64 * sin(6.28 * (float) i / (float)SIZEOF_SIGNALS);
+    //     v_signal[i] = 1000 * sin(6.28 * (float) i / (float)SIZEOF_SIGNALS);
     // }
     // for (int i = SIZEOF_SIGNALS / 2; i < SIZEOF_SIGNALS; i++)
     // {
-    //     v_input[i] = 0;
+    //     v_signal[i] = 0;
     // }
-    
-    short times = 12;    //from zero to pole
-    float b1 = (1. - 0.98) * times;
-    b1 = 1. - b1;
-    float x_mul = (1. - b1) / (1. -0.98);
-    printf(" zero to pole times: %d b1: %f x_mul: %f\n", times, b1, x_mul);
+    // end of sinusoidal
+
+    // adjust imputs values to current selected
+    float multi = max_antenna_current * 887. / 1000.;
+    // ten percent
+    // float multi = max_antenna_current / 10 * 887. / 1000.;    
+    // float multi = 887. / 1000.;    
+    printf("  selected current: %f Ra: %f multiplier: %f\n", max_antenna_current, Ra, multi);
     for (int i = 0; i < SIZEOF_SIGNALS; i++)
     {
-        if (i)            
-            v_pre[i] = b1 * v_pre[i - 1] + x_mul * v_input[i] - x_mul * 0.98 * v_input[i - 1];
-        else
-            v_pre[i] = x_mul * v_input[i];
-        
+        v_input[i] = v_signal[i] * multi;
     }
 
+    // pre filter for square
+    float zero_to_pole = 8;
+    float b1_pre = 1. - (1. - a1_pos) * zero_to_pole;    
+    float gain_pre = (1. - b1_pre) / (1. - a1_pos);
+    printf("  pre filter gain: %f zero: %f pole: %f\n", gain_pre, a1_pos, b1_pre);
+    float v_pre_ff [SIZEOF_SIGNALS] = { 0 };
+    for (int i = 0; i < SIZEOF_SIGNALS; i++)
+    {
+        if (i)
+        {
+            // v_pre_ff[i] = gain_pre * v_input[i] - gain_pre * 0.98 * v_input[i - 1];
+            v_pre_ff[i] = b1_pre * v_pre_ff[i - 1] + gain_pre * v_input[i] - gain_pre * a1_pos * v_input[i - 1];
+            // printf("v_pre_ff: %f v_input: %d v_input_1: %d\n", v_pre_ff[i], v_input[i], v_input[i-1]);
+        }
+        else
+        {
+            v_pre_ff[i] = gain_pre * v_input[i];
+            // printf("v_pre_ff: %f v_input: %d\n", v_pre_ff[i], v_input[i]);
+        }
+    }
+    // end of pre filter square
+    
+    // pre filter for triangular and sinusoidal
+    // float gain_pre = 1./(1. - a1_pos);    
+    // printf("  pre filter gain: %f\n", gain_pre);
+    // float v_pre_ff [SIZEOF_SIGNALS] = { 0 };
+    // for (int i = 0; i < SIZEOF_SIGNALS; i++)
+    // {
+    //     if (i)
+    //     {
+    //         // v_pre_ff[i] = gain_pre * v_input[i] - gain_pre * 0.98 * v_input[i - 1];
+    //         v_pre_ff[i] = gain_pre * v_input[i] - gain_pre * a1_pos * v_input[i - 1];            
+    //         // printf("v_pre_ff: %f v_input: %d v_input_1: %d\n", v_pre_ff[i], v_input[i], v_input[i-1]);
+    //     }
+    //     else
+    //     {
+    //         v_pre_ff[i] = gain_pre * v_input[i];
+    //         // printf("v_pre_ff: %f v_input: %d\n", v_pre_ff[i], v_input[i]);
+    //     }
+    // }
+    // end of pre filter for triangular and sinusoidal
+
+    // direct from input without filter
+    // multi = (Ra * 1000.) / (Vin * 887.);
+    // printf("  duty for 1 amps: %f\n", multi);
+    // for (int i = 0; i < SIZEOF_SIGNALS; i++)
+    //     v_pre[i] = v_input[i] * multi;
+
+    // adjust prefilter output for duty
+    int accum = 0;
+    multi = (Ra * 1000.) / (Vin * 887.);
+    printf("  duty for 1 amps: %f\n", multi);
+    for (int i = 0; i < SIZEOF_SIGNALS; i++)
+    {
+        v_pre[i] = v_pre_ff[i] * multi;
+
+        // pre filter with roof and floor
+        // if (v_pre[i] >= 0)
+        // {
+        //     int pre = v_pre[i];
+        //     int a = pre + accum;
+        //     if (a > 950)
+        //     {
+        //         if (pre > 950)    // still adding to accum
+        //         {
+        //             accum += pre - 950;
+        //             v_pre[i] = 950;
+        //         }
+        //         else    // start to drop the accum
+        //         {
+        //             int diff = 950 - pre;
+        //             if (accum > diff)
+        //             {
+        //                 v_pre[i] = 950;
+        //                 accum -= diff;
+        //             }
+        //             else
+        //             {
+        //                 v_pre[i] = pre + accum;
+        //                 accum = 0;
+        //             }
+        //         }
+        //     }
+        //     else
+        //     {
+        //         if (accum > 0)
+        //         {
+        //         }
+        //         else
+        //         {
+        //             v_pre[i] = v_pre[i] + accum;
+        //             accum = 0;
+        //         }
+        //     }
+        // }
+        // else if (v_pre[i] < -950)
+        // {
+        //     accum -= 950 - v_pre[i];
+        //     v_pre[i] = -950;
+        // }
+        // else
+        //     accum = 0;        
+    }
+
+
+    
+    // float pre filter
+    // float v_pre_f [SIZEOF_SIGNALS];
+    // for (int i = 0; i < SIZEOF_SIGNALS; i++)
+    // {
+    //     if (i)            
+    //         v_pre_f[i] = gain_pre * v_input[i] - gain_pre * 0.98 * v_input[i - 1];
+    //     else
+    //         v_pre_f[i] = gain_pre * v_input[i];
+        
+    // }    
+    // for (int i = 0; i < SIZEOF_SIGNALS; i++)
+    //     v_pre_from_f[i] = (short) v_pre_f[i];
+    
     printf(" apply signal\n");
     for (int i = 0; i < SIZEOF_SIGNALS; i++)
     {
         duty = v_pre[i];
-        signal_out = Recursive_Filter_Float (&plant, Valim * (float) duty / 1000.0);
+        signal_out = Recursive_Filter_Float (&plant, Vin * (float) duty / 1000.0);
         v_output[i] = Adc12BitsConvertion(signal_out);        
     }
 
@@ -230,8 +367,10 @@ void Plant_From_Input_Response (void)
         return;
     }
 
+    // Vector_Short_To_File (file, "signal", v_signal, SIZEOF_SIGNALS);    
     Vector_Short_To_File (file, "input", v_input, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "prefilter", v_pre, SIZEOF_SIGNALS);    
+    Vector_Short_To_File (file, "pre_scale", v_pre_f, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "prefilter", v_pre, SIZEOF_SIGNALS);
     Vector_Short_To_File (file, "output", v_output, SIZEOF_SIGNALS);    
 
     printf("\nRun by hand python3 simul_outputs.py\n");
@@ -239,11 +378,6 @@ void Plant_From_Input_Response (void)
 }
 
 
-float Vin = 192.0;
-float Rsense = 0.055;
-float Ao = 13.0;
-float La = 0.142;
-float Ra = 11.0;
 void Set_Recursive_From_Single_Antenna (recursive_filter_t * f, unsigned char antenna_index)
 {
     antenna_st my_antenna;
