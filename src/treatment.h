@@ -18,33 +18,33 @@
 
 
 // Module Exported Types Constants and Macros ----------------------------------
-typedef enum {
-	CH1_ENABLE = 1,
-	CH2_ENABLE,
-	CH3_ENABLE,
-	CH4_ENABLE,        
-	CH1_DISABLE,
-	CH2_DISABLE,
-	CH3_DISABLE,
-	CH4_DISABLE
+// typedef enum {
+// 	CH1_ENABLE = 1,
+// 	CH2_ENABLE,
+// 	CH3_ENABLE,
+// 	CH4_ENABLE,        
+// 	CH1_DISABLE,
+// 	CH2_DISABLE,
+// 	CH3_DISABLE,
+// 	CH4_DISABLE
 
-} ch_in_treatment_e;
+// } ch_in_treatment_e;
 
 
-typedef struct {
-	signal_type_e signal;
-	unsigned char freq_int;
-	unsigned char freq_dec;    
-	// unsigned char freq_table_inc;
-	unsigned char power;
-	// unsigned char synchro_needed;
+// typedef struct {
+// 	signal_type_e signal;
+// 	unsigned char freq_int;
+// 	unsigned char freq_dec;    
+// 	// unsigned char freq_table_inc;
+// 	unsigned char power;
+// 	// unsigned char synchro_needed;
 
-	//internals
-	// unsigned short kprop;
-	// unsigned short kinteg;
-	// unsigned short kderv;
+// 	//internals
+// 	// unsigned short kprop;
+// 	// unsigned short kinteg;
+// 	// unsigned short kderv;
 
-} signals_struct_t;
+// } signals_struct_t;
 
 // typedef enum {
 //     UPDWN_AUTO = 0,
@@ -61,14 +61,14 @@ typedef struct {
 } treatment_conf_t;
 
 
-typedef enum {
-	ERROR_OK = 0,
-	ERROR_OVERCURRENT,
-	ERROR_NO_CURRENT,
-	ERROR_SOFT_OVERCURRENT,
-	ERROR_OVERTEMP
+// typedef enum {
+// 	ERROR_OK = 0,
+// 	ERROR_OVERCURRENT,
+// 	ERROR_NO_CURRENT,
+// 	ERROR_SOFT_OVERCURRENT,
+// 	ERROR_OVERTEMP
 
-} error_t;
+// } error_t;
 
 
 // //TIPO de descarga y estado de signal

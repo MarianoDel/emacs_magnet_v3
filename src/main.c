@@ -589,24 +589,24 @@ void ErrorSetStatus (unsigned char error, unsigned char channel)
 }
 
 
-void Signals_Setup_All_Channels (void)
-{
-}
+// void Signals_Setup_All_Channels (void)
+// {
+// }
 
 
-void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_sp)
-{
-}
+// void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_sp)
+// {
+// }
 
 
-void Signals_Generate_All_Channels (void)
-{
-}
+// void Signals_Generate_All_Channels (void)
+// {
+// }
 
 
-void Signals_Stop_All_Channels (void)
-{
-}
+// void Signals_Stop_All_Channels (void)
+// {
+// }
 
 
 void TimingDelay_Decrement(void)

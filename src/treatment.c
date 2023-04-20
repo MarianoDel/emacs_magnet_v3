@@ -3,7 +3,6 @@
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags
 // ## @TAGS:   Global
-// ## @CPU:    STM32F103
 // ##
 // #### TREATMENT.C ###############################
 //---------------------------------------------------------
@@ -12,6 +11,15 @@
 #include "treatment.h"
 #include "comms.h"
 #include "hard.h"
+#include "usart.h"
+#include "tim.h"
+
+
+#include "antennas_defs.h"
+#include "antennas.h"
+#include "signals.h"
+
+#include "comms_from_rasp.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -74,14 +82,9 @@ void Treatment_Manager (void)
             {
                 RPI_Send("ERROR on params\r\n");
             }
-            // else if (check_other_antenna_conns)
-            // {
-            //     RPI_Send("ERROR no antenna\r\n");                
-            // }
             else
             {
                 RPI_Send("OK\r\n");
-                // PowerSendConf();
                 treat_state = TREATMENT_CHECK_ANTENNAS_CONNECTED;
             }
         }
@@ -98,11 +101,16 @@ void Treatment_Manager (void)
             if (resp == resp_ok)
             {
                 char buff_ch [10];
+                antenna_st ch_ant;
                 
                 some_channel++;
                 Signals_Set_Reset_Channel_For_Treatment(i, 1);
-                Signals_Set_Channel_PI_Parameters (i);
-                sprintf(buff_ch, "ch%d ", i);
+
+                AntennaGetParamsStruct(i, &ch_ant);
+                Signals_Set_Channel_PI_Parameters (i, &ch_ant);
+
+                // sprintf(buff_ch, "ch%d ", i);
+                sprintf(buff_ch, "ch%d ", i + 1);                
                 strcat(buff, buff_ch);
             }
             else
@@ -477,6 +485,7 @@ resp_e Treatment_AssertParams (void)
     if ((treatment_conf.treatment_signal.power > 100) || (treatment_conf.treatment_signal.power < 10))
         return resp;
 
+    //TODO: check this, freq is now extended
     if ((treatment_conf.treatment_signal.freq_dec > 99) ||
         (treatment_conf.treatment_signal.freq_int < FREQ_MIN_ALLOWED) ||
         (treatment_conf.treatment_signal.freq_int > FREQ_MAX_ALLOWED))
@@ -486,9 +495,6 @@ resp_e Treatment_AssertParams (void)
         (treatment_conf.treatment_signal.signal != TRIANGULAR_SIGNAL) &&
         (treatment_conf.treatment_signal.signal != SINUSOIDAL_SIGNAL))
         return resp;
-
-    // if (!(treatment_conf.channels_in_treatment & CHX_MASK))
-    //     return resp;
 
     return resp_ok;
 }

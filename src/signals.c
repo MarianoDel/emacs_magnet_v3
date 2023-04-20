@@ -9,6 +9,8 @@
 
 // Includes --------------------------------------------------------------------
 #include "signals.h"
+#include "signals_defs.h"
+
 #include "hard.h"
 // #include "stm32f0xx.h"
 #include "tim.h"
@@ -16,13 +18,22 @@
 #include "adc.h"
 #include "pwm.h"
 #include "channels_defs.h"
+#include "antennas_defs.h"
+#include "errors.h"
 
-// #include "uart.h"
-// #include "gpio.h"
 #include <stdio.h>
 
 
 // Module Private Types Constants and Macros -----------------------------------
+typedef enum {
+	ERROR_OK = 0,
+	ERROR_OVERCURRENT,
+	ERROR_NO_CURRENT,
+	ERROR_SOFT_OVERCURRENT,
+	ERROR_OVERTEMP
+
+} error_e;
+
 
 #define USE_SOFT_NO_CURRENT
 #define USE_SOFT_OVERCURRENT
@@ -265,856 +276,10 @@ const unsigned short square_table_outphase [] = {0,0,0,0,0,0,0,0,0,0,
 
 
 // Module Private Functions ----------------------------------------------------
-void Signal_UpdatePointerReset (void);
-resp_e Signal_UpdatePointer (void);
-void Signal_DrawingReset (void);
-resp_e Signal_Drawing (void);
-void Signal_OffsetCalculate (void);
-
-void Signal_Generate_Phase_0_90_120 (void);
-void Signal_Generate_Phase_180 (void);
-void Signal_Generate_Phase_240 (void);
-
 void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_sp);
 
+
 // Module Functions ------------------------------------------------------------
-// void StopTreatment (void)
-// {
-//     if (treatment_state != TREATMENT_STANDBY)
-//         treatment_state = TREATMENT_STOPPING;
-// }
-
-// error_t GetErrorStatus (void)
-// {
-// 	error_t error = ERROR_OK;
-
-// 	if (global_error & ERROR_OVERTEMP_MASK)
-// 		error = ERROR_OVERTEMP;
-// 	else if (global_error & ERROR_OVERCURRENT_MASK)
-// 		error = ERROR_OVERCURRENT;
-// 	else if (global_error & ERROR_NO_CURRENT_MASK)
-// 		error = ERROR_NO_CURRENT;
-// 	else if (global_error & ERROR_SOFT_OVERCURRENT_MASK)
-// 		error = ERROR_SOFT_OVERCURRENT;
-
-// 	return error;
-// }
-
-// void SetErrorStatus (error_t e)
-// {
-//     if (e == ERROR_FLUSH_MASK)
-//         global_error = 0;
-//     else
-//     {
-//         if (e == ERROR_OVERTEMP)
-//             global_error |= ERROR_OVERTEMP_MASK;
-//         if (e == ERROR_OVERCURRENT)
-//             global_error |= ERROR_OVERCURRENT_MASK;
-//         if (e == ERROR_SOFT_OVERCURRENT)
-//             global_error |= ERROR_SOFT_OVERCURRENT_MASK;
-//         if (e == ERROR_NO_CURRENT)
-//             global_error |= ERROR_NO_CURRENT_MASK;
-//     }
-// }
-
-// //recibe tipo de senial
-// //setea senial y offset
-// resp_e SetSignalTypeAndOffset (signal_type_t a, signal_offset_t offset)
-// {
-//     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
-//         return resp_error;
-
-//     if (offset <= TWO_HUNDRED_FORTY_DEG_OFFSET)
-//         signal_to_gen.offset = offset;
-//     else
-//         return resp_error;
-
-//     if (a == SQUARE_SIGNAL)
-//     {
-//         p_signal = (unsigned short *) s_square_3A;
-
-//         pid_param_p = PID_SQUARE_P;
-//         pid_param_i = PID_SQUARE_I;
-//         pid_param_d = PID_SQUARE_D;
-
-//         signal_to_gen.signal = a;
-//     }
-// #if (defined USE_PROTECTION_WITH_INT) && (defined INT_SPEED_RESPONSE)
-//     else if (a == TRIANGULAR_SIGNAL)
-//     {
-//         p_signal = (unsigned short *) s_triangular_6A;
-
-//         pid_param_p = PID_TRIANGULAR_P;
-//         pid_param_i = PID_TRIANGULAR_I;
-//         pid_param_d = PID_TRIANGULAR_D;
-        
-//         signal_to_gen.signal = a;
-//     }
-// #else
-//     else if (a == TRIANGULAR_SIGNAL)
-//     {
-//         p_signal = (unsigned short *) s_triangular_3A;
-
-//         pid_param_p = PID_TRIANGULAR_P;
-//         pid_param_i = PID_TRIANGULAR_I;
-//         pid_param_d = PID_TRIANGULAR_D;
-
-//         signal_to_gen.signal = a;        
-//     }
-// #endif
-//     else if (a == SINUSOIDAL_SIGNAL)
-//     {
-//         p_signal = (unsigned short *) s_sinusoidal_3A;
-
-//         pid_param_p = PID_SINUSOIDAL_P;
-//         pid_param_i = PID_SINUSOIDAL_I;
-//         pid_param_d = PID_SINUSOIDAL_D;
-
-//         signal_to_gen.signal = a;
-//     }
-//     else
-//         return resp_error;
-        
-//     return resp_ok;
-// }
-
-//recibe referencia a la estructura de senial
-//recibe tipo de senial
-// resp_e SetSignalType (signals_struct_t * s, signal_type_t a)
-// {
-//     //TODO: despues cargar directamente los k
-//     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
-//         return resp_error;
-
-//     if (a == SQUARE_SIGNAL)
-//         p_signal = (unsigned short *) s_cuadrada_1_5A;
-
-// #if (defined USE_PROTECTION_WITH_INT) && (defined INT_SPEED_RESPONSE)
-//     if (a == TRIANGULAR_SIGNAL)
-//         p_signal = (unsigned short *) s_triangular_6A;
-// #else
-//     if (a == TRIANGULAR_SIGNAL)
-//         p_signal = (unsigned short *) s_triangular_1_5A;    
-// #endif
-
-//     if (a == SINUSOIDAL_SIGNAL)
-//         p_signal = (unsigned short *) s_senoidal_1_5A;
-
-//     // signal_to_gen.signal = a;
-//     s->signal = a;
-
-//     return resp_ok;
-// }
-
-//setea la frecuencia y el timer con el que se muestrea
-//por default o error es simepre de 1500Hz -> seniales de 10Hz
-// resp_e SetFrequency (unsigned char entero, unsigned char decimal)
-// {
-//     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
-//         return resp_error;
-
-//     if (decimal >= 100)
-//         return resp_error;
-    
-//     if ((entero >= FREQ_ALLOWED_MIN) && (entero <= FREQ_ALLOWED_MAX))
-//     {
-//         signal_to_gen.freq_int = entero;
-//         signal_to_gen.freq_dec = decimal;
-//     }
-
-//     return resp_ok;
-// }
-
-// resp_e SetPower (unsigned char a)
-// {
-//     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
-//         return resp_error;
-
-//     if (a > 100)
-//         signal_to_gen.power = 100;
-//     else if (a < 10)
-//         signal_to_gen.power = 10;
-//     else
-//         signal_to_gen.power = a;
-
-//     return resp_ok;
-// }
-
-// //verifica que se cumplan con todos los parametros para poder enviar una senial coherente
-// resp_e AssertTreatmentParams (void)
-// {
-//     resp_e resp = resp_error;
-
-//     if ((signal_to_gen.power > 100) || (signal_to_gen.power < 10))
-//         return resp;
-
-//     //reviso frecuencia a generar
-//     if (signal_to_gen.freq_dec >= 100)
-//         return resp;
-    
-//     if ((signal_to_gen.freq_int < FREQ_ALLOWED_MIN) &&
-//         (signal_to_gen.freq_int > FREQ_ALLOWED_MAX))
-//         return resp;
-
-//     if (signal_to_gen.signal > SINUSOIDAL_SIGNAL)
-//         return resp;
-
-//     if (signal_to_gen.offset > TWO_HUNDRED_FORTY_DEG_OFFSET)
-//         return resp;
-    
-//     //TODO: revisar tambien puntero  senial!!!!
-//     return resp_ok;
-// }
-
-// void SendAllConf (void)
-// {
-//     char b [64];
-
-//     //muestro el canal
-//     sprintf(b, "channel: %s\n", GetOwnChannel());
-//     Usart1Send(b);
-
-//     //muestro la senial
-//     switch (signal_to_gen.signal)
-//     {
-//     case SQUARE_SIGNAL:
-//         Usart1Send("signal: SQUARE\n");        
-//         break;
-
-//     case TRIANGULAR_SIGNAL:
-//         Usart1Send("signal: TRIANGULAR\n");
-//         break;
-
-//     case SINUSOIDAL_SIGNAL:
-//         Usart1Send("signal: SINUSOIDAL\n");
-//         break;
-
-//     default:
-//         Usart1Send("signal: error !not loaded!\n");
-//         break;
-//     }
-    
-//     //muestro la frecuencia
-//     sprintf(b, "freq: %d.%02dHz\n",
-//             signal_to_gen.freq_int,
-//             signal_to_gen.freq_dec);
-    
-//     Usart1Send(b);
-
-//     //muestro el offset
-//     switch (signal_to_gen.offset)
-//     {
-//     case ZERO_DEG_OFFSET:
-//         Usart1Send("offset: 0deg\n");        
-//         break;
-
-//     case NINTY_DEG_OFFSET:
-//         Usart1Send("offset: 90deg\n");
-//         break;
-
-//     case HUNDRED_TWENTY_DEG_OFFSET:
-//         Usart1Send("offset: 120deg\n");
-//         break;
-
-//     case HUNDRED_EIGHTY_DEG_OFFSET:
-//         Usart1Send("offset: 180deg\n");
-//         break;
-
-//     case TWO_HUNDRED_FORTY_DEG_OFFSET:
-//         Usart1Send("offset: 240deg\n");
-//         break;
-        
-//     default:
-//         Usart1Send("offset: !not loaded!\n");
-//         break;
-//     }
-    
-//     //muestro el t1
-//     sprintf(b, "t1[100us]: %d\n", signal_to_gen.t1);
-//     Usart1Send(b);
-
-//     //muestro la potencia
-//     sprintf(b, "power: %d\n\n", signal_to_gen.power);
-//     Usart1Send(b);
-// }
-
-// //reset a antes de la generacion de seniales
-// void GenerateSignalReset (void)
-// {
-//     gen_signal_state = GEN_SIGNAL_INIT;
-// }
-
-/////////////////////////////////////////////////////////////////
-// FUNCIONES SIGNAL_GENERATE_PHASE                             //
-// son 3, se encargan de dibujar la senial teniendo en cuenta: //
-// * sincronismo                                               //
-// * fases seleccionada                                        //
-//                                                             //
-// Funciones:                                                  //
-//  void Signal_Generate_Phase_0_90_120 (void)                  //
-//  void Signal_Generate_Phase_180 (void)                      //      
-//  void Signal_Generate_Phase_240 (void)                      //
-//                                                             //
-/////////////////////////////////////////////////////////////////
-
-// Funcion que llama el manager para generar la senial en el canal
-// utiliza la senial de synchro desde el puerto serie
-// para dibujar la senial llama a Signal_Drawing()
-// necesito conocer la fase a generar (hardcoded en la funcion)
-// los tiempos de espera, dependen de la frecuencia y de la fase
-// el control de soft_overcurrent debiera salir de aca, ya que conozco cuando dibujo o cuando no
-// siempre fast discharge hasta que tiene que generar que pasa a normal discharge
-// cuando se termine de generar el que llama a esta funcion debera poner normal discharge
-// void Signal_Generate_Phase_0_90_120 (void)
-// {
-
-//     switch (gen_signal_state)
-//     {
-//     case GEN_SIGNAL_INIT:
-//         SIGNAL_PWM_NORMAL_DISCHARGE;
-//         gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
-
-//         //sync
-//         sync_on_signal = 0;
-
-//         //no current
-// #ifdef USE_SOFT_NO_CURRENT
-//         current_integral_running = 0;
-//         current_integral_ended = 0;
-// #endif
-//         break;
-
-//     case GEN_SIGNAL_WAIT_FOR_SYNC:
-//         if (sync_on_signal)
-//         {
-// #ifdef LED_SHOW_SYNC_SIGNAL
-//             if (LED)
-//                 LED_OFF;
-//             else
-//                 LED_ON;
-// #endif
-
-//             sync_on_signal = 0;
-
-//             TIM16->CNT = 0;
-//             gen_signal_state = GEN_SIGNAL_WAIT_T1;
-//         }
-//         break;
-
-//     case GEN_SIGNAL_WAIT_T1:
-//         if (TIM16->CNT > signal_to_gen.t1)
-//         {
-//             SIGNAL_PWM_NORMAL_DISCHARGE;
-//             sequence_ready_reset;
-            
-//             Signal_DrawingReset ();
-//             gen_signal_state = GEN_SIGNAL_DRAWING;
-//         }
-//         break;
-            
-//     case GEN_SIGNAL_DRAWING:
-//         //en este bloque tomo la nueva muestra del ADC
-//         //hago update de la senial antes de cada PID
-//         //luego calculo el PID y los PWM que correspondan
-//         if (sequence_ready)
-//         {
-//             sequence_ready_reset;    //aprox 7KHz synchro con pwm
-
-// #ifdef LED_SHOW_SEQUENCE
-//             if (LED)
-//                 LED_OFF;
-//             else
-//                 LED_ON;
-// #endif
-            
-//             if (Signal_Drawing() == resp_ended) //resuelvo lo referido al final de la senial
-//                 gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
-//             else
-//             {
-//                 //resuelvo lo referido a la senial cuando estoy dibujando
-// #ifdef USE_SOFT_NO_CURRENT
-//                 current_integral_running += I_Sense;
-// #endif                
-
-// #ifdef USE_SOFT_OVERCURRENT
-//                 soft_overcurrent_max_current_in_cycles = MA8Circular(I_Sense);
-// #endif
-//             }
-//         }
-//         break;
-
-//     case GEN_SIGNAL_DRAWING_ENDED:
-
-//         SIGNAL_PWM_FAST_DISCHARGE;
-//         gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
-
-// #ifdef USE_SOFT_NO_CURRENT
-//         current_integral = current_integral_running;
-//         current_integral_running = 0;
-//         current_integral_ended = 1;
-// #endif
-//         break;
-            
-//     case GEN_SIGNAL_STOPPED_BY_INT:		//lo freno la interrupcion
-//         break;
-
-//     default:
-//         gen_signal_state = GEN_SIGNAL_INIT;
-//         break;
-//     }
-    
-// }
-    
-// // Senial especial de 180 grados de defasaje, en la que el synchro
-// // justo cuando estoy terminando de dibujar la senial o apenas terminado
-// void Signal_Generate_Phase_180 (void)
-// {
-
-//     switch (gen_signal_state)
-//     {
-//     case GEN_SIGNAL_INIT:
-//         SIGNAL_PWM_NORMAL_DISCHARGE;
-//         gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
-
-//         //sync
-//         sync_on_signal = 0;
-
-//         //no current
-// #ifdef USE_SOFT_NO_CURRENT
-//         current_integral_running = 0;
-//         current_integral_ended = 0;
-// #endif
-//         break;
-
-//     case GEN_SIGNAL_WAIT_FOR_SYNC:
-//         if (sync_on_signal)
-//         {
-// #ifdef LED_SHOW_SYNC_SIGNAL
-//             if (LED)
-//                 LED_OFF;
-//             else
-//                 LED_ON;
-// #endif
-
-//             sync_on_signal = 0;
-
-//             TIM16->CNT = 0;
-//             gen_signal_state = GEN_SIGNAL_WAIT_T1;
-//         }
-//         break;
-
-//     case GEN_SIGNAL_WAIT_T1:
-//         if (TIM16->CNT > signal_to_gen.t1)
-//         {
-//             SIGNAL_PWM_NORMAL_DISCHARGE;
-//             sequence_ready_reset;
-            
-//             Signal_DrawingReset();
-//             gen_signal_state = GEN_SIGNAL_DRAWING;
-//         }
-//         break;
-            
-//     case GEN_SIGNAL_DRAWING:
-//         //en este bloque tomo la nueva muestra del ADC
-//         //hago update de la senial antes de cada PID
-//         //luego calculo el PID y los PWM que correspondan
-//         if (sequence_ready)
-//         {
-//             sequence_ready_reset;    //aprox 7KHz synchro con pwm
-
-// #ifdef LED_SHOW_SEQUENCE
-//             if (LED)
-//                 LED_OFF;
-//             else
-//                 LED_ON;
-// #endif
-            
-//             if (Signal_Drawing() == resp_ended)
-//                 gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
-//             else
-//             {
-//                 //resuelvo lo referido a la senial cuando estoy dibujando                
-// #ifdef USE_SOFT_NO_CURRENT
-//                 current_integral_running += I_Sense;
-// #endif
-                
-// #ifdef USE_SOFT_OVERCURRENT
-//                 soft_overcurrent_max_current_in_cycles = MA8Circular(I_Sense);
-// #endif                
-//             }
-//         }
-//         break;
-
-//     case GEN_SIGNAL_DRAWING_ENDED:
-
-//         SIGNAL_PWM_FAST_DISCHARGE;
-//         gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
-        
-// #ifdef USE_SOFT_NO_CURRENT
-//         current_integral = current_integral_running;
-//         current_integral_running = 0;
-//         current_integral_ended = 1;
-// #endif
-//         break;
-            
-//     case GEN_SIGNAL_STOPPED_BY_INT:		//lo freno la interrupcion
-//         break;
-
-//     default:
-//         gen_signal_state = GEN_SIGNAL_INIT;
-//         break;
-//     }
-
-//     //el synchro en general me llega al final de GEN_SIGNAL_DRAWING
-//     if ((sync_on_signal) &&
-//         (gen_signal_state != GEN_SIGNAL_WAIT_FOR_SYNC) &&
-//         (gen_signal_state == GEN_SIGNAL_DRAWING))
-//     {
-//         //no le doy ack al sync
-//         gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
-//     }
-
-// }
-
-// // Senial especial, defasaje 240 grados, el synchro llega justo cuando estoy dibujando la senial
-// // de todas formas espero el primer sync para arrancar
-// // uso sync_on_signal como un doble flag
-// void Signal_Generate_Phase_240 (void)
-// {
-
-//     switch (gen_signal_state)
-//     {
-//     case GEN_SIGNAL_INIT:
-//         SIGNAL_PWM_NORMAL_DISCHARGE;
-//         gen_signal_state = GEN_SIGNAL_WAIT_FOR_FIRST_SYNC;
-
-//         //sync
-//         sync_on_signal = 0;
-
-//         //no current
-// #ifdef USE_SOFT_NO_CURRENT
-//         current_integral_running = 0;
-//         current_integral_ended = 0;
-// #endif
-//         break;
-        
-//     case GEN_SIGNAL_WAIT_FOR_FIRST_SYNC:
-//         if (sync_on_signal)
-//         {
-//             sync_on_signal = 2;
-//             TIM16->CNT = 0;
-//             gen_signal_state = GEN_SIGNAL_WAIT_T1;
-
-// #ifdef LED_SHOW_SYNC_SIGNAL
-//             if (LED)
-//                 LED_OFF;
-//             else
-//                 LED_ON;
-// #endif            
-//         }
-//         break;
-
-//     case GEN_SIGNAL_WAIT_T1:
-//         if ((TIM16->CNT > signal_to_gen.t1) && (sync_on_signal == 2))
-//         {            
-//             SIGNAL_PWM_NORMAL_DISCHARGE;
-//             sequence_ready_reset;
-//             sync_on_signal = 0;
-            
-//             Signal_DrawingReset ();
-//             gen_signal_state = GEN_SIGNAL_DRAWING;
-//         }
-//         break;
-            
-//     case GEN_SIGNAL_DRAWING:
-//         //en este bloque tomo la nueva muestra del ADC
-//         //hago update de la senial antes de cada PID
-//         //luego calculo el PID y los PWM que correspondan
-//         if (sequence_ready)
-//         {
-//             sequence_ready_reset;    //aprox 7KHz synchro con pwm
-
-// #ifdef LED_SHOW_SEQUENCE
-//             if (LED)
-//                 LED_OFF;
-//             else
-//                 LED_ON;
-// #endif
-            
-//             if (Signal_Drawing() == resp_ended)
-//                 gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
-//             else
-//             {
-//                 //resuelvo lo referido a la senial cuando estoy dibujando
-// #ifdef USE_SOFT_NO_CURRENT
-//                 current_integral_running += I_Sense;
-// #endif                                
-
-// #ifdef USE_SOFT_OVERCURRENT
-//                 soft_overcurrent_max_current_in_cycles = MA8Circular(I_Sense);
-// #endif
-//             }
-//         }
-//         break;
-
-//     case GEN_SIGNAL_DRAWING_ENDED:
-
-//         SIGNAL_PWM_FAST_DISCHARGE;
-//         gen_signal_state = GEN_SIGNAL_WAIT_T1;
-        
-// #ifdef USE_SOFT_NO_CURRENT
-//         current_integral = current_integral_running;
-//         current_integral_running = 0;
-//         current_integral_ended = 1;
-// #endif
-//         break;
-            
-//     case GEN_SIGNAL_STOPPED_BY_INT:		//lo freno la interrupcion
-//         break;
-
-//     default:
-//         gen_signal_state = GEN_SIGNAL_INIT;
-//         break;
-//     }
-
-//     //el synchro en general me llega en el medio de GEN_SIGNAL_DRAWING
-//     //uso sync_on_signal como doble flag
-//     if ((sync_on_signal == 1) && (gen_signal_state != GEN_SIGNAL_WAIT_FOR_FIRST_SYNC))
-//     {
-//         sync_on_signal = 2;
-//         TIM16->CNT = 0;
-
-// #ifdef LED_SHOW_SYNC_SIGNAL
-//             if (LED)
-//                 LED_OFF;
-//             else
-//                 LED_ON;
-// #endif        
-//     }
-    
-// }
-
-// typedef enum {
-// 	NORMAL_DISCHARGE = 0,
-// 	TAU_DISCHARGE,
-// 	FAST_DISCHARGE
-
-// } drawing_state_t;
-
-// drawing_state_t drawing_state = NORMAL_DISCHARGE;
-
-// void Signal_DrawingReset (void)
-// {
-//     drawing_state = NORMAL_DISCHARGE;
-//     d = 0;
-//     ez1 = 0;
-//     ez2 = 0;
-
-//     Signal_UpdatePointerReset();
-// }
-
-// //llamar para cada punto a dibujar
-// //calculo PID con puntero anterior y actualizo el puntero
-// resp_e Signal_Drawing (void)
-// {
-//     resp_e resp = resp_continue;
-    
-//     switch (drawing_state)
-//     {
-//     case NORMAL_DISCHARGE:
-//         d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
-//                       I_Sense,
-//                       d,
-//                       &ez1,
-//                       &ez2);
-                    
-//         //reviso si necesito cambiar a descarga por tau
-//         if (d < 0)
-//         {
-//             HIGH_LEFT_PWM(0);
-//             drawing_state = TAU_DISCHARGE;
-//             d = 0;	//limpio para pid descarga
-//         }
-//         else
-//         {
-//             if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
-//                 d = DUTY_95_PERCENT;
-            
-//             HIGH_LEFT_PWM(d);
-//         }
-
-//         if (Signal_UpdatePointer() != resp_continue)
-//             resp = resp_ended;
-
-//         break;
-
-//     case TAU_DISCHARGE:		//la medicion de corriente sigue siendo I_Sense
-//         d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
-//                       I_Sense,
-//                       d,
-//                       &ez1,
-//                       &ez2);
-
-//         //reviso si necesito cambiar a descarga rapida
-//         if (d < 0)
-//         {
-//             if (-d < DUTY_100_PERCENT)
-//                 LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
-//             else
-//                 LOW_RIGHT_PWM(0);    //descarga maxima
-
-//             drawing_state = FAST_DISCHARGE;
-//         }
-//         else
-//         {
-//             //esto es normal
-//             if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
-//                 d = DUTY_95_PERCENT;
-
-//             HIGH_LEFT_PWM(d);
-//             drawing_state = NORMAL_DISCHARGE;
-//         }
-
-//         if (Signal_UpdatePointer() != resp_continue)
-//             resp = resp_ended;
-
-//         break;
-
-//     case FAST_DISCHARGE:		//la medicion de corriente ahora esta en I_Sense_negado
-//         d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
-//                       I_Sense_negado,
-//                       d,
-//                       &ez1,
-//                       &ez2);
-
-//         //reviso si necesito cambiar a descarga por tau o normal
-//         if (d < 0)
-//         {
-//             if (-d < DUTY_100_PERCENT)
-//                 LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
-//             else
-//                 LOW_RIGHT_PWM(0);    //descarga maxima
-//         }
-//         else
-//         {
-//             //vuelvo a TAU_DISCHARGE
-//             LOW_RIGHT_PWM(DUTY_ALWAYS);
-//             drawing_state = TAU_DISCHARGE;
-//         }
-
-//         if (Signal_UpdatePointer() != resp_continue)
-//             resp = resp_ended;
-
-//         break;
-
-//     default:
-//         break;
-//     }
-//     return resp;
-// }
-
-// inline void Signal_UpdatePointerReset (void)
-// {
-//     p_signal_running = p_signal;
-// }
-
-// resp_e Signal_UpdatePointer (void)
-// {
-//     resp_e resp = resp_continue;
-//     //si la senial esta corriendo hago update de senial y un par de chequeos
-//     //senial del adc cuando convierte la secuencia disparada por TIM1 a 2000Hz 6000Hz o 12000Hz
-
-//     //-- Signal Update --//
-//     if ((p_signal_running) < (p_signal + SIZEOF_SIGNALS))
-//     {
-//         p_signal_running += 1;
-//     }
-//     else    //termino la senial, aviso
-//     {                        
-//         resp = resp_ended;
-//     }
-
-//     return resp;
-// }
-
-// //calculo el offset de la senial, T1 y el sampling
-// //el sampling lo seteo en el timer TIM1
-// //ticks[us] = 1/freq * 1/2 * 1/100 * 1e6 
-// //TODO: HUNDRED_EIGHTY T1 = T * 180 / 360
-// void Signal_OffsetCalculate (void)
-// {
-//     unsigned int ticks = 1000000;
-//     unsigned int offset = 1000000;
-//     unsigned short freq = 0;
-//     unsigned short freq_2 = 0;
-    
-
-//     //calculo cantidad de ticks para sampling como 100 puntos en medio ciclo
-//     //sampling tick 1us
-//     freq = signal_to_gen.freq_int * 100;
-//     freq += signal_to_gen.freq_dec;
-//     freq_2 = freq * 2;
-    
-//     ticks = ticks / freq_2;
-//     TIM1_ChangeTick((unsigned short) ticks);
-
-//     //calculo el t1 en ticks de 100us segun offset
-//     offset = offset / freq;
-//     switch (signal_to_gen.offset)
-//     {
-//     case ZERO_DEG_OFFSET:
-//         offset = 0;
-//         break;
-
-//     case NINTY_DEG_OFFSET:
-//         offset = offset * 90;
-//         offset = offset / 360;
-//         break;
-
-//     case HUNDRED_TWENTY_DEG_OFFSET:
-//         offset = offset * 120;
-//         offset = offset / 360;
-//         break;
-
-//     case HUNDRED_EIGHTY_DEG_OFFSET:
-//         offset = offset * 180;
-//         offset = offset / 360;        
-//         break;
-
-//     case TWO_HUNDRED_FORTY_DEG_OFFSET:
-//         offset = offset * 240;
-//         offset = offset / 360;        
-//         break;
-//     }
-//     signal_to_gen.t1 = (unsigned short) offset;
-    
-// }
-
-// //hubo sobrecorriente, me llaman desde la interrupcion
-// void Overcurrent_Shutdown (void)
-// {
-// #ifdef LED_SHOW_INT
-//     LED_ON;
-// #endif
-
-//     //primero freno todos los PWM
-//     HIGH_LEFT_PWM(0);
-//     LOW_RIGHT_PWM(0);
-
-//     DISABLE_TIM3;
-
-//     //freno la generacionde la senial
-//     gen_signal_state = GEN_SIGNAL_STOPPED_BY_INT;
-
-//     //ahora aviso del error
-//     SetErrorStatus(ERROR_OVERCURRENT);
-
-//     //meto la generacion en Overcurrent
-//     timer_signals = 10;
-//     treatment_state = TREATMENT_STOPPING2;
-// }
-
-
 const unsigned short * p_table_inphase;
 const unsigned short * p_table_outphase;
 pi_data_obj_t pi_ch1;
@@ -1283,7 +448,7 @@ void Signals_Generate_All_Channels (void)
 #ifdef USE_SOFT_NO_CURRENT
     if (signal_ended)
     {
-        if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+        if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
         {
             if (signal_integral_ch1 < signal_no_current_threshold_ch1)
             {
@@ -1291,13 +456,14 @@ void Signals_Generate_All_Channels (void)
                     signal_no_current_cnt_ch1++;
                 else
                 {
-                    treat_in_ch1 = CHANNEL_DISCONNECT;
-                    ErrorSetStatus(ERROR_NO_CURRENT, CH1);
+                    Signals_Stop_Single_Channel(CH1);
+                    global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
+                    Error_SetStatus(ERROR_NO_CURRENT, CH1);
                 }
             }
         }
 
-        if (treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
+        if (global_signals.treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
         {
             if (signal_integral_ch2 < signal_no_current_threshold_ch2)
             {
@@ -1305,13 +471,14 @@ void Signals_Generate_All_Channels (void)
                     signal_no_current_cnt_ch2++;
                 else
                 {
-                    treat_in_ch2 = CHANNEL_DISCONNECT;
-                    ErrorSetStatus(ERROR_NO_CURRENT, CH2);
+                    Signals_Stop_Single_Channel(CH2);
+                    global_signals.treat_in_ch2 = CHANNEL_DISCONNECT;
+                    Error_SetStatus(ERROR_NO_CURRENT, CH2);
                 }
             }
         }
 
-        if (treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
+        if (global_signals.treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
         {
             if (signal_integral_ch3 < signal_no_current_threshold_ch3)
             {
@@ -1319,13 +486,14 @@ void Signals_Generate_All_Channels (void)
                     signal_no_current_cnt_ch3++;
                 else
                 {
-                    treat_in_ch3 = CHANNEL_DISCONNECT;
-                    ErrorSetStatus(ERROR_NO_CURRENT, CH3);
+                    Signals_Stop_Single_Channel(CH3);
+                    global_signals.treat_in_ch3 = CHANNEL_DISCONNECT;
+                    Error_SetStatus(ERROR_NO_CURRENT, CH3);
                 }
             }
         }
 
-        if (treat_in_ch4 == CHANNEL_CONNECTED_GOOD)
+        if (global_signals.treat_in_ch4 == CHANNEL_CONNECTED_GOOD)
         {
             if (signal_integral_ch4 < signal_no_current_threshold_ch4)
             {
@@ -1333,8 +501,9 @@ void Signals_Generate_All_Channels (void)
                     signal_no_current_cnt_ch4++;
                 else
                 {
-                    treat_in_ch4 = CHANNEL_DISCONNECT;
-                    ErrorSetStatus(ERROR_NO_CURRENT, CH4);
+                    Signals_Stop_Single_Channel(CH4);
+                    global_signals.treat_in_ch4 = CHANNEL_DISCONNECT;
+                    Error_SetStatus(ERROR_NO_CURRENT, CH4);
                 }
             }
         }        
@@ -1354,7 +523,7 @@ void Signals_Generate_All_Channels (void)
 #endif    // USE_SOFT_NO_CURRENT
 
 #ifdef USE_SOFT_OVERCURRENT
-    if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+    if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
     {
         unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch1, IS_CH1);
         if (filter_c > signal_ovcp_threshold_ch1)
@@ -1366,12 +535,12 @@ void Signals_Generate_All_Channels (void)
                    signal_index);
 
             Signals_Stop_Single_Channel(CH1);
-            treat_in_ch1 = CHANNEL_DISCONNECT;
-            ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH1);
+            global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
+            Error_SetStatus(ERROR_SOFT_OVERCURRENT, CH1);
         }
     }
 
-    if (treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
+    if (global_signals.treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
     {
         unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch2, IS_CH2);
         if (filter_c > signal_ovcp_threshold_ch2)
@@ -1383,12 +552,12 @@ void Signals_Generate_All_Channels (void)
                    signal_index);
 
             Signals_Stop_Single_Channel(CH2);                
-            treat_in_ch2 = CHANNEL_DISCONNECT;
-            ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH2);
+            global_signals.treat_in_ch2 = CHANNEL_DISCONNECT;
+            Error_SetStatus(ERROR_SOFT_OVERCURRENT, CH2);
         }
     }
 
-    if (treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
+    if (global_signals.treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
     {
         unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch3, IS_CH3);
         if (filter_c > signal_ovcp_threshold_ch3)
@@ -1400,12 +569,12 @@ void Signals_Generate_All_Channels (void)
                    signal_index);
 
             Signals_Stop_Single_Channel(CH3);                
-            treat_in_ch3 = CHANNEL_DISCONNECT;
-            ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH3);
+            global_signals.treat_in_ch3 = CHANNEL_DISCONNECT;
+            Error_SetStatus(ERROR_SOFT_OVERCURRENT, CH3);
         }
     }
 
-    if (treat_in_ch4 == CHANNEL_CONNECTED_GOOD)        
+    if (global_signals.treat_in_ch4 == CHANNEL_CONNECTED_GOOD)        
     {
         unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch4, IS_CH4);
         if (filter_c > signal_ovcp_threshold_ch4)
@@ -1417,8 +586,8 @@ void Signals_Generate_All_Channels (void)
                    signal_index);
 
             Signals_Stop_Single_Channel(CH4);
-            treat_in_ch4 = CHANNEL_DISCONNECT;
-            ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH4);
+            global_signals.treat_in_ch4 = CHANNEL_DISCONNECT;
+            Error_SetStatus(ERROR_SOFT_OVERCURRENT, CH4);
         }
     }
 #endif
@@ -1456,14 +625,14 @@ void Signals_Generate_Single_Channel_OpenLoop (void)
         signal_ended = 1;
     }
     
-    if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+    if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
         Signals_Generate_Channel_OpenLoop (CH1, ref_inphase);
 
     // now check channels for errors
 #ifdef USE_SOFT_NO_CURRENT
     if (signal_ended)
     {
-        if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+        if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
         {
             if (signal_integral_ch1 < signal_no_current_threshold_ch1)
             {
@@ -1471,8 +640,8 @@ void Signals_Generate_Single_Channel_OpenLoop (void)
                     signal_no_current_cnt_ch1++;
                 else
                 {
-                    treat_in_ch1 = CHANNEL_DISCONNECT;
-                    ErrorSetStatus(ERROR_NO_CURRENT, CH1);
+                    global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
+                    Error_SetStatus(ERROR_NO_CURRENT, CH1);
                 }
             }
         }
@@ -1486,7 +655,7 @@ void Signals_Generate_Single_Channel_OpenLoop (void)
 #endif    // USE_SOFT_NO_CURRENT
 
 #ifdef USE_SOFT_OVERCURRENT
-        if (treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+        if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
         {
             unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch1, IS_CH1);
             if (filter_c > signal_ovcp_threshold_ch1)
@@ -1498,8 +667,8 @@ void Signals_Generate_Single_Channel_OpenLoop (void)
                        signal_index);
 
                 Signals_Stop_Single_Channel(CH1);
-                treat_in_ch1 = CHANNEL_DISCONNECT;
-                ErrorSetStatus(ERROR_SOFT_OVERCURRENT, CH1);
+                global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
+                Error_SetStatus(ERROR_SOFT_OVERCURRENT, CH1);
             }
         }
 #endif
@@ -1723,21 +892,71 @@ void Signals_Set_Reset_Channel_For_Treatment (unsigned char which_channel, unsig
     }        
 }
 
-
-void Signals_Set_Channel_PI_Parameters (unsigned char which_channel)
+// typical values
+// float Vin = 192.0;
+// float Rsense = 0.055;
+// float Ao = 13.0;
+// float La = 0.142;
+// float Ra = 11.0;
+// float fsampling = 7000.0;
+void Signals_Set_Channel_PI_Parameters (unsigned char which_channel, antenna_st * ant)
 {
+    float Vin = 192.0;
+    float fsampling = 7000.0;
+    float Rsense = 0.055;
+    
+    float La = ant->inductance_int + ant->inductance_dec / 100.0;
+    La = La / 1000.0;    // convert mHy to Hy
+
+    float Ra = ant->resistance_int + ant->resistance_dec / 100.0;
+
+    float max_antenna_current = ant->current_limit_int + ant->current_limit_dec / 100.0;
+    
+    // float b0 = Rsense * Ao;
+    float b0 = 0.715;    
+    b0 = b0 / (La * fsampling);
+
+    float a1 = -1.0 + (Ra + Rsense)/(La * fsampling);
+
+    float a1_pos = -a1;
+
+    // float multi = max_antenna_current * 887. / 1000.;
+    float multi = max_antenna_current * 887.;    
+
+    float gain = b0 /(1. - a1_pos);
+    float gain_five_perc = 19. /(gain * Vin);
+    
+    // calc ki from kp and zero eq to pole freq
+    float zero_eq_pole = Ra/(La * 6.28);
+    float ki_gain = zero_eq_pole * gain_five_perc * 6.28 * 128. * 10. / fsampling;
+    
+    short ki = (short) ki_gain;    //ki = kp * 2 * np.pi * 20 / fs    
+    short kp = (short) (gain_five_perc * 128);
+    
     switch (which_channel)
     {
     case CH1:
+        global_signals.ki_ch1 = ki;        
+        global_signals.kp_ch1 = kp;
+        global_signals.max_c_ch1 = (unsigned short) multi;
         break;
 
     case CH2:
+        global_signals.ki_ch2 = ki;
+        global_signals.kp_ch2 = kp;
+        global_signals.max_c_ch2 = (unsigned short) multi;        
         break;
 
     case CH3:
+        global_signals.ki_ch3 = ki;
+        global_signals.kp_ch3 = kp;
+        global_signals.max_c_ch3 = (unsigned short) multi;        
         break;
 
     case CH4:
+        global_signals.ki_ch4 = ki;
+        global_signals.kp_ch4 = kp;
+        global_signals.max_c_ch4 = (unsigned short) multi;        
         break;
     }        
 }
@@ -1745,6 +964,8 @@ void Signals_Set_Channel_PI_Parameters (unsigned char which_channel)
 
 void Signals_Stop_All_Channels (void)
 {
+    signal_index = 0;    //next start will be in phase
+    
     HIGH_LEFT_PWM_CH1(DUTY_NONE);
     LOW_RIGHT_PWM_CH1(DUTY_NONE);
     

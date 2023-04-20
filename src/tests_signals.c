@@ -9,13 +9,17 @@
 
 // Includes Modules for tests --------------------------------------------------
 #include "signals.h"
+#include "signals_defs.h"
 #include "tim.h"
 #include "dsp.h"
+
+#include "antennas_defs.h"
 
 // helper modules
 #include "tests_ok.h"
 #include "tests_mock_usart.h"
 #include "tests_vector_utils.h"
+#include "tests_know_antennas.h"
 
 #include <stdio.h>
 // #include <math.h>
@@ -53,7 +57,7 @@ void Test_PI_Functions (void);
 void Test_PI_Simul (void);
 void Test_Generate_Setup (void);
 void Test_Generate_All_Channels (void);
-
+void Test_Set_Channel_PI_Parameters (void);
 
 // Module Auxiliary Functions --------------------------------------------------
 
@@ -64,10 +68,11 @@ void Test_Generate_All_Channels (void);
 // Module Functions ------------------------------------------------------------
 int main (int argc, char *argv[])
 {
-    Test_PI_Functions ();
-    Test_PI_Simul ();
-    Test_Generate_Setup ();
-    Test_Generate_All_Channels ();
+    // Test_PI_Functions ();
+    // Test_PI_Simul ();
+    // Test_Generate_Setup ();
+    // Test_Generate_All_Channels ();
+    Test_Set_Channel_PI_Parameters ();
 
     return 0;
 }
@@ -106,6 +111,25 @@ void Test_Generate_Setup (void)
     else
         PrintERR();    
     
+}
+
+
+extern signals_struct_t global_signals;
+void Test_Set_Channel_PI_Parameters (void)
+{
+    antenna_st my_ant;
+    // unsigned char antenna_index = 0;
+    // unsigned char antenna_index = 6;
+    unsigned char antenna_index = 8;
+    
+    TSP_Get_Know_Single_Antenna (&my_ant, antenna_index);
+    
+    Signals_Set_Channel_PI_Parameters (0, &my_ant);
+
+    printf("global_signals params:\n");
+    printf(" ki: %d\n", global_signals.ki_ch1);
+    printf(" kp: %d\n", global_signals.kp_ch1);
+    printf(" max_c: %d\n", global_signals.max_c_ch1);           
 }
 
 
@@ -301,6 +325,13 @@ void UpdateBuzzer (void)
 
 void UpdateRaspberryMessages (void)
 {
+}
+
+void Error_SetStatus (unsigned char error, unsigned char channel)
+{
+    error <<= 4;
+    error += channel + 1;
+    printf("error: 0x%02x\n", error);
 }
 
 //--- end of file ---//

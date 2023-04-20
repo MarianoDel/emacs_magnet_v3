@@ -80,8 +80,8 @@ SRC += ./src/test_functions.c
 
 SRC += ./src/comms_channels.c
 SRC += ./src/antennas.c
-
-# SRC += ./src/signals.c
+SRC += ./src/signals.c
+SRC += ./src/errors.c
 
 
 ## Core Support
@@ -237,7 +237,8 @@ tests_signals:
 	# second auxiliary helper modules
 	gcc -c src/tests_ok.c -I $(INCDIR)
 	gcc -c src/tests_vector_utils.c -I $(INCDIR)
-	gcc --coverage src/tests_signals.c signals.o dsp.o tests_ok.o tests_vector_utils.o -I $(INCDIR) $(DDEFS)
+	gcc -c src/tests_know_antennas.c -I $(INCDIR)
+	gcc --coverage src/tests_signals.c signals.o dsp.o tests_ok.o tests_vector_utils.o tests_know_antennas.o -I $(INCDIR) $(DDEFS)
 	./a.out
 	# process coverage
 	gcov signals.c -m

@@ -19,6 +19,7 @@
 #include "usart.h"
 #include "treatment.h"
 #include "utils.h"
+#include "antennas.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -205,11 +206,11 @@ static void Raspberry_Messages (char * msg)
             
     }
 
-    else if (!strncmp(msg, (const char *)"stretcher up", (sizeof("stretcher up") - 1)))
-    {
-        comms_messages_rpi |= COMM_STRETCHER_UP;
-        RpiSend(s_ans_ok);        
-    }
+    // else if (!strncmp(msg, (const char *)"stretcher up", (sizeof("stretcher up") - 1)))
+    // {
+    //     comms_messages_rpi |= COMM_STRETCHER_UP;
+    //     RpiSend(s_ans_ok);        
+    // }
 
     // else if (!strncmp(msg,
     //                   (const char *)"stretcher autoup on",
@@ -583,8 +584,8 @@ static void SendAllConf (void)
 
 static void SendStatus (void)
 {
-    char b [128];
-    unsigned char st = 0;
+    // char b [128];
+    // unsigned char st = 0;
     
     // st = Treatment_GetMainState();
     // sprintf(b, "Main State: %d\r\n", st);

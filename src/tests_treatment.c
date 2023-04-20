@@ -10,6 +10,7 @@
 // Includes Modules for tests --------------------------------------------------
 #include "treatment.h"
 #include "comms.h"
+#include "antennas_defs.h"
 
 // helper modules
 #include "tests_ok.h"
@@ -57,13 +58,15 @@ extern unsigned short secs_elapsed_up_to_now;
 
 
 // Globals ---------------------------------------------------------------------
+int antenna_in_this_treatment = 0;
 
 
 // Module Functions to Test ----------------------------------------------------
-void Test_Utils_Module (void);
-void Test_Treatment_Module (void);
-void Test_Functions (void);
+void Test_Treatment_Module_Settings (void);
+void Test_Treatment_Manager_Bad_Params (void);
+void Test_Treatment_Manager_Not_Antenna (void);
 void Test_Treatment_Manager (void);
+void Test_Treatment_Manager_Till_Finish (void);
 
 
 // Module Auxiliary Functions --------------------------------------------------
@@ -76,19 +79,22 @@ void Test_Treatment_Manager (void);
 int main (int argc, char *argv[])
 {
 
-    Test_Treatment_Module();
-    Test_Treatment_Manager();    
+    Test_Treatment_Manager_Bad_Params();
+    Test_Treatment_Module_Settings();    // this one fix the params
+    Test_Treatment_Manager_Not_Antenna();    
+    Test_Treatment_Manager();
+    Test_Treatment_Manager_Till_Finish();
 
     return 0;
 }
 
 
-void Test_Treatment_Module (void)
+void Test_Treatment_Module_Settings (void)
 {
     int some_err = 0;    
     resp_e resp = resp_ok;
     
-    printf("Testing Treatment Module: ");
+    printf("Testing Treatment Module Settings: ");
 
     signal_type_e signal = SQUARE_SIGNAL;
     resp = Treatment_SetSignalType (signal);
@@ -211,6 +217,9 @@ void Test_Treatment_Module (void)
     }
     
 
+    char all_conf [250];
+    Treatment_GetAllConf(all_conf);
+    
     if (some_err)
         PrintERR();
     else
@@ -221,7 +230,8 @@ void Test_Treatment_Module (void)
 
 typedef enum {
     TREATMENT_STANDBY = 0,
-    TREATMENT_STARTING,
+    TREATMENT_CHECK_ANTENNAS_CONNECTED,
+    TREATMENT_STARTING,    
     TREATMENT_RUNNING,
     TREATMENT_PAUSED,
     TREATMENT_WITH_ERRORS,
@@ -229,12 +239,16 @@ typedef enum {
 
 } treatment_t;
 
+
 extern unsigned char treat_state;
-void Test_Treatment_Manager (void)
+extern treatment_conf_t treatment_conf;
+void Test_Treatment_Manager_Bad_Params (void)
 {
     int some_err = 0;    
     resp_e resp = resp_ok;
 
+    antenna_in_this_treatment = 0;
+    printf("\n-- Testing Manager Bad Params --\n");    
     printf("-- treat in standby\n");
     for (int i = 0; i < 20; i++)
         Treatment_Manager();
@@ -242,22 +256,105 @@ void Test_Treatment_Manager (void)
     if (treat_state != TREATMENT_STANDBY)
         some_err = 1;
 
-    printf("-- treat to running\n");    
+
+    treatment_conf.treatment_signal.signal = 5;
     if (!some_err)
     {
+        printf("-- treat to running\n");        
         comms_messages_rpi |= COMM_START_TREAT;
         
         for (int i = 0; i < 20; i++)
+        {
+            // printf("running loop: %d treat_state: %d\n", i, treat_state);
             Treatment_Manager();
+        }
+
+        if (treat_state != TREATMENT_STANDBY)
+            some_err = 1;
+        
+    }
+    
+    printf("Testing Treatment Bad Params: ");
+    if (some_err)
+        PrintERR();
+    else
+        PrintOK();
+    
+}
+
+
+void Test_Treatment_Manager_Not_Antenna (void)
+{
+    int some_err = 0;    
+    resp_e resp = resp_ok;
+
+    antenna_in_this_treatment = 0;
+    printf("\n-- Testing Manager No Antennas --\n");    
+    printf("-- treat in standby\n");
+    for (int i = 0; i < 20; i++)
+        Treatment_Manager();
+
+    if (treat_state != TREATMENT_STANDBY)
+        some_err = 1;
+
+    if (!some_err)
+    {
+        printf("-- treat to running\n");        
+        comms_messages_rpi |= COMM_START_TREAT;
+        
+        for (int i = 0; i < 20; i++)
+        {
+            // printf("running loop: %d treat_state: %d\n", i, treat_state);
+            Treatment_Manager();
+        }
+
+        if (treat_state != TREATMENT_STANDBY)
+            some_err = 1;
+        
+    }
+    
+    printf("Testing Treatment Not Antenna: ");
+    if (some_err)
+        PrintERR();
+    else
+        PrintOK();
+    
+}
+
+
+void Test_Treatment_Manager (void)
+{
+    int some_err = 0;    
+    resp_e resp = resp_ok;
+
+    antenna_in_this_treatment = 0x0f;
+    printf("\n-- Testing Manager All Antennas --\n");
+    printf("-- treat in standby\n");
+    for (int i = 0; i < 20; i++)
+        Treatment_Manager();
+
+    if (treat_state != TREATMENT_STANDBY)
+        some_err = 1;
+
+    if (!some_err)
+    {
+        printf("-- treat to running\n");        
+        comms_messages_rpi |= COMM_START_TREAT;
+        
+        for (int i = 0; i < 20; i++)
+        {
+            // printf("running loop: %d treat_state: %d\n", i, treat_state);
+            Treatment_Manager();
+        }
 
         if (treat_state != TREATMENT_RUNNING)
             some_err = 1;
         
     }
 
-    printf("-- treat to pause\n");
-    if (!some_err)
+    if (!some_err)        
     {
+        printf("-- treat to pause\n");
         comms_messages_rpi |= COMM_PAUSE_TREAT;
         
         for (int i = 0; i < 20; i++)
@@ -272,9 +369,9 @@ void Test_Treatment_Manager (void)
         
     }
 
-    printf("-- treat to run again\n");    
     if (!some_err)
     {
+        printf("-- treat to run again\n");    
         comms_messages_rpi |= COMM_PAUSE_TREAT;
         
         for (int i = 0; i < 20; i++)
@@ -285,9 +382,9 @@ void Test_Treatment_Manager (void)
         
     }
 
-    printf("-- treat to stop\n");
     if (!some_err)
     {
+        printf("-- treat to stop\n");
         comms_messages_rpi |= COMM_STOP_TREAT;
         
         for (int i = 0; i < 20; i++)
@@ -298,9 +395,9 @@ void Test_Treatment_Manager (void)
         
     }
 
-    printf("-- treat to running double START sended\n");    
     if (!some_err)
     {
+        printf("-- treat to running double START sended\n");    
         comms_messages_rpi |= COMM_START_TREAT;
         
         for (int i = 0; i < 20; i++)
@@ -315,10 +412,9 @@ void Test_Treatment_Manager (void)
         
     }
 
-
-    printf("-- treat to pause and stop\n");
     if (!some_err)
     {
+        printf("-- treat to pause and stop\n");
         comms_messages_rpi |= COMM_PAUSE_TREAT;
         
         for (int i = 0; i < 20; i++)
@@ -342,14 +438,62 @@ void Test_Treatment_Manager (void)
 }
 
 
-
-void Test_Functions (void)
+void Test_Treatment_Manager_Till_Finish (void)
 {
-    printf("tested ok!\n");
-    PrintOK();
+    int some_err = 0;    
+    resp_e resp = resp_ok;
+
+    antenna_in_this_treatment = 0x0f;
+    printf("\n-- Testing Manager Till Finish --\n");
+    printf("-- treat in standby\n");
+    for (int i = 0; i < 20; i++)
+        Treatment_Manager();
+
+    if (treat_state != TREATMENT_STANDBY)
+        some_err = 1;
+
+    if (!some_err)
+    {
+        Treatment_SetTime(0, 1, 0);
+        printf("-- treat to running\n");        
+        comms_messages_rpi |= COMM_START_TREAT;
+        
+        for (int i = 0; i < 20; i++)
+        {
+            // printf("running loop: %d treat_state: %d\n", i, treat_state);
+            Treatment_Manager();
+        }
+
+        if (treat_state != TREATMENT_RUNNING)
+            some_err = 1;
+        
+    }
+
+    if (!some_err)        
+    {
+        printf("-- treat to finish\n");
+        secs_in_treatment = 70;
+        for (int i = 0; i < 20; i++)
+        {
+            // printf("running loop: %d treat_state: %d\n", i, treat_state);
+            Treatment_Manager();
+        }
+
+        if (treat_state != TREATMENT_STANDBY)
+            some_err = 1;
+        
+    }
+    
+    printf("Testing Treatment Till End: ");
+    if (some_err)
+        PrintERR();
+    else
+        PrintOK();
+    
 }
 
 
+// Module Mocked Functions -----------------------------------------------------
 void RPI_Send (char * a)
 {
     Usart1Send(a);
@@ -436,6 +580,40 @@ void Signals_Generate_All_Channels (void)
     }
 }
 
+
+unsigned char AntennaVerifyForTreatment (unsigned char ch)
+{
+    printf("antenna verify for treatment on ch%d -- ", ch + 1);
+    
+    if (antenna_in_this_treatment & (1 << ch))
+    {
+        printf("finded\n");
+        return 1;
+    }
+
+    printf("not present\n");
+    return 0;    
+}
+
+
+void Signals_Set_Reset_Channel_For_Treatment (unsigned char which_channel, unsigned char state)
+{
+    if (state)
+        printf("in signals ch%d set for treatment\n", which_channel + 1);
+    else
+        printf("in signals ch%d not in this treatment\n", which_channel + 1);
+}
+
+
+void AntennaGetParamsStruct (unsigned char ch, antenna_st *ant)
+{
+    printf("get antenna info for ch%d\n", ch + 1);
+}
+
+void Signals_Set_Channel_PI_Parameters (unsigned char which_channel, antenna_st * ant)
+{
+    printf("calculate pi params for ch%d\n", which_channel + 1);
+}
 //--- end of file ---//
 
 
