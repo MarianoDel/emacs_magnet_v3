@@ -155,56 +155,56 @@ static void Raspberry_Messages (char * msg)
             RpiSend(s_ans_nok);
     }
 
-    else if (!strncmp(msg, (const char *)"enable channel ", (sizeof("enable channel ") - 1)))
-    {
-        if (*(msg + 15) == '1')
-        {
-            Treatment_SetChannelsFlag(ENABLE_CH1_FLAG);
-            RpiSend(s_ans_ok);
-        }
+    // else if (!strncmp(msg, (const char *)"enable channel ", (sizeof("enable channel ") - 1)))
+    // {
+    //     if (*(msg + 15) == '1')
+    //     {
+    //         Treatment_SetChannelsFlag(ENABLE_CH1_FLAG);
+    //         RpiSend(s_ans_ok);
+    //     }
 
-        else if (*(msg + 15) == '2')
-        {
-            Treatment_SetChannelsFlag(ENABLE_CH2_FLAG);
-            RpiSend(s_ans_ok);
-        }
+    //     else if (*(msg + 15) == '2')
+    //     {
+    //         Treatment_SetChannelsFlag(ENABLE_CH2_FLAG);
+    //         RpiSend(s_ans_ok);
+    //     }
 
-        else if (*(msg + 15) == '3')
-        {
-            Treatment_SetChannelsFlag(ENABLE_CH3_FLAG);
-            RpiSend(s_ans_ok);
-        }
+    //     else if (*(msg + 15) == '3')
+    //     {
+    //         Treatment_SetChannelsFlag(ENABLE_CH3_FLAG);
+    //         RpiSend(s_ans_ok);
+    //     }
 
-        else
-            RpiSend(s_ans_nok);
+    //     else
+    //         RpiSend(s_ans_nok);
 
         
-    }
+    // }
 
-    else if (!strncmp(msg, (const char *)"disable channel ", (sizeof("disable channel ") - 1)))
-    {
-        if (*(msg + 16) == '1')
-        {
-            Treatment_SetChannelsFlag(DISABLE_CH1_FLAG);
-            RpiSend(s_ans_ok);
-        }
+    // else if (!strncmp(msg, (const char *)"disable channel ", (sizeof("disable channel ") - 1)))
+    // {
+    //     if (*(msg + 16) == '1')
+    //     {
+    //         Treatment_SetChannelsFlag(DISABLE_CH1_FLAG);
+    //         RpiSend(s_ans_ok);
+    //     }
 
-        else if (*(msg + 16) == '2')
-        {
-            Treatment_SetChannelsFlag(DISABLE_CH2_FLAG);
-            RpiSend(s_ans_ok);
-        }
+    //     else if (*(msg + 16) == '2')
+    //     {
+    //         Treatment_SetChannelsFlag(DISABLE_CH2_FLAG);
+    //         RpiSend(s_ans_ok);
+    //     }
 
-        else if (*(msg + 16) == '3')
-        {
-            Treatment_SetChannelsFlag(DISABLE_CH3_FLAG);
-            RpiSend(s_ans_ok);
-        }
+    //     else if (*(msg + 16) == '3')
+    //     {
+    //         Treatment_SetChannelsFlag(DISABLE_CH3_FLAG);
+    //         RpiSend(s_ans_ok);
+    //     }
 
-        else
-            RpiSend(s_ans_nok);
+    //     else
+    //         RpiSend(s_ans_nok);
             
-    }
+    // }
 
     // else if (!strncmp(msg, (const char *)"stretcher up", (sizeof("stretcher up") - 1)))
     // {

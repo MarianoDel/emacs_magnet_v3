@@ -49,7 +49,7 @@ typedef enum
 
 
 // Externals -------------------------------------------------------------------
-// volatile unsigned short adc_ch [2];
+volatile unsigned short adc_ch [2];
 // volatile unsigned char usart1_have_data = 0;
 unsigned short comms_messages_rpi = 0;
 extern volatile unsigned short secs_in_treatment;
@@ -62,11 +62,7 @@ int antenna_in_this_treatment = 0;
 
 
 // Module Functions to Test ----------------------------------------------------
-void Test_Treatment_Module_Settings (void);
-void Test_Treatment_Manager_Bad_Params (void);
-void Test_Treatment_Manager_Not_Antenna (void);
-void Test_Treatment_Manager (void);
-void Test_Treatment_Manager_Till_Finish (void);
+void Test_Treatment_All_Chain (void);
 
 
 // Module Auxiliary Functions --------------------------------------------------
@@ -79,11 +75,7 @@ void Test_Treatment_Manager_Till_Finish (void);
 int main (int argc, char *argv[])
 {
 
-    Test_Treatment_Manager_Bad_Params();
-    Test_Treatment_Module_Settings();    // this one fix the params
-    Test_Treatment_Manager_Not_Antenna();    
-    Test_Treatment_Manager();
-    Test_Treatment_Manager_Till_Finish();
+    Test_Treatment_All_Chain();
 
     return 0;
 }
@@ -286,13 +278,13 @@ void Test_Treatment_Manager_Bad_Params (void)
 }
 
 
-void Test_Treatment_Manager_Not_Antenna (void)
+void Test_Treatment_All_Chain (void)
 {
     int some_err = 0;    
     resp_e resp = resp_ok;
 
     antenna_in_this_treatment = 0;
-    printf("\n-- Testing Manager No Antennas --\n");    
+    printf("\n-- Testing Treatment Manager All Chain --\n");    
     printf("-- treat in standby\n");
     for (int i = 0; i < 20; i++)
         Treatment_Manager();
@@ -300,23 +292,59 @@ void Test_Treatment_Manager_Not_Antenna (void)
     if (treat_state != TREATMENT_STANDBY)
         some_err = 1;
 
+    printf("-- settings treatment params...\n");
+    for (int i = 0; i < 20; i++)
+    {
+        Treatment_Manager();
+        if (i == 0)
+        {
+            printf("-- set signal\n");
+            Usart1FillRxBuffer("signal square\r\n");
+        }
+
+        if (i == 5)
+        {
+            printf("-- set power\n");
+            Usart1FillRxBuffer("power 100\r\n");
+        }
+
+        if (i == 10)
+        {
+            printf("-- set frequency\n");
+            Usart1FillRxBuffer("frequency 20.00\r\n");
+        }
+
+        if (i == 15)
+        {
+            printf("-- set time\n");
+            Usart1FillRxBuffer("duration,120\r\n");
+        }
+    }
+        
+    if (treat_state != TREATMENT_STANDBY)
+        some_err = 1;
+    
+    
     if (!some_err)
     {
         printf("-- treat to running\n");        
-        comms_messages_rpi |= COMM_START_TREAT;
         
         for (int i = 0; i < 20; i++)
         {
-            // printf("running loop: %d treat_state: %d\n", i, treat_state);
             Treatment_Manager();
+            if (i == 0)
+            {
+                printf("-- set to run\n");
+                Usart1FillRxBuffer("start,\r\n");
+            }
         }
 
-        if (treat_state != TREATMENT_STANDBY)
+        if (treat_state != TREATMENT_RUNNING)
             some_err = 1;
         
     }
     
-    printf("Testing Treatment Not Antenna: ");
+    printf("Testing Treatment All Chain: ");
     if (some_err)
         PrintERR();
     else
@@ -325,175 +353,6 @@ void Test_Treatment_Manager_Not_Antenna (void)
 }
 
 
-void Test_Treatment_Manager (void)
-{
-    int some_err = 0;    
-    resp_e resp = resp_ok;
-
-    antenna_in_this_treatment = 0x0f;
-    printf("\n-- Testing Manager All Antennas --\n");
-    printf("-- treat in standby\n");
-    for (int i = 0; i < 20; i++)
-        Treatment_Manager();
-
-    if (treat_state != TREATMENT_STANDBY)
-        some_err = 1;
-
-    if (!some_err)
-    {
-        printf("-- treat to running\n");        
-        comms_messages_rpi |= COMM_START_TREAT;
-        
-        for (int i = 0; i < 20; i++)
-        {
-            // printf("running loop: %d treat_state: %d\n", i, treat_state);
-            Treatment_Manager();
-        }
-
-        if (treat_state != TREATMENT_RUNNING)
-            some_err = 1;
-        
-    }
-
-    if (!some_err)        
-    {
-        printf("-- treat to pause\n");
-        comms_messages_rpi |= COMM_PAUSE_TREAT;
-        
-        for (int i = 0; i < 20; i++)
-        {
-            Treatment_Manager();
-            if (i == 5)
-                comms_messages_rpi |= COMM_START_TREAT;
-        }
-
-        if (treat_state != TREATMENT_PAUSED)
-            some_err = 1;
-        
-    }
-
-    if (!some_err)
-    {
-        printf("-- treat to run again\n");    
-        comms_messages_rpi |= COMM_PAUSE_TREAT;
-        
-        for (int i = 0; i < 20; i++)
-            Treatment_Manager();
-
-        if (treat_state != TREATMENT_RUNNING)
-            some_err = 1;
-        
-    }
-
-    if (!some_err)
-    {
-        printf("-- treat to stop\n");
-        comms_messages_rpi |= COMM_STOP_TREAT;
-        
-        for (int i = 0; i < 20; i++)
-            Treatment_Manager();
-
-        if (treat_state != TREATMENT_STANDBY)
-            some_err = 1;
-        
-    }
-
-    if (!some_err)
-    {
-        printf("-- treat to running double START sended\n");    
-        comms_messages_rpi |= COMM_START_TREAT;
-        
-        for (int i = 0; i < 20; i++)
-        {
-            Treatment_Manager();
-            if (i == 5)
-                comms_messages_rpi |= COMM_START_TREAT;
-        }
-
-        if (treat_state != TREATMENT_RUNNING)
-            some_err = 1;
-        
-    }
-
-    if (!some_err)
-    {
-        printf("-- treat to pause and stop\n");
-        comms_messages_rpi |= COMM_PAUSE_TREAT;
-        
-        for (int i = 0; i < 20; i++)
-        {
-            Treatment_Manager();
-            if (i == 5)
-                comms_messages_rpi |= COMM_STOP_TREAT;
-        }
-
-        if (treat_state != TREATMENT_STANDBY)
-            some_err = 1;
-        
-    }
-    
-    printf("Testing Treatment Manager: ");
-    if (some_err)
-        PrintERR();
-    else
-        PrintOK();
-    
-}
-
-
-void Test_Treatment_Manager_Till_Finish (void)
-{
-    int some_err = 0;    
-    resp_e resp = resp_ok;
-
-    antenna_in_this_treatment = 0x0f;
-    printf("\n-- Testing Manager Till Finish --\n");
-    printf("-- treat in standby\n");
-    for (int i = 0; i < 20; i++)
-        Treatment_Manager();
-
-    if (treat_state != TREATMENT_STANDBY)
-        some_err = 1;
-
-    if (!some_err)
-    {
-        Treatment_SetTime(0, 1, 0);
-        printf("-- treat to running\n");        
-        comms_messages_rpi |= COMM_START_TREAT;
-        
-        for (int i = 0; i < 20; i++)
-        {
-            // printf("running loop: %d treat_state: %d\n", i, treat_state);
-            Treatment_Manager();
-        }
-
-        if (treat_state != TREATMENT_RUNNING)
-            some_err = 1;
-        
-    }
-
-    if (!some_err)        
-    {
-        printf("-- treat to finish\n");
-        secs_in_treatment = 70;
-        for (int i = 0; i < 20; i++)
-        {
-            // printf("running loop: %d treat_state: %d\n", i, treat_state);
-            Treatment_Manager();
-        }
-
-        if (treat_state != TREATMENT_STANDBY)
-            some_err = 1;
-        
-    }
-    
-    printf("Testing Treatment Till End: ");
-    if (some_err)
-        PrintERR();
-    else
-        PrintOK();
-    
-}
 
 
 // Module Mocked Functions -----------------------------------------------------
@@ -502,6 +361,17 @@ void RPI_Send (char * a)
     Usart1Send(a);
 }
 
+
+void HARD_L1_ON (void)
+{
+    printf("Led1 -> ON\n");
+}
+
+
+void HARD_L1_OFF (void)
+{
+    printf("Led1 -> OFF\n");
+}
 
 void ChangeLed (unsigned char number)
 {
@@ -512,6 +382,11 @@ void ChangeLed (unsigned char number)
 void Wait_ms (unsigned short number)
 {
     printf("wait for %d millis\n", number);
+}
+
+
+void AntennaSendKnowInfoWithTimer (void)
+{
 }
 
 
@@ -547,9 +422,9 @@ void UpdateBuzzer (void)
 {
 }
 
-void UpdateRaspberryMessages (void)
-{
-}
+// void UpdateRaspberryMessages (void)
+// {
+// }
 
 #define STOP_SIGNAL    1
 #define SETUP_SIGNAL    2

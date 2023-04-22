@@ -453,27 +453,27 @@ void Treatment_GetAllConf (char * tosend)
     strcat(tosend, buf);
 
     // Active channels
-    unsigned char c1 = 0;
-    unsigned char c2 = 0;
-    unsigned char c3 = 0;
+    // unsigned char c1 = 0;
+    // unsigned char c2 = 0;
+    // unsigned char c3 = 0;
 
-    if (treatment_conf.channels_in_treatment & ENABLE_CH1_FLAG)
-        c1 = 1;
+    // if (treatment_conf.channels_in_treatment & ENABLE_CH1_FLAG)
+    //     c1 = 1;
 
-    if (treatment_conf.channels_in_treatment & ENABLE_CH2_FLAG)
-        c2 = 1;
+    // if (treatment_conf.channels_in_treatment & ENABLE_CH2_FLAG)
+    //     c2 = 1;
 
-    if (treatment_conf.channels_in_treatment & ENABLE_CH3_FLAG)
-        c3 = 1;
+    // if (treatment_conf.channels_in_treatment & ENABLE_CH3_FLAG)
+    //     c3 = 1;
     
-    sprintf(buf, "in treat ch1:%d ch2:%d ch3:%d\n", c1, c2, c3);
-    strcat(tosend, buf);
+    // sprintf(buf, "in treat ch1:%d ch2:%d ch3:%d\n", c1, c2, c3);
+    // strcat(tosend, buf);
 
-    //Timer for sync
-    unsigned short tsync = 0;
-    // tsync = treatment_conf.timer_synchro / 10;
-    sprintf(buf, "synchro: %dms\n", tsync);
-    strcat(tosend, buf);
+    // //Timer for sync
+    // unsigned short tsync = 0;
+    // // tsync = treatment_conf.timer_synchro / 10;
+    // sprintf(buf, "synchro: %dms\n", tsync);
+    // strcat(tosend, buf);
 }
 
 

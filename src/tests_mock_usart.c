@@ -87,6 +87,18 @@ void Usart1FillRxBuffer (char * msg)
 }
 
 
+unsigned char Usart1HaveData (void)
+{
+    return usart1_have_data;
+}
+
+
+void Usart1HaveDataReset (void)
+{
+    usart1_have_data = 0;
+}
+
+
 ///////////////////////////
 // Usart2 Mock Functions //
 ///////////////////////////

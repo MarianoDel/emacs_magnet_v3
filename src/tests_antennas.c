@@ -21,6 +21,7 @@
 
 
 #include <stdio.h>
+#include <string.h>
 
 
 // Types Constants and Macros --------------------------------------------------
@@ -60,7 +61,10 @@ void Test_Antenna_All_Ch_In_Treatment (void);
 
 
 // Module Auxiliary Functions --------------------------------------------------
-
+void Usart2CB (char * msg);
+void Usart3CB (char * msg);
+void Uart4CB (char * msg);
+void Uart5CB (char * msg);
 
 // Tests Module Auxiliary or General Functions ---------------------------------
 
@@ -101,6 +105,12 @@ void Test_Antennas_Standby (void)
 
 void Test_Antenna_All_Ch_No_Connection (void)
 {
+    // activate usarts callbacks
+    Usart2Callback(Usart2CB);
+    Usart3Callback(Usart3CB);
+    Uart4Callback(Uart4CB);
+    Uart5Callback(Uart5CB);
+    
     for (int i = 0; i < 20000; i++)
     {
         AntennaUpdateStates ();
@@ -131,7 +141,15 @@ void Test_Antenna_All_Ch_Connection (void)
 {
     answer_params = 1;
     answer_keepalive = 1;
+
+    // activate usarts callbacks
+    Usart2Callback(Usart2CB);
+    Usart3Callback(Usart3CB);
+    Uart4Callback(Uart4CB);
+    Uart5Callback(Uart5CB);
+
     for (int i = 0; i < 20000; i++)
+    // for (int i = 0; i < 2000; i++)        
     {
         AntennaUpdateStates ();
         AntennaTimeouts ();
@@ -473,15 +491,14 @@ void RPI_Send (char * a)
     Usart1Send(a);
 }
 
-void UART_CH1_Send (char * a)
-{
-    Usart2Send(a);
 
+void Usart2CB (char * msg)
+{
     if ((answer_params) &&
-        (!strncmp(a, "get_params", sizeof("get_params") - 1)))
+        (!strncmp(msg, "get_params", sizeof("get_params") - 1)))
     {
-        const char s_antena [] = { "ant0,012.27,087.90,001.80,065.00\r\n" };
-        Usart2FillRxBuffer(s_antena);
+        // const char s_antena [] = { "ant0,012.27,087.90,001.80,065.00\r\n" };
+        // Usart2FillRxBuffer((char *) s_antena);
 
         // mock process string
         antenna_st my_ant;
@@ -491,25 +508,26 @@ void UART_CH1_Send (char * a)
     }
 
     if ((answer_keepalive) &&
-        (!strncmp(a, "keepalive", sizeof("keepalive") - 1)))
+        (!strncmp(msg, "keepalive", sizeof("keepalive") - 1)))
     {
         AntennaIsAnswering(CH1);        
     }
 
     if ((answer_name) &&
-        (!strncmp(a, "get_name", sizeof("get_name") - 1)))
+        (!strncmp(msg, "get_name", sizeof("get_name") - 1)))
     {
         AntennaSetName(CH1, "tunnel");
     }
     
 }
 
-void UART_CH2_Send (char * a)
+
+void Usart3CB (char * msg)
 {
-    Usart3Send(a);
+    // Usart3Send(a);
 
     if ((answer_params) &&
-        (!strncmp(a, "get_params", sizeof("get_params") - 1)))
+        (!strncmp(msg, "get_params", sizeof("get_params") - 1)))
     {
         // const char s_antena [] = { "ant1,023.85,141.60,001.30,065.00\r\n" };
         // Usart3FillRxBuffer(s_antena);
@@ -522,25 +540,26 @@ void UART_CH2_Send (char * a)
     }
     
     if ((answer_keepalive) &&
-        (!strncmp(a, "keepalive", sizeof("keepalive") - 1)))
+        (!strncmp(msg, "keepalive", sizeof("keepalive") - 1)))
     {
         AntennaIsAnswering(CH2);
     }
 
     if ((answer_name) &&
-        (!strncmp(a, "get_name", sizeof("get_name") - 1)))
+        (!strncmp(msg, "get_name", sizeof("get_name") - 1)))
     {
         AntennaSetName(CH2, "tunnel");
     }
     
 }
 
-void UART_CH3_Send (char * a)
+
+void Uart4CB (char * msg)
 {
-    Uart4Send(a);
+    // Uart4Send(a);
 
     if ((answer_params) &&
-        (!strncmp(a, "get_params", sizeof("get_params") - 1)))
+        (!strncmp(msg, "get_params", sizeof("get_params") - 1)))
     {
         // const char s_antena [] = { "ant1,017.00,120.00,001.30,065.00\r\n" };
         // Uart4FillRxBuffer(s_antena);
@@ -553,25 +572,26 @@ void UART_CH3_Send (char * a)
     }
 
     if ((answer_keepalive) &&
-        (!strncmp(a, "keepalive", sizeof("keepalive") - 1)))
+        (!strncmp(msg, "keepalive", sizeof("keepalive") - 1)))
     {
         AntennaIsAnswering(CH3);
     }
 
     if ((answer_name) &&
-        (!strncmp(a, "get_name", sizeof("get_name") - 1)))
+        (!strncmp(msg, "get_name", sizeof("get_name") - 1)))
     {
         AntennaSetName(CH3, "tunnel");
     }
     
 }
 
-void UART_CH4_Send (char * a)
+
+void Uart5CB (char * msg)
 {
-    Uart5Send(a);
+    // Uart5Send(a);
 
     if ((answer_params) &&
-        (!strncmp(a, "get_params", sizeof("get_params") - 1)))
+        (!strncmp(msg, "get_params", sizeof("get_params") - 1)))
     {
         // const char s_antena [] = { "ant2,005.70,011.10,002.80,065.00\r\n" };
         // Uart5FillRxBuffer(s_antena);
@@ -584,13 +604,13 @@ void UART_CH4_Send (char * a)
     }
 
     if ((answer_keepalive) &&
-        (!strncmp(a, "keepalive", sizeof("keepalive") - 1)))
+        (!strncmp(msg, "keepalive", sizeof("keepalive") - 1)))
     {
         AntennaIsAnswering(CH4);
     }
 
     if ((answer_name) &&
-        (!strncmp(a, "get_name", sizeof("get_name") - 1)))
+        (!strncmp(msg, "get_name", sizeof("get_name") - 1)))
     {
         AntennaSetName(CH4, "tunnel");
     }
