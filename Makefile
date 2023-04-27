@@ -221,17 +221,22 @@ tests_treatment:
 tests_treat_all_chain:
 	# compile first modules in this test
 	# first module objects to test
-	gcc -c src/treatment.c -I. $(INCDIR) $(DDEFS)
-	gcc -c src/comms_from_rasp.c -I. $(INCDIR) -DSTM32F10X_HD
+	# gcc -c src/treatment.c -I. $(INCDIR) $(DDEFS)
+	gcc -c src/treatment.c -I. $(INCDIR) $(DDEFS) -DTESTING_SHOW_INFO
+	gcc -c src/comms_from_rasp.c -I. $(INCDIR) $(DDEFS)
 	gcc -c src/utils.c -I. $(INCDIR)
+	gcc -c src/antennas.c -I. $(INCDIR) $(DDEFS)
+	gcc -c src/signals.c -I. $(INCDIR) $(DDEFS) -DTESTING_SHOW_INFO
+	# gcc -c src/signals.c -I. $(INCDIR) $(DDEFS) -DTESTING_SHOW_INFO -DTESTING_SHOW_INFO_INDEX_SP
 	# gcc -c src/signals.c -I. $(INCDIR) $(DDEFS)
-	# gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
+	gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
 	# second auxiliary helper modules
 	gcc -c src/tests_ok.c -I $(INCDIR)
 	gcc -c src/tests_mock_usart.c -I $(INCDIR)
-	# gcc -c src/tests_vector_utils.c -I $(INCDIR)
-	# gcc -c src/tests_know_antennas.c -I $(INCDIR)
-	gcc --coverage src/tests_treat_all_chain.c treatment.o comms_from_rasp.o utils.o tests_ok.o tests_mock_usart.o -I $(INCDIR) $(DDEFS)
+	gcc -c src/tests_recursive_utils.c -I $(INCDIR)
+	gcc -c src/tests_vector_utils.c -I $(INCDIR)
+	gcc -c src/tests_know_antennas.c -I $(INCDIR)
+	gcc src/tests_treat_all_chain.c treatment.o comms_from_rasp.o utils.o antennas.o signals.o dsp.o tests_ok.o tests_mock_usart.o tests_recursive_utils.o tests_vector_utils.o tests_know_antennas.o -I $(INCDIR) $(DDEFS)
 	./a.out
 
 

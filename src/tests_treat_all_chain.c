@@ -11,15 +11,29 @@
 #include "treatment.h"
 #include "comms.h"
 #include "antennas_defs.h"
+#include "antennas.h"
+#include "channels_defs.h"
+
 
 // helper modules
 #include "tests_ok.h"
 #include "tests_mock_usart.h"
+#include "tests_know_antennas.h"
+#include "tests_vector_utils.h"
+#include "tests_recursive_utils.h"
+
 
 #include <stdio.h>
+#include <string.h>
 // #include <math.h>
 
 // Types Constants and Macros --------------------------------------------------
+// #define SIZEOF_SIGNALS    256    // one signal or one complete table
+#define SIZEOF_SIGNALS    (256 * 8)
+// #define SIZEOF_SIGNALS    (506)
+// #define SIZEOF_SIGNALS    (1020)
+// #define SIZEOF_SIGNALS    (132)
+
 //ESTADOS DEL BUZZER copied from hard.h
 typedef enum
 {    
@@ -47,10 +61,16 @@ typedef enum
 #define BUZZER_HALF_CMD		BUZZER_MULTIPLE_HALF
 #define BUZZER_SHORT_CMD	BUZZER_MULTIPLE_SHORT
 
+#define IS_CH4    adc_ch[0]
+#define IS_CH3    adc_ch[1]
+#define IS_CH2    adc_ch[2]
+#define IS_CH1    adc_ch[3]
+
 
 // Externals -------------------------------------------------------------------
-volatile unsigned short adc_ch [2];
-// volatile unsigned char usart1_have_data = 0;
+volatile unsigned short adc_ch [4];
+volatile unsigned char timer1_seq_ready = 0;
+
 unsigned short comms_messages_rpi = 0;
 extern volatile unsigned short secs_in_treatment;
 extern unsigned short secs_end_treatment;
@@ -58,7 +78,28 @@ extern unsigned short secs_elapsed_up_to_now;
 
 
 // Globals ---------------------------------------------------------------------
-int antenna_in_this_treatment = 0;
+int answer_params = 0;
+int answer_keepalive = 0;
+int answer_name = 0;
+
+
+#define B_SIZE    1
+#define A_SIZE    2
+// ch1 plant
+// float b_vector_ch1 [B_SIZE] = { 0.62806727 };
+// float a_vector_ch1 [A_SIZE] = { 1., -0.94942247 };
+float b_vector_ch1 [B_SIZE] = { 0.6445 };
+float a_vector_ch1 [A_SIZE] = { 1., -0.94809 };
+float ins_vector_ch1 [B_SIZE] = { 0.0 };
+float outs_vector_ch1 [A_SIZE] = { 0.0 };
+recursive_filter_t plant_ch1;
+
+short v_duty_ch1 [SIZEOF_SIGNALS] = { 0 };
+short v_error_ch1 [SIZEOF_SIGNALS] = { 0 };
+short v_sp_ch1 [SIZEOF_SIGNALS] = { 0 };
+short v_adc_ch1 [SIZEOF_SIGNALS] = { 0 };
+short v_ref_ch1 [SIZEOF_SIGNALS] = { 0 };
+short v_signal_ch1 [SIZEOF_SIGNALS] = { 0 };
 
 
 // Module Functions to Test ----------------------------------------------------
@@ -66,6 +107,14 @@ void Test_Treatment_All_Chain (void);
 
 
 // Module Auxiliary Functions --------------------------------------------------
+void Usart2CB (char * msg);
+void Usart3CB (char * msg);
+void Uart4CB (char * msg);
+void Uart5CB (char * msg);
+void Set_Recursive_From_Single_Antenna (recursive_filter_t * f, unsigned char antenna_index);
+float Plant_Out_Recursive (recursive_filter_t * f, short duty);
+unsigned short Adc12BitsConvertion (float sample);
+unsigned short Adc10BitsConvertion (float sample);
 
 
 // Tests Module Auxiliary or General Functions ---------------------------------
@@ -78,148 +127,6 @@ int main (int argc, char *argv[])
     Test_Treatment_All_Chain();
 
     return 0;
-}
-
-
-void Test_Treatment_Module_Settings (void)
-{
-    int some_err = 0;    
-    resp_e resp = resp_ok;
-    
-    printf("\n-- Testing Treatment Module Settings --\n");
-
-    signal_type_e signal = SQUARE_SIGNAL;
-    resp = Treatment_SetSignalType (signal);
-    signal = Treatment_GetSignalType();
-    if ((resp != resp_ok) || (signal != SQUARE_SIGNAL))
-    {
-        printf("\nTreatSignal error with %d ", signal);
-        some_err = 1;
-    }
-
-    signal = TRIANGULAR_SIGNAL;
-    resp = Treatment_SetSignalType (signal);
-    signal = Treatment_GetSignalType();
-    if ((resp != resp_ok) || (signal != TRIANGULAR_SIGNAL))
-    {
-        printf("\nTreatSignal error with %d ", signal);
-        some_err = 1;
-    }
-
-    signal = SINUSOIDAL_SIGNAL;
-    resp = Treatment_SetSignalType (signal);
-    signal = Treatment_GetSignalType();
-    if ((resp != resp_ok) || (signal != SINUSOIDAL_SIGNAL))
-    {
-        printf("\nTreatSignal error with %d ", signal);
-        some_err = 1;
-    }
-
-    signal = 10;
-    resp = Treatment_SetSignalType (signal);
-    if (resp != resp_error)
-    {
-        printf("\nTreatSignal error with %d ", signal);
-        some_err = 1;
-    }
-
-    unsigned char f_int = 10;
-    unsigned char f_dec = 10;
-    resp = Treatment_SetFrequency (f_int, f_dec);
-    Treatment_GetFrequency (&f_int, &f_dec);
-    if ((resp != resp_ok) || (f_int != 10) || (f_dec != 10))
-    {
-        printf("\nTreatFreq error with %d.%d ", f_int, f_dec);
-        some_err = 1;
-    }
-
-    f_int = 100;
-    f_dec = 10;
-    resp = Treatment_SetFrequency (f_int, f_dec);
-    if (resp != resp_error)
-    {
-        printf("\nTreatFreq error with %d.%d ", f_int, f_dec);
-        some_err = 1;
-    }
-
-    unsigned char power = 100;
-    resp = Treatment_SetPower (power);
-    power = Treatment_GetPower ();
-
-    if ((resp != resp_ok) || (power != 100))
-    {
-        printf("\nTreatPower error with %d ", power);
-         some_err = 1;
-    }
-
-    power = 1;
-    resp = Treatment_SetPower (power);
-    power = Treatment_GetPower ();
-    if ((resp != resp_ok) || (power != 10))
-    {
-        printf("\nTreatPower error with %d ", power);
-        some_err = 1;
-    }
-
-    power = 120;
-    resp = Treatment_SetPower (power);
-    power = Treatment_GetPower ();
-    if ((resp != resp_ok) || (power != 100))
-    {
-        printf("\nTreatPower error with %d ", power);
-        some_err = 1;
-    }
-
-    unsigned char minutes = 100;
-    unsigned short secs = 0;
-    resp = Treatment_SetTimeinMinutes (minutes);
-    secs = Treatment_GetTime ();
-    if ((resp != resp_ok) || (secs != (minutes * 60)))
-    {
-        printf("\nTreatTime error with %d ", minutes);
-        some_err = 1;
-    }
-
-    minutes = 121;
-    resp = Treatment_SetTimeinMinutes (minutes);
-    if (resp != resp_error)
-    {
-        printf("\nTreatTime error with %d ", minutes);
-        some_err = 1;
-    }
-
-    unsigned char channels_a = 0;
-    unsigned char channels_b = 0;    
-    channels_a |= ENABLE_CH1_FLAG | ENABLE_CH2_FLAG | ENABLE_CH3_FLAG;
-    Treatment_SetChannelsFlag (channels_a);
-    channels_b = Treatment_GetChannelsFlag ();
-    if ((channels_a & 0x0f) != channels_b)
-    {
-        printf("\nTreatChannels error with setted: %d getted: %d ", channels_a, channels_b);
-        some_err = 1;
-    }
-
-    channels_a = DISABLE_CH1_FLAG;
-    Treatment_SetChannelsFlag (channels_a);
-    channels_b = Treatment_GetChannelsFlag ();
-    if (channels_b != ((ENABLE_CH2_FLAG | ENABLE_CH3_FLAG) & 0x0f))
-    {
-        printf("\nTreatChannels error with setted: %d getted: %d ", channels_a, channels_b);
-        some_err = 1;
-    }
-    
-
-    char all_conf [250];
-    Treatment_GetAllConf(all_conf);
-    printf("-- get all conf\n");
-    printf("%s", all_conf);
-    
-    printf("Testing Treatment Module Settings: ");
-    if (some_err)
-        PrintERR();
-    else
-        PrintOK();
-    
 }
 
 
@@ -237,53 +144,11 @@ typedef enum {
 
 extern unsigned char treat_state;
 extern treatment_conf_t treatment_conf;
-void Test_Treatment_Manager_Bad_Params (void)
-{
-    int some_err = 0;    
-    resp_e resp = resp_ok;
-
-    antenna_in_this_treatment = 0;
-    printf("\n-- Testing Manager Bad Params --\n");    
-    printf("-- treat in standby\n");
-    for (int i = 0; i < 20; i++)
-        Treatment_Manager();
-
-    if (treat_state != TREATMENT_STANDBY)
-        some_err = 1;
-
-
-    treatment_conf.treatment_signal.signal = 5;
-    if (!some_err)
-    {
-        printf("-- treat to running\n");        
-        comms_messages_rpi |= COMM_START_TREAT;
-        
-        for (int i = 0; i < 20; i++)
-        {
-            // printf("running loop: %d treat_state: %d\n", i, treat_state);
-            Treatment_Manager();
-        }
-
-        if (treat_state != TREATMENT_STANDBY)
-            some_err = 1;
-        
-    }
-    
-    printf("Testing Treatment Bad Params: ");
-    if (some_err)
-        PrintERR();
-    else
-        PrintOK();
-    
-}
-
-
 void Test_Treatment_All_Chain (void)
 {
     int some_err = 0;    
     resp_e resp = resp_ok;
 
-    antenna_in_this_treatment = 0;
     printf("\n-- Testing Treatment Manager All Chain --\n");    
     printf("-- treat in standby\n");
     for (int i = 0; i < 20; i++)
@@ -299,19 +164,31 @@ void Test_Treatment_All_Chain (void)
         if (i == 0)
         {
             printf("-- set signal\n");
-            Usart1FillRxBuffer("signal square\r\n");
+            // Usart1FillRxBuffer("signal square\r\n");
+            // Usart1FillRxBuffer("signal triangular\r\n");
+            Usart1FillRxBuffer("signal sinusoidal\r\n");            
         }
 
         if (i == 5)
         {
             printf("-- set power\n");
             Usart1FillRxBuffer("power 100\r\n");
+            // Usart1FillRxBuffer("power 050\r\n");
+            // Usart1FillRxBuffer("power 010\r\n");            
         }
 
         if (i == 10)
         {
             printf("-- set frequency\n");
-            Usart1FillRxBuffer("frequency 20.00\r\n");
+            Usart1FillRxBuffer("frequency 90.99\r\n");
+            // Usart1FillRxBuffer("frequency 86.22\r\n");            
+            // Usart1FillRxBuffer("frequency 56.00\r\n");
+            // Usart1FillRxBuffer("frequency 28.00\r\n");            
+            // Usart1FillRxBuffer("frequency 20.50\r\n");            
+            // Usart1FillRxBuffer("frequency 15.00\r\n");
+            // Usart1FillRxBuffer("frequency 14.00\r\n");
+            // Usart1FillRxBuffer("frequency 10.50\r\n");
+            // Usart1FillRxBuffer("frequency 07.00\r\n");
         }
 
         if (i == 15)
@@ -327,10 +204,39 @@ void Test_Treatment_All_Chain (void)
     
     if (!some_err)
     {
+        printf("-- setting antennas connection\n");
+
+        // activate usarts callbacks
+        Usart2Callback(Usart2CB);
+        Usart3Callback(Usart3CB);
+        Uart4Callback(Uart4CB);
+        Uart5Callback(Uart5CB);
+
+        // activate antennas answers
+        answer_params = 1;
+        answer_keepalive = 1;
+        answer_name = 1;
+        
+    
+        for (int i = 0; i < 20000; i++)
+        {
+            AntennaUpdateStates ();
+            AntennaTimeouts ();
+        }
+        
+        if (treat_state != TREATMENT_STANDBY)
+            some_err = 1;
+        
+    }
+    
+    
+    if (!some_err)
+    {
         printf("-- treat to running\n");        
         
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < SIZEOF_SIGNALS; i++)
         {
+            timer1_seq_ready = 1;
             Treatment_Manager();
             if (i == 0)
             {
@@ -349,11 +255,100 @@ void Test_Treatment_All_Chain (void)
         PrintERR();
     else
         PrintOK();
+
+    // backup data to file
+        ///////////////////////////
+    // Backup Data to a file //
+    ///////////////////////////
+    FILE * file = fopen("data.txt", "w");
+
+    if (file == NULL)
+    {
+        printf("data file not created!\n");
+        return;
+    }
+
+    Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
+    printf("\nRun by hand python3 simul_outputs.py\n");
+}
+
+
+float Vin = 192.0;
+float Rsense = 0.055;
+float Ao = 13.0;
+float La = 0.142;
+float Ra = 11.0;
+float fsampling = 7000.0;
+void Set_Recursive_From_Single_Antenna (recursive_filter_t * f, unsigned char antenna_index)
+{
+    antenna_st my_antenna;
+    
+    f->b_params = b_vector_ch1;
+    f->a_params = a_vector_ch1;
+    f->b_size = B_SIZE;
+    f->a_size = A_SIZE;
+    f->last_inputs = ins_vector_ch1;
+    f->last_outputs = outs_vector_ch1;
+
+    TSP_Get_Know_Single_Antenna (&my_antenna, antenna_index);
+
+    La = my_antenna.inductance_int + my_antenna.inductance_dec / 100.0;
+    La = La / 1000.0;    // convert mHy to Hy
+    Ra = my_antenna.resistance_int + my_antenna.resistance_dec / 100.0;
+    float max_antenna_current = my_antenna.current_limit_int + my_antenna.current_limit_dec / 100.0;
+    
+    float b0 = Rsense * Ao;
+    b0 = b0 / (La * fsampling);
+
+    float a0 = 1.0;
+    float a1 = -1.0 + (Ra + Rsense)/(La * fsampling);
+
+    b_vector_ch1[0] = b0;
+    a_vector_ch1[0] = a0;
+    a_vector_ch1[1] = a1;        
+
+    for (int i = 0; i < B_SIZE; i++)
+        ins_vector_ch1[i] = 0.0;
+
+    for (int i = 0; i < A_SIZE; i++)
+        outs_vector_ch1[i] = 0.0;
+
+    printf("b params: %f\n", f->b_params[0]);
+    printf("a params: %f %f\n", f->a_params[0], f->a_params[1]);
+
+    // check the Tau for parameters correction
+    float Tau = La / Ra;
+    float Tau_s = Tau * fsampling;
+    int Tau_samples = (int) Tau_s;
+    printf("antenna La: %f Ra: %f Tau: %f Tau_samples: %d\n",
+           La,
+           Ra,
+           Tau,
+           Tau_samples);
+
+    printf("low pass L-R wc: %fr/s fc: %fHz\n",
+           Ra/La,
+           Ra/(La * 6.28));
     
 }
 
 
+float Plant_Out_Recursive (recursive_filter_t * f, short duty)
+{
+    return Recursive_Filter_Float(f, (float) duty * Vin / 1000.0);
+}
 
+
+void Plant_Out_Recursive_Reset (int which_channel, recursive_filter_t * f)
+{
+    Recursive_Filter_Float_Reset(f);
+}
+
+
+void Plant_Out_PI_Flush (unsigned char which_channel)
+{
+}
 
 // Module Mocked Functions -----------------------------------------------------
 void RPI_Send (char * a)
@@ -385,10 +380,134 @@ void Wait_ms (unsigned short number)
 }
 
 
-void AntennaSendKnowInfoWithTimer (void)
+// void AntennaSendKnowInfoWithTimer (void)
+// {
+// }
+
+void Usart2CB (char * msg)
 {
+    if ((answer_params) &&
+        (!strncmp(msg, "get_params", sizeof("get_params") - 1)))
+    {
+        // const char s_antena [] = { "ant0,012.27,087.90,001.80,065.00\r\n" };
+        // Usart2FillRxBuffer((char *) s_antena);
+
+        // mock process string
+        antenna_st my_ant;
+        TSP_Get_Know_Single_Antenna(&my_ant, 0);        
+        AntennaSetParamsStruct (CH1, &my_ant);
+        Set_Recursive_From_Single_Antenna(&plant_ch1, 0);
+    }
+
+    if ((answer_keepalive) &&
+        (!strncmp(msg, "keepalive", sizeof("keepalive") - 1)))
+    {
+        AntennaIsAnswering(CH1);        
+    }
+
+    if ((answer_name) &&
+        (!strncmp(msg, "get_name", sizeof("get_name") - 1)))
+    {
+        AntennaSetName(CH1, "tunnel");
+    }
+    
 }
 
+
+void Usart3CB (char * msg)
+{
+    // Usart3Send(a);
+
+    if ((answer_params) &&
+        (!strncmp(msg, "get_params", sizeof("get_params") - 1)))
+    {
+        // const char s_antena [] = { "ant1,023.85,141.60,001.30,065.00\r\n" };
+        // Usart3FillRxBuffer(s_antena);
+
+        // mock process string
+        antenna_st my_ant;
+        TSP_Get_Know_Single_Antenna(&my_ant, 1);
+        
+        AntennaSetParamsStruct (CH2, &my_ant);
+    }
+    
+    if ((answer_keepalive) &&
+        (!strncmp(msg, "keepalive", sizeof("keepalive") - 1)))
+    {
+        AntennaIsAnswering(CH2);
+    }
+
+    if ((answer_name) &&
+        (!strncmp(msg, "get_name", sizeof("get_name") - 1)))
+    {
+        AntennaSetName(CH2, "tunnel");
+    }
+    
+}
+
+
+void Uart4CB (char * msg)
+{
+    // Uart4Send(a);
+
+    if ((answer_params) &&
+        (!strncmp(msg, "get_params", sizeof("get_params") - 1)))
+    {
+        // const char s_antena [] = { "ant1,017.00,120.00,001.30,065.00\r\n" };
+        // Uart4FillRxBuffer(s_antena);
+
+        // mock process string
+        antenna_st my_ant;
+        TSP_Get_Know_Single_Antenna(&my_ant, 2);
+        
+        AntennaSetParamsStruct (CH3, &my_ant);
+    }
+
+    if ((answer_keepalive) &&
+        (!strncmp(msg, "keepalive", sizeof("keepalive") - 1)))
+    {
+        AntennaIsAnswering(CH3);
+    }
+
+    if ((answer_name) &&
+        (!strncmp(msg, "get_name", sizeof("get_name") - 1)))
+    {
+        AntennaSetName(CH3, "tunnel");
+    }
+    
+}
+
+
+void Uart5CB (char * msg)
+{
+    // Uart5Send(a);
+
+    if ((answer_params) &&
+        (!strncmp(msg, "get_params", sizeof("get_params") - 1)))
+    {
+        // const char s_antena [] = { "ant2,005.70,011.10,002.80,065.00\r\n" };
+        // Uart5FillRxBuffer(s_antena);
+
+        // mock process string
+        antenna_st my_ant;
+        TSP_Get_Know_Single_Antenna(&my_ant, 3);
+        
+        AntennaSetParamsStruct (CH4, &my_ant);
+    }
+
+    if ((answer_keepalive) &&
+        (!strncmp(msg, "keepalive", sizeof("keepalive") - 1)))
+    {
+        AntennaIsAnswering(CH4);
+    }
+
+    if ((answer_name) &&
+        (!strncmp(msg, "get_name", sizeof("get_name") - 1)))
+    {
+        AntennaSetName(CH4, "tunnel");
+    }
+    
+}
 
 void BuzzerCommands (unsigned char cmd, unsigned char number)
 {
@@ -422,76 +541,125 @@ void UpdateBuzzer (void)
 {
 }
 
-// void UpdateRaspberryMessages (void)
-// {
-// }
 
-#define STOP_SIGNAL    1
-#define SETUP_SIGNAL    2
-#define GENERATE_SIGNAL    3
-int last_signal_state = 0;
-void Signals_Stop_All_Channels (void)
+unsigned short Adc12BitsConvertion (float sample)
 {
-    if (last_signal_state != STOP_SIGNAL)
+    if (sample > 0.0001)
     {
-        printf("stopping all channels\n");
-        last_signal_state = STOP_SIGNAL;
+        sample = sample / 3.3;
+        sample = sample * 4095;
+        
+        if (sample > 4095)
+            sample = 4095;
     }
-}
-
-
-void Signals_Setup_All_Channels (void)
-{
-    if (last_signal_state != SETUP_SIGNAL)
-    {
-        printf("setup in all channels\n");
-        last_signal_state = SETUP_SIGNAL;
-    }
-}
-
-void Signals_Generate_All_Channels (void)
-{
-    if (last_signal_state != GENERATE_SIGNAL)
-    {
-        printf("generate all channels\n");
-        last_signal_state = GENERATE_SIGNAL;
-    }
-}
-
-
-unsigned char AntennaVerifyForTreatment (unsigned char ch)
-{
-    printf("antenna verify for treatment on ch%d -- ", ch + 1);
-    
-    if (antenna_in_this_treatment & (1 << ch))
-    {
-        printf("finded\n");
-        return 1;
-    }
-
-    printf("not present\n");
-    return 0;    
-}
-
-
-void Signals_Set_Reset_Channel_For_Treatment (unsigned char which_channel, unsigned char state)
-{
-    if (state)
-        printf("in signals ch%d set for treatment\n", which_channel + 1);
     else
-        printf("in signals ch%d not in this treatment\n", which_channel + 1);
+        sample = 0.0;
+
+    return (unsigned short) sample;
+    
 }
 
 
-void AntennaGetParamsStruct (unsigned char ch, antenna_st *ant)
+unsigned short Adc10BitsConvertion (float sample)
 {
-    printf("get antenna info for ch%d\n", ch + 1);
+    if (sample > 0.0001)
+    {
+        sample = sample / 3.3;
+        sample = sample * 1023;
+        
+        if (sample > 1023)
+            sample = 1023;
+    }
+    else
+        sample = 0.0;
+
+    return (unsigned short) sample;
+    
 }
 
-void Signals_Set_Channel_PI_Parameters (unsigned char which_channel, antenna_st * ant)
+// Mocked Functions for Signals Module -----------------------------------------
+int pwm_cnt = 0;
+void TIM8_Update_CH3 (unsigned short a)
 {
-    printf("calculate pi params for ch%d\n", which_channel + 1);
+    // printf("HL CH1: %d\n", a);
+    if (a)
+    {
+        float output = 0.0;
+        output = Plant_Out_Recursive(&plant_ch1, a);
+
+        IS_CH1 = Adc12BitsConvertion (output);
+        v_adc_ch1[pwm_cnt] = IS_CH1;
+        v_duty_ch1[pwm_cnt] = a;
+        pwm_cnt++;
+    }
+    
 }
+
+void TIM8_Update_CH4 (unsigned short a)
+{
+    // printf("LR CH1: %d\n", a);
+    if (a == 0)    // no emition no adc data
+    {
+        IS_CH1 = 0;
+        Plant_Out_Recursive_Reset (CH1, &plant_ch1);
+        Plant_Out_PI_Flush (CH1);
+        v_adc_ch1[pwm_cnt] = IS_CH1;
+        v_duty_ch1[pwm_cnt] = a;        
+        pwm_cnt++;
+    }
+    else if (a < 950)    // regulation on negative
+    {
+        float output = 0.0;
+        output = Plant_Out_Recursive(&plant_ch1, -a);
+        // output = Plant_Out_Recursive(&plant_ch1, -a << 5);    // simulate a fast discharge     
+        IS_CH1 = Adc12BitsConvertion (output);
+        v_adc_ch1[pwm_cnt] = IS_CH1;
+        v_duty_ch1[pwm_cnt] = -a;
+        pwm_cnt++;
+    }
+    else
+    {
+        // regulation by positive, do nothing in here
+    }    
+}
+
+void TIM8_Update_CH2 (unsigned short a)
+{
+    // printf("HL CH2: %d\n", a);
+}
+
+void TIM8_Update_CH1 (unsigned short a)
+{
+    // printf("LR CH2: %d\n", a);
+}
+
+void TIM4_Update_CH2 (unsigned short a)
+{
+    // printf("HL CH3: %d\n", a);
+}
+
+void TIM4_Update_CH3 (unsigned short a)
+{
+    // printf("LR CH3: %d\n", a);
+}
+
+void TIM5_Update_CH1 (unsigned short a)
+{
+    // printf("HL CH4: %d\n", a);
+}
+
+void TIM5_Update_CH2 (unsigned short a)
+{
+    // printf("LR CH4: %d\n", a);
+}
+
+void Error_SetStatus (unsigned char error, unsigned char channel)
+{
+    error <<= 4;
+    error += channel + 1;
+    printf("error: 0x%02x\n", error);
+}
+
 //--- end of file ---//
 
 

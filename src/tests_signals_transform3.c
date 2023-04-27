@@ -175,9 +175,9 @@ void Plant_From_Input_And_Feedback (void)
 {
     float signal_out = 0.0;
     short duty = 0;
-    // unsigned char antenna_index = 0;
+    unsigned char antenna_index = 0;
     // unsigned char antenna_index = 6;
-    unsigned char antenna_index = 8;    
+    // unsigned char antenna_index = 8;    
     
     printf("from input response\n");    
 
@@ -192,25 +192,25 @@ void Plant_From_Input_And_Feedback (void)
     printf(" setting input signal\n");
     // all signals to 1000pts
     // step
-    for (int i = 0; i < SIZEOF_SIGNALS / 2; i++)
-    {
-        v_input[i] = 1000;
-    }
-    for (int i = SIZEOF_SIGNALS / 2; i < SIZEOF_SIGNALS; i++)
-    {
-        v_input[i] = 0;
-    }
-    // end of step function
-    
-    // triangular
     // for (int i = 0; i < SIZEOF_SIGNALS / 2; i++)
     // {
-    //     v_input[i] =  2 * i * 1000 / SIZEOF_SIGNALS ;
+    //     v_input[i] = 1000;
     // }
     // for (int i = SIZEOF_SIGNALS / 2; i < SIZEOF_SIGNALS; i++)
     // {
     //     v_input[i] = 0;
     // }
+    // end of step function
+    
+    // triangular
+    for (int i = 0; i < SIZEOF_SIGNALS / 2; i++)
+    {
+        v_input[i] =  2 * i * 1000 / SIZEOF_SIGNALS ;
+    }
+    for (int i = SIZEOF_SIGNALS / 2; i < SIZEOF_SIGNALS; i++)
+    {
+        v_input[i] = 0;
+    }
     // end of triangular
 
     // sinusoidal

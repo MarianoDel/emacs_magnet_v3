@@ -84,7 +84,24 @@ void Treatment_Manager (void)
             }
             else
             {
-                RPI_Send("OK\r\n");
+                signals_struct_t new_treat_data;
+                unsigned char fi = 0;
+                unsigned char fd = 0;
+                Treatment_GetFrequency(&fi, &fd);
+                new_treat_data.freq_int = fi;
+                new_treat_data.freq_dec = fd;
+                new_treat_data.signal = Treatment_GetSignalType();
+                new_treat_data.power = Treatment_GetPower();                
+                Signals_Setup_Treatment_Data(&new_treat_data);
+#ifdef TESTING_SHOW_INFO
+                printf("\n treatment -> signal freq: %02d.%02dHz sig: %d power: %d\n",
+                       new_treat_data.freq_int,
+                       new_treat_data.freq_dec,
+                       new_treat_data.signal,
+                       new_treat_data.power);
+#endif
+                
+                RPI_Send("OK\r\n");                
                 treat_state = TREATMENT_CHECK_ANTENNAS_CONNECTED;
             }
         }

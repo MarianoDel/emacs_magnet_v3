@@ -33,6 +33,11 @@
 volatile unsigned short adc_ch [10];
 volatile unsigned char timer1_seq_ready = 0;
 
+extern void Signals_Setup_Phase_Accumulator (unsigned char freq_int,
+                                             unsigned char freq_dec,
+                                             unsigned short * phase_accum);
+
+
 
 // Globals ---------------------------------------------------------------------
 short v_duty_ch1 [SIZEOF_SIGNALS] = { 0 };
@@ -58,6 +63,8 @@ void Test_PI_Simul (void);
 void Test_Generate_Setup (void);
 void Test_Generate_All_Channels (void);
 void Test_Set_Channel_PI_Parameters (void);
+void Test_Setup_Phase_And_Increment (void);
+
 
 // Module Auxiliary Functions --------------------------------------------------
 
@@ -72,7 +79,8 @@ int main (int argc, char *argv[])
     // Test_PI_Simul ();
     // Test_Generate_Setup ();
     // Test_Generate_All_Channels ();
-    Test_Set_Channel_PI_Parameters ();
+    // Test_Set_Channel_PI_Parameters ();
+    Test_Setup_Phase_And_Increment ();    
 
     return 0;
 }
@@ -130,6 +138,28 @@ void Test_Set_Channel_PI_Parameters (void)
     printf(" ki: %d\n", global_signals.ki_ch1);
     printf(" kp: %d\n", global_signals.kp_ch1);
     printf(" max_c: %d\n", global_signals.max_c_ch1);           
+}
+
+
+void Test_Setup_Phase_And_Increment (void)
+{
+    unsigned char freq_int = 0;
+    unsigned char freq_dec = 50;
+    unsigned short phase_a = 0;
+    
+    for (int i = 0; i < 200; i += 10)
+    {
+        freq_int = i;
+        Signals_Setup_Phase_Accumulator(freq_int, freq_dec, &phase_a);
+
+        float eff_freq = phase_a * 7000.0 / (256 * 256);
+        printf("estimated for sampling 7000Hz freq: %f\n", eff_freq);
+        printf("with %02d.%02dHz phase acc: %d\n\n",
+               freq_int,
+               freq_dec,
+               phase_a);
+    }
+
 }
 
 

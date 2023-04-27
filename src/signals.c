@@ -60,18 +60,9 @@ extern volatile unsigned char timer1_seq_ready;
 
 
 // Globals ---------------------------------------------------------------------
-// treatment_e treatment_state = TREATMENT_INIT_FIRST_TIME;
-// signals_struct_t signal_to_gen;
-// gen_signal_state_e gen_signal_state = GEN_SIGNAL_INIT;
-// unsigned char global_error = 0;
-
-// unsigned short * p_signal;
-// unsigned short * p_signal_running;
-
-// short d = 0;
-// short ez1 = 0;
-// short ez2 = 0;
 unsigned short phase_accum = 0;
+unsigned short signal_index = 0;
+
 
 //-- para determinacion de soft overcurrent ------------
 #ifdef USE_SOFT_OVERCURRENT
@@ -277,6 +268,9 @@ const unsigned short square_table_outphase [] = {0,0,0,0,0,0,0,0,0,0,
 
 // Module Private Functions ----------------------------------------------------
 void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_sp);
+void Signals_Setup_Phase_Accumulator (unsigned char freq_int,
+                                      unsigned char freq_dec,
+                                      unsigned short * phase_accum);
 
 
 // Module Functions ------------------------------------------------------------
@@ -286,7 +280,6 @@ pi_data_obj_t pi_ch1;
 pi_data_obj_t pi_ch2;
 pi_data_obj_t pi_ch3;
 pi_data_obj_t pi_ch4;
-unsigned short signal_index = 0;
 unsigned short ch1_max_current = 0;
 unsigned short ch2_max_current = 0;
 unsigned short ch3_max_current = 0;
@@ -296,8 +289,8 @@ unsigned short ch4_max_current = 0;
 signals_struct_t global_signals = {
     // general all channels things
     // .signal = SINUSOIDAL_SIGNAL,
-    .signal = SQUARE_SIGNAL,
-    // .signal = TRIANGULAR_SIGNAL,
+    // .signal = SQUARE_SIGNAL,
+    .signal = TRIANGULAR_SIGNAL,
 
     .freq_int = 23,
     .freq_dec = 10,
@@ -323,6 +316,16 @@ signals_struct_t global_signals = {
     .max_c_ch4 = 870,
     
 };
+
+
+void Signals_Setup_Treatment_Data (signals_struct_t * new_treat_data)
+{
+    global_signals.signal = new_treat_data->signal;
+    global_signals.freq_int = new_treat_data->freq_int;
+    global_signals.freq_dec = new_treat_data->freq_dec;
+    global_signals.power = new_treat_data->power;
+}
+
 
 void Signals_Setup_All_Channels (void)
 {
@@ -352,6 +355,19 @@ void Signals_Setup_All_Channels (void)
     
     signal_index = 0;
 
+    // phase accum calc and signal index increment
+    Signals_Setup_Phase_Accumulator (
+        global_signals.freq_int,
+        global_signals.freq_dec,
+        &phase_accum);
+
+#ifdef TESTING_SHOW_INFO
+    printf(" -- freq: %d.%02dHz phase_accum: %d --\n", 
+           global_signals.freq_int,
+           global_signals.freq_dec,           
+           phase_accum);
+#endif
+    
     ch1_max_current = global_signals.max_c_ch1;
     ch2_max_current = global_signals.max_c_ch2;
     ch3_max_current = global_signals.max_c_ch3;
@@ -374,16 +390,35 @@ void Signals_Setup_All_Channels (void)
     pi_ch4.kp = global_signals.kp_ch4;
     pi_ch4.ki = global_signals.ki_ch4;
 
-#ifdef USE_SOFT_NO_CURRENT    
-    // power * mean * integ (sizeof signal = 256) / 2
-    unsigned int mean_current = global_signals.power * signal_mean * 128;
-    mean_current = mean_current / 10000;    //adjust power and mean
+#ifdef USE_SOFT_NO_CURRENT
+    if (phase_accum == 0)
+    {
+        phase_accum = 256;    //default for 27.34Hz
+#ifdef TESTING_SHOW_INFO
+        printf("ERROR phase_accum is 0 on Signals_Setup_All_Channels\n");
+#endif                
+    }
+
+    unsigned int mean_current = 65536 / phase_accum;
+    mean_current = mean_current * global_signals.power * signal_mean;
+    mean_current = mean_current / 10000;    //adjust power, mean and phase_accum
 
     signal_no_current_threshold_ch1 = mean_current * ch1_max_current;    //antenna current peak value
     signal_no_current_threshold_ch2 = mean_current * ch2_max_current;    //antenna current peak value
     signal_no_current_threshold_ch3 = mean_current * ch3_max_current;    //antenna current peak value
     signal_no_current_threshold_ch4 = mean_current * ch4_max_current;    //antenna current peak value    
 
+    signal_no_current_threshold_ch1 >>= 1;    // threshold at 50%
+    signal_no_current_threshold_ch2 >>= 1;    // threshold at 50%
+    signal_no_current_threshold_ch3 >>= 1;    // threshold at 50%
+    signal_no_current_threshold_ch4 >>= 1;    // threshold at 50%
+    
+#ifdef TESTING_SHOW_INFO
+    printf(" -- no current ch1 mean: %d threshold: %d\n", 
+           mean_current * ch1_max_current,
+           signal_no_current_threshold_ch1);
+#endif
+    
     signal_integral_ch1 = 0;
     signal_integral_ch2 = 0;
     signal_integral_ch3 = 0;
@@ -407,6 +442,38 @@ void Signals_Setup_All_Channels (void)
 }
 
 
+void Signals_Setup_Phase_Accumulator (unsigned char freq_int,
+                                      unsigned char freq_dec,
+                                      unsigned short * phase_accum)
+{
+    // try first with increment of 1
+    float fsampling = 7000.0;
+    float freq = freq_int + freq_dec / 100.0;
+    float calc = freq * 256 * 256 / fsampling;
+    
+    *phase_accum = (unsigned short) calc;
+
+    // float fsampling = 7000.0;
+    // float freq = freq_int + freq_dec / 100.0;
+    // float calc = freq * 256 * 65536 / fsampling;
+    
+    // unsigned int p = (unsigned int) calc;
+    // if ((p >> 16) == 0)
+    // {
+    //     *phase_accum = (unsigned short) p;
+    //     *signal_index_inc = 1;
+    // }
+    // else
+    // {
+    //     *signal_index_inc = 1 + (p >> 16);
+    //     calc = freq * 256 * 65536 / (fsampling * (*signal_index_inc));
+    //     p = (unsigned short) calc;
+    //     *phase_accum = (unsigned short) p;
+    // }
+    
+}
+
+
 #define CHANNEL_CONNECTED_GOOD    1
 #define CHANNEL_DISCONNECT    2
 void Signals_Generate_All_Channels (void)
@@ -424,8 +491,11 @@ void Signals_Generate_All_Channels (void)
     unsigned short sp_outphase = *(p_table_outphase + s_index);
 
     // index update (modulo 16?)
-    if (signal_index < 65535)
+    unsigned int total_phase = signal_index + phase_accum;
+    if (total_phase < 65535)
+    {
         signal_index += phase_accum;
+    }
     else
     {
         signal_index += phase_accum;    //modulo 16 roundup
@@ -433,7 +503,12 @@ void Signals_Generate_All_Channels (void)
     }
     
     if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+    {
+#ifdef TESTING_SHOW_INFO_INDEX_SP
+        printf("signal_index: %d sp_inphase: %d\n", signal_index, sp_inphase);
+#endif
         Signals_Generate_Channel (CH1, sp_inphase);
+    }
 
     if (global_signals.treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
         Signals_Generate_Channel (CH2, sp_inphase);
@@ -450,12 +525,22 @@ void Signals_Generate_All_Channels (void)
     {
         if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
         {
+#ifdef TESTING_SHOW_INFO
+            printf(" -- ch1 integral: %d threshold: %d --\n", 
+                   signal_integral_ch1,
+                   signal_no_current_threshold_ch1);
+#endif
             if (signal_integral_ch1 < signal_no_current_threshold_ch1)
             {
                 if (signal_no_current_cnt_ch1 < NO_CURRENT_THRESHOLD_CNT)
                     signal_no_current_cnt_ch1++;
                 else
                 {
+#ifdef TESTING_SHOW_INFO
+                    printf("stop no current on ch1 integral: %d threshold: %d\n", 
+                           signal_integral_ch1,
+                           signal_no_current_threshold_ch1);
+#endif
                     Signals_Stop_Single_Channel(CH1);
                     global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
                     Error_SetStatus(ERROR_NO_CURRENT, CH1);
@@ -528,11 +613,13 @@ void Signals_Generate_All_Channels (void)
         unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch1, IS_CH1);
         if (filter_c > signal_ovcp_threshold_ch1)
         {
+#ifdef TESTING_SHOW_INFO
             printf("ch1 current filtered: %d threshold: %d sample: %d index: %d\n",
                    filter_c,
                    signal_ovcp_threshold_ch1,
                    IS_CH1,
                    signal_index);
+#endif
 
             Signals_Stop_Single_Channel(CH1);
             global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
@@ -545,11 +632,11 @@ void Signals_Generate_All_Channels (void)
         unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch2, IS_CH2);
         if (filter_c > signal_ovcp_threshold_ch2)
         {
-            printf("ch2 current filtered: %d threshold: %d sample: %d index: %d\n",
-                   filter_c,
-                   signal_ovcp_threshold_ch2,
-                   IS_CH2,
-                   signal_index);
+            // printf("ch2 current filtered: %d threshold: %d sample: %d index: %d\n",
+            //        filter_c,
+            //        signal_ovcp_threshold_ch2,
+            //        IS_CH2,
+            //        signal_index);
 
             Signals_Stop_Single_Channel(CH2);                
             global_signals.treat_in_ch2 = CHANNEL_DISCONNECT;
@@ -562,11 +649,11 @@ void Signals_Generate_All_Channels (void)
         unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch3, IS_CH3);
         if (filter_c > signal_ovcp_threshold_ch3)
         {
-            printf("ch3 current filtered: %d threshold: %d sample: %d index: %d\n",
-                   filter_c,
-                   signal_ovcp_threshold_ch3,
-                   IS_CH3,
-                   signal_index);
+            // printf("ch3 current filtered: %d threshold: %d sample: %d index: %d\n",
+            //        filter_c,
+            //        signal_ovcp_threshold_ch3,
+            //        IS_CH3,
+            //        signal_index);
 
             Signals_Stop_Single_Channel(CH3);                
             global_signals.treat_in_ch3 = CHANNEL_DISCONNECT;
@@ -579,11 +666,11 @@ void Signals_Generate_All_Channels (void)
         unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch4, IS_CH4);
         if (filter_c > signal_ovcp_threshold_ch4)
         {
-            printf("ch4 current filtered: %d threshold: %d sample: %d index: %d\n",
-                   filter_c,
-                   signal_ovcp_threshold_ch4,
-                   IS_CH4,
-                   signal_index);
+            // printf("ch4 current filtered: %d threshold: %d sample: %d index: %d\n",
+            //        filter_c,
+            //        signal_ovcp_threshold_ch4,
+            //        IS_CH4,
+            //        signal_index);
 
             Signals_Stop_Single_Channel(CH4);
             global_signals.treat_in_ch4 = CHANNEL_DISCONNECT;
@@ -660,11 +747,11 @@ void Signals_Generate_Single_Channel_OpenLoop (void)
             unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch1, IS_CH1);
             if (filter_c > signal_ovcp_threshold_ch1)
             {
-                printf("ch1 current filtered: %d threshold: %d sample: %d index: %d\n",
-                       filter_c,
-                       signal_ovcp_threshold_ch1,
-                       IS_CH1,
-                       signal_index);
+                // printf("ch1 current filtered: %d threshold: %d sample: %d index: %d\n",
+                //        filter_c,
+                //        signal_ovcp_threshold_ch1,
+                //        IS_CH1,
+                //        signal_index);
 
                 Signals_Stop_Single_Channel(CH1);
                 global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
@@ -729,9 +816,17 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
     unsigned int sp = new_sp * global_signals.power * max_c;    //870 corriente max de antena    
     sp >>= 10;    //div 1024 compensate for max current
     sp = sp / 100;    //compensate for percentage power 
+#ifdef TESTING_SHOW_INFO_SP_OFFSET
+    printf("new_sp: %d power: %d max_c: %d sp: %d\n",
+           new_sp,
+           global_signals.power,
+           max_c,
+           sp);
 
-    // if (sp > 4095)
-    //     printf("sp is wrong!!! %d\n", sp);
+    if (sp > 4095)
+        printf("sp is wrong!!! %d\n", sp);
+
+#endif
     
     // set duty cycle and save pi current data
     p_pi->sample = sample;
@@ -925,13 +1020,21 @@ void Signals_Set_Channel_PI_Parameters (unsigned char which_channel, antenna_st 
 
     float gain = b0 /(1. - a1_pos);
     float gain_five_perc = 19. /(gain * Vin);
-    
+#ifdef TESTING_SHOW_INFO
+    printf(" filter gain: %f prop gain: %f gain 5 perc: %f\n", gain, gain * Vin, gain_five_perc);
+#endif
     // calc ki from kp and zero eq to pole freq
     float zero_eq_pole = Ra/(La * 6.28);
     float ki_gain = zero_eq_pole * gain_five_perc * 6.28 * 128. * 10. / fsampling;
     
     short ki = (short) ki_gain;    //ki = kp * 2 * np.pi * 20 / fs    
     short kp = (short) (gain_five_perc * 128);
+#ifdef TESTING_SHOW_INFO
+    printf(" pid values ki: %d kp: %d\n", ki, kp);
+    printf(" zero from ki_eff: %f to kp: %fHz\n",
+           (float) ki * fsampling,
+           (float) ki * fsampling / (6.28 * (float) kp));
+#endif
     
     switch (which_channel)
     {
