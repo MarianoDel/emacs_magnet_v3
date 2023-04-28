@@ -611,6 +611,14 @@ void Signals_Generate_All_Channels (void)
     if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
     {
         unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch1, IS_CH1);
+#ifdef TESTING_SHOW_INFO
+        printf("ch1 current filtered: %d threshold: %d sample: %d index: %d\n",
+               filter_c,
+               signal_ovcp_threshold_ch1,
+               IS_CH1,
+               signal_index);
+#endif
+        
         if (filter_c > signal_ovcp_threshold_ch1)
         {
 #ifdef TESTING_SHOW_INFO

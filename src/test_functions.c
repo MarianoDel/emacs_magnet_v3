@@ -13,6 +13,7 @@
 #include "test_functions.h"
 #include "hard.h"
 #include "stm32f10x.h"
+#include "gpio.h"
 #include "adc.h"
 #include "usart.h"
 #include "dma.h"
@@ -52,6 +53,7 @@ void TF_Tim5_Channel4_Pwm (void);
 
 void TF_PROT_Input_Ch1_Ch2 (void);
 void TF_PROT_Input_Ch3_Ch4 (void);
+void TF_PROT_Inputs_Ch1_Ch2_Ch3_Ch4_With_Ints (void);
 
 void TF_Usart1_Tx (void);
 void TF_Usart1_Tx_String (void);
@@ -97,6 +99,7 @@ void TF_Hardware_Tests (void)
     
     // TF_PROT_Input_Ch1_Ch2 ();
     // TF_PROT_Input_Ch3_Ch4 ();
+    TF_PROT_Inputs_Ch1_Ch2_Ch3_Ch4_With_Ints ();
 
     // TF_Usart1_Tx ();
     // TF_Usart1_Tx_String ();
@@ -121,7 +124,7 @@ void TF_Hardware_Tests (void)
     // TF_Signal_PWM_Channel4 ();
 
     // TF_Antennas_Connection ();
-    TF_Treatment_And_Antennas_Connection ();
+    // TF_Treatment_And_Antennas_Connection ();
 }
 
 
@@ -280,6 +283,65 @@ void TF_PROT_Input_Ch3_Ch4 (void)
         else
             LED2_OFF;
     }    
+}
+
+
+volatile unsigned char ch_in_int = 0;
+void TF_PROT_Inputs_Ch1_Ch2_Ch3_Ch4_With_Ints (void)
+{
+    for (int i = 0; i < 5; i++)
+    {
+        LED1_ON;
+        LED2_ON;
+        Wait_ms(400);
+        LED1_OFF;
+        LED2_OFF;
+        Wait_ms(400);        
+    }
+
+
+    while (1)
+    {
+        if (!timer_standby)
+        {
+            if (LED2)
+            {
+                LED2_OFF;
+                EXTIOn();
+            }
+            else
+            {
+                LED2_ON;
+                EXTIOff();
+            }
+
+            timer_standby = 10000;
+        }
+
+        if (ch_in_int)
+        {
+            for (int j = 0; j < 5; j++)
+            {
+                for (int i = 0; i < ch_in_int; i++)
+                {
+                    LED1_ON;
+                    Wait_ms(150);
+                    LED1_OFF;
+                    Wait_ms(150);                    
+                }
+
+                Wait_ms(1500 - 300 * ch_in_int);
+            }
+
+            ch_in_int = 0;
+        }
+    }    
+}
+
+
+void TF_Prot_Int_Handler (unsigned char ch)
+{
+    ch_in_int = ch;
 }
 
 

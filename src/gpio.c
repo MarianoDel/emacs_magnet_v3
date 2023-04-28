@@ -8,19 +8,44 @@
 // #### GPIO.C ################################
 //---------------------------------------------
 
-/* Includes ------------------------------------------------------------------*/
+// Includes --------------------------------------------------------------------
 #include "stm32f10x.h"
 #include "gpio.h"
 #include "hard.h"
 
 
-/* Externals ------------------------------------------------------------------*/
+// Module Private Types Constants and Macros -----------------------------------
+#define USE_EXTI_LINES
 
 
-/* Globals ------------------------------------------------------------------*/
+#define RCC_GPIOA_CLK    (RCC->APB2ENR & 0x00000004)
+#define RCC_GPIOA_CLKEN    (RCC->APB2ENR |= 0x00000004)
+#define RCC_GPIOA_CLKDIS    (RCC->APB2ENR &= ~0x00000004)
+
+#define RCC_GPIOB_CLK    (RCC->APB2ENR & 0x00000008)
+#define RCC_GPIOB_CLKEN    (RCC->APB2ENR |= 0x00000008)
+#define RCC_GPIOB_CLKDIS    (RCC->APB2ENR &= ~0x00000008)
+
+#define RCC_GPIOC_CLK    (RCC->APB2ENR & 0x00000010)
+#define RCC_GPIOC_CLKEN    (RCC->APB2ENR |= 0x00000010)
+#define RCC_GPIOC_CLKDIS    (RCC->APB2ENR &= ~0x00000010)
+
+#define RCC_GPIOD_CLK    (RCC->APB2ENR & 0x00000020)
+#define RCC_GPIOD_CLKEN    (RCC->APB2ENR |= 0x00000020)
+#define RCC_GPIOD_CLKDIS    (RCC->APB2ENR &= ~0x00000020)
+
+#define RCC_AFIO_CLK    (RCC->APB2ENR & 0x00000001)
+#define RCC_AFIO_CLKEN    (RCC->APB2ENR |= 0x00000001)
+#define RCC_AFIO_CLKDIS    (RCC->APB2ENR &= ~0x00000001)
 
 
-/* Module Functions -----------------------------------------------------------*/
+// Externals -------------------------------------------------------------------
+
+
+// Globals ---------------------------------------------------------------------
+
+
+// Module Functions ------------------------------------------------------------
 
 
 //--- Tamper config ---//
@@ -200,4 +225,64 @@ void GpioInit (void)
     temp |= 0x00000800;
     GPIOD->CRL = temp;
 
+#ifdef USE_EXTI_LINES
+    //Interrupts on:
+    // PA4 PROT_CH4
+    // PB2 PROT_CH3
+    // PB13 PROT_CH2
+    // PB15 PROT_CH1
+    if (!RCC_AFIO_CLK)
+        RCC_AFIO_CLKEN;
+
+    // EXTI2 Select Port B & Pin2 for external interrupt
+    temp = AFIO->EXTICR[0];
+    temp &= ~AFIO_EXTICR1_EXTI2;
+    temp |= AFIO_EXTICR1_EXTI2_PB;
+    AFIO->EXTICR[0] = (unsigned short) temp;
+
+    // EXTI4 Select Port A & Pin4 for external interrupt
+    temp = AFIO->EXTICR[1];
+    temp &= ~AFIO_EXTICR2_EXTI4;
+    temp |= AFIO_EXTICR2_EXTI4_PA;
+    AFIO->EXTICR[1] = (unsigned short) temp;
+
+    // EXTI13 & EXTI15 Select PortB-Pin13 and PortB-Pin15 for external interrupt
+    temp = AFIO->EXTICR[3];
+    temp &= ~(AFIO_EXTICR4_EXTI13 | AFIO_EXTICR4_EXTI15);
+    temp |= (AFIO_EXTICR4_EXTI13_PB | AFIO_EXTICR4_EXTI15_PB);
+    AFIO->EXTICR[3] = (unsigned short) temp;
+
+    // EXTI->IMR |= 0x00000001;    //Corresponding mask bit for interrupts EXTI2 EXTI4 EXTI13 EXTI15
+    // EXTI->EMR |= 0x00000000;    //Corresponding mask bit for events
+    //Interrupt line on rising edge
+    EXTI->RTSR |= EXTI_RTSR_TR2 | EXTI_RTSR_TR4 | EXTI_RTSR_TR13 | EXTI_RTSR_TR15;
+    EXTI->FTSR |= 0x00000000;    //Interrupt line on falling edge
+
+    // Enable NVIC for EXTIs
+    NVIC_EnableIRQ(EXTI2_IRQn);
+    NVIC_SetPriority(EXTI2_IRQn, 2);
+
+    NVIC_EnableIRQ(EXTI4_IRQn);
+    NVIC_SetPriority(EXTI4_IRQn, 2);
+    
+    NVIC_EnableIRQ(EXTI15_10_IRQn);
+    NVIC_SetPriority(EXTI15_10_IRQn, 2);
+    
+#endif    // USE_EXTI_LINES
 }
+
+
+#ifdef USE_EXTI_LINES
+void EXTIOff (void)
+{
+    EXTI->IMR &= ~(EXTI_IMR_MR2 | EXTI_IMR_MR4 | EXTI_IMR_MR13 | EXTI_IMR_MR15);
+}
+
+void EXTIOn (void)
+{
+    EXTI->IMR |= (EXTI_IMR_MR2 | EXTI_IMR_MR4 | EXTI_IMR_MR13 | EXTI_IMR_MR15);
+}
+#endif
+
+
+//--- end of file ---//

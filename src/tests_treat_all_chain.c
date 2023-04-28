@@ -29,10 +29,10 @@
 
 // Types Constants and Macros --------------------------------------------------
 // #define SIZEOF_SIGNALS    256    // one signal or one complete table
-#define SIZEOF_SIGNALS    (256 * 8)
+// #define SIZEOF_SIGNALS    (256 * 8)
 // #define SIZEOF_SIGNALS    (506)
 // #define SIZEOF_SIGNALS    (1020)
-// #define SIZEOF_SIGNALS    (132)
+#define SIZEOF_SIGNALS    (132)
 
 //ESTADOS DEL BUZZER copied from hard.h
 typedef enum
@@ -81,6 +81,7 @@ extern unsigned short secs_elapsed_up_to_now;
 int answer_params = 0;
 int answer_keepalive = 0;
 int answer_name = 0;
+int overcurrent_samples = 0;
 
 
 #define B_SIZE    1
@@ -104,6 +105,7 @@ short v_signal_ch1 [SIZEOF_SIGNALS] = { 0 };
 
 // Module Functions to Test ----------------------------------------------------
 void Test_Treatment_All_Chain (void);
+void Test_Treatment_All_Chain_Soft_Overcurrent (void);
 
 
 // Module Auxiliary Functions --------------------------------------------------
@@ -124,7 +126,9 @@ unsigned short Adc10BitsConvertion (float sample);
 int main (int argc, char *argv[])
 {
 
-    Test_Treatment_All_Chain();
+    // Test_Treatment_All_Chain();
+
+    Test_Treatment_All_Chain_Soft_Overcurrent ();
 
     return 0;
 }
@@ -164,9 +168,9 @@ void Test_Treatment_All_Chain (void)
         if (i == 0)
         {
             printf("-- set signal\n");
-            // Usart1FillRxBuffer("signal square\r\n");
+            Usart1FillRxBuffer("signal square\r\n");
             // Usart1FillRxBuffer("signal triangular\r\n");
-            Usart1FillRxBuffer("signal sinusoidal\r\n");            
+            // Usart1FillRxBuffer("signal sinusoidal\r\n");            
         }
 
         if (i == 5)
@@ -180,11 +184,141 @@ void Test_Treatment_All_Chain (void)
         if (i == 10)
         {
             printf("-- set frequency\n");
-            Usart1FillRxBuffer("frequency 90.99\r\n");
+            // Usart1FillRxBuffer("frequency 90.99\r\n");
             // Usart1FillRxBuffer("frequency 86.22\r\n");            
             // Usart1FillRxBuffer("frequency 56.00\r\n");
             // Usart1FillRxBuffer("frequency 28.00\r\n");            
             // Usart1FillRxBuffer("frequency 20.50\r\n");            
+            // Usart1FillRxBuffer("frequency 15.00\r\n");
+            // Usart1FillRxBuffer("frequency 14.00\r\n");
+            // Usart1FillRxBuffer("frequency 10.50\r\n");
+            Usart1FillRxBuffer("frequency 07.00\r\n");
+        }
+
+        if (i == 15)
+        {
+            printf("-- set time\n");
+            Usart1FillRxBuffer("duration,120\r\n");
+        }
+    }
+        
+    if (treat_state != TREATMENT_STANDBY)
+        some_err = 1;
+    
+    
+    if (!some_err)
+    {
+        printf("-- setting antennas connection\n");
+
+        // activate usarts callbacks
+        Usart2Callback(Usart2CB);
+        Usart3Callback(Usart3CB);
+        Uart4Callback(Uart4CB);
+        Uart5Callback(Uart5CB);
+
+        // activate antennas answers
+        answer_params = 1;
+        answer_keepalive = 1;
+        answer_name = 1;
+        
+    
+        for (int i = 0; i < 20000; i++)
+        {
+            AntennaUpdateStates ();
+            AntennaTimeouts ();
+        }
+        
+        if (treat_state != TREATMENT_STANDBY)
+            some_err = 1;
+        
+    }
+    
+    
+    if (!some_err)
+    {
+        printf("-- treat to running\n");        
+        
+        for (int i = 0; i < SIZEOF_SIGNALS; i++)
+        {
+            timer1_seq_ready = 1;
+            Treatment_Manager();
+            if (i == 0)
+            {
+                printf("-- set to run\n");
+                Usart1FillRxBuffer("start,\r\n");
+            }
+        }
+
+        if (treat_state != TREATMENT_RUNNING)
+            some_err = 1;
+        
+    }
+    
+    printf("Testing Treatment All Chain: ");
+    if (some_err)
+        PrintERR();
+    else
+        PrintOK();
+
+    // backup data to file
+        ///////////////////////////
+    // Backup Data to a file //
+    ///////////////////////////
+    FILE * file = fopen("data.txt", "w");
+
+    if (file == NULL)
+    {
+        printf("data file not created!\n");
+        return;
+    }
+
+    Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
+    printf("\nRun by hand python3 simul_outputs.py\n");
+}
+
+
+void Test_Treatment_All_Chain_Soft_Overcurrent (void)
+{
+    int some_err = 0;    
+    resp_e resp = resp_ok;
+
+    printf("\n-- Testing Treatment Manager All Chain --\n");    
+    printf("-- treat in standby\n");
+    for (int i = 0; i < 20; i++)
+        Treatment_Manager();
+
+    if (treat_state != TREATMENT_STANDBY)
+        some_err = 1;
+
+    printf("-- settings treatment params...\n");
+    for (int i = 0; i < 20; i++)
+    {
+        Treatment_Manager();
+        if (i == 0)
+        {
+            printf("-- set signal\n");
+            Usart1FillRxBuffer("signal square\r\n");
+            // Usart1FillRxBuffer("signal triangular\r\n");
+            // Usart1FillRxBuffer("signal sinusoidal\r\n");            
+        }
+
+        if (i == 5)
+        {
+            printf("-- set power\n");
+            // Usart1FillRxBuffer("power 100\r\n");
+            Usart1FillRxBuffer("power 050\r\n");
+            // Usart1FillRxBuffer("power 010\r\n");            
+        }
+
+        if (i == 10)
+        {
+            printf("-- set frequency\n");
+            // Usart1FillRxBuffer("frequency 90.99\r\n");
+            // Usart1FillRxBuffer("frequency 86.22\r\n");            
+            // Usart1FillRxBuffer("frequency 56.00\r\n");
+            // Usart1FillRxBuffer("frequency 28.00\r\n");            
+            Usart1FillRxBuffer("frequency 20.50\r\n");            
             // Usart1FillRxBuffer("frequency 15.00\r\n");
             // Usart1FillRxBuffer("frequency 14.00\r\n");
             // Usart1FillRxBuffer("frequency 10.50\r\n");
@@ -232,7 +366,10 @@ void Test_Treatment_All_Chain (void)
     
     if (!some_err)
     {
-        printf("-- treat to running\n");        
+        printf("-- treat to running\n");
+
+        // activate overcurrent samples
+        overcurrent_samples = 2000;
         
         for (int i = 0; i < SIZEOF_SIGNALS; i++)
         {
@@ -588,7 +725,15 @@ void TIM8_Update_CH3 (unsigned short a)
         output = Plant_Out_Recursive(&plant_ch1, a);
 
         IS_CH1 = Adc12BitsConvertion (output);
-        v_adc_ch1[pwm_cnt] = IS_CH1;
+
+        if (overcurrent_samples)
+        {
+            v_adc_ch1[pwm_cnt] = overcurrent_samples;
+            IS_CH1 = overcurrent_samples;
+        }
+        else
+            v_adc_ch1[pwm_cnt] = IS_CH1;
+        
         v_duty_ch1[pwm_cnt] = a;
         pwm_cnt++;
     }

@@ -583,30 +583,46 @@ int main (void)
 //--- End of Main ---//
 
 
-// Hard Mocked Functions -------------------------------------------------------
-void ErrorSetStatus (unsigned char error, unsigned char channel)
+// Other Module Functions ------------------------------------------------------
+extern void TF_Prot_Int_Handler (unsigned char ch);
+void EXTI2_IRQHandler (void)
 {
+    if(EXTI->PR & EXTI_PR_PR2)    //Line2
+    {
+        // Overcurrent_Shutdown();
+        TF_Prot_Int_Handler (3);    // PROT_CH3
+        EXTI->PR |= EXTI_PR_PR2;
+    }
 }
 
 
-// void Signals_Setup_All_Channels (void)
-// {
-// }
+void EXTI4_IRQHandler (void)
+{
+    if(EXTI->PR & EXTI_PR_PR4)    //Line4
+    {
+        // Overcurrent_Shutdown();
+        TF_Prot_Int_Handler (4);    // PROT_CH4
+        EXTI->PR |= EXTI_PR_PR4;
+    }
+}
 
 
-// void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_sp)
-// {
-// }
+void EXTI15_10_IRQHandler (void)
+{
+    if(EXTI->PR & EXTI_PR_PR13)    //Line13
+    {
+        // Overcurrent_Shutdown();
+        TF_Prot_Int_Handler (2);    // PROT_CH2        
+        EXTI->PR |= EXTI_PR_PR13;
+    }
+    else if (EXTI->PR & EXTI_PR_PR15)    //Line15
+    {
+        // Overcurrent_Shutdown();
+        TF_Prot_Int_Handler (1);    // PROT_CH1        
+        EXTI->PR |= EXTI_PR_PR15;
+    }
+}
 
-
-// void Signals_Generate_All_Channels (void)
-// {
-// }
-
-
-// void Signals_Stop_All_Channels (void)
-// {
-// }
 
 
 void TimingDelay_Decrement(void)
