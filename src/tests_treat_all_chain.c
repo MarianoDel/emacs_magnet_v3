@@ -32,7 +32,8 @@
 // #define SIZEOF_SIGNALS    (256 * 8)
 // #define SIZEOF_SIGNALS    (506)
 // #define SIZEOF_SIGNALS    (1020)
-#define SIZEOF_SIGNALS    (132)
+// #define SIZEOF_SIGNALS    (132)
+#define SIZEOF_SIGNALS    (20000)
 
 //ESTADOS DEL BUZZER copied from hard.h
 typedef enum
@@ -81,6 +82,7 @@ extern unsigned short secs_elapsed_up_to_now;
 int answer_params = 0;
 int answer_keepalive = 0;
 int answer_name = 0;
+int answer_temp = 0;
 int overcurrent_samples = 0;
 
 
@@ -105,7 +107,9 @@ short v_signal_ch1 [SIZEOF_SIGNALS] = { 0 };
 
 // Module Functions to Test ----------------------------------------------------
 void Test_Treatment_All_Chain (void);
-void Test_Treatment_All_Chain_Soft_Overcurrent (void);
+void Test_Treatment_All_Chain_No_Vectors (void);
+void Test_Treatment_All_Chain_Soft_Overcurrent_Channel1_Continue (void);
+void Test_Treatment_All_Chain_Soft_Overcurrent_Channel1_Stop (void);
 
 
 // Module Auxiliary Functions --------------------------------------------------
@@ -127,8 +131,10 @@ int main (int argc, char *argv[])
 {
 
     // Test_Treatment_All_Chain();
+    Test_Treatment_All_Chain_No_Vectors ();    //no saved vectors 
 
-    Test_Treatment_All_Chain_Soft_Overcurrent ();
+    // Test_Treatment_All_Chain_Soft_Overcurrent_Channel1_Stop ();
+    // Test_Treatment_All_Chain_Soft_Overcurrent_Channel1_Continue ();
 
     return 0;
 }
@@ -278,7 +284,7 @@ void Test_Treatment_All_Chain (void)
 }
 
 
-void Test_Treatment_All_Chain_Soft_Overcurrent (void)
+void Test_Treatment_All_Chain_No_Vectors (void)
 {
     int some_err = 0;    
     resp_e resp = resp_ok;
@@ -306,8 +312,8 @@ void Test_Treatment_All_Chain_Soft_Overcurrent (void)
         if (i == 5)
         {
             printf("-- set power\n");
-            // Usart1FillRxBuffer("power 100\r\n");
-            Usart1FillRxBuffer("power 050\r\n");
+            Usart1FillRxBuffer("power 100\r\n");
+            // Usart1FillRxBuffer("power 050\r\n");
             // Usart1FillRxBuffer("power 010\r\n");            
         }
 
@@ -318,11 +324,117 @@ void Test_Treatment_All_Chain_Soft_Overcurrent (void)
             // Usart1FillRxBuffer("frequency 86.22\r\n");            
             // Usart1FillRxBuffer("frequency 56.00\r\n");
             // Usart1FillRxBuffer("frequency 28.00\r\n");            
-            Usart1FillRxBuffer("frequency 20.50\r\n");            
+            // Usart1FillRxBuffer("frequency 20.50\r\n");            
             // Usart1FillRxBuffer("frequency 15.00\r\n");
             // Usart1FillRxBuffer("frequency 14.00\r\n");
             // Usart1FillRxBuffer("frequency 10.50\r\n");
-            // Usart1FillRxBuffer("frequency 07.00\r\n");
+            Usart1FillRxBuffer("frequency 07.00\r\n");
+        }
+
+        if (i == 15)
+        {
+            printf("-- set time\n");
+            Usart1FillRxBuffer("duration,120\r\n");
+        }
+    }
+        
+    if (treat_state != TREATMENT_STANDBY)
+        some_err = 1;
+    
+    
+    if (!some_err)
+    {
+        printf("-- setting antennas connection\n");
+
+        // activate usarts callbacks
+        Usart2Callback(Usart2CB);
+        Usart3Callback(Usart3CB);
+        Uart4Callback(Uart4CB);
+        Uart5Callback(Uart5CB);
+
+        // activate antennas answers
+        answer_params = 1;
+        answer_keepalive = 1;
+        answer_name = 1;
+        answer_temp = 1;
+        
+    
+        for (int i = 0; i < 20000; i++)
+        {
+            AntennaUpdateStates ();
+            AntennaTimeouts ();
+        }
+        
+        if (treat_state != TREATMENT_STANDBY)
+            some_err = 1;
+        
+    }
+    
+    
+    if (!some_err)
+    {
+        printf("-- treat to running\n");        
+        
+        for (int i = 0; i < SIZEOF_SIGNALS; i++)
+        {
+            timer1_seq_ready = 1;
+            Treatment_Manager();
+            AntennaUpdateStates ();
+            AntennaTimeouts ();            
+            if (i == 0)
+            {
+                printf("-- set to run\n");
+                Usart1FillRxBuffer("start,\r\n");
+            }
+        }
+
+        if (treat_state != TREATMENT_RUNNING)
+            some_err = 1;
+        
+    }
+    
+    printf("Testing Treatment All Chain No vectors: ");
+    if (some_err)
+        PrintERR();
+    else
+        PrintOK();
+
+}
+
+
+void Test_Treatment_All_Chain_Soft_Overcurrent_Channel1_Continue (void)
+{
+    int some_err = 0;    
+    resp_e resp = resp_ok;
+
+    printf("\n-- Testing Treatment Manager All Chain --\n");    
+    printf("-- treat in standby\n");
+    for (int i = 0; i < 20; i++)
+        Treatment_Manager();
+
+    if (treat_state != TREATMENT_STANDBY)
+        some_err = 1;
+
+    printf("-- settings treatment params...\n");
+    for (int i = 0; i < 20; i++)
+    {
+        Treatment_Manager();
+        if (i == 0)
+        {
+            printf("-- set signal\n");
+            Usart1FillRxBuffer("signal square\r\n");
+        }
+
+        if (i == 5)
+        {
+            printf("-- set power\n");
+            Usart1FillRxBuffer("power 050\r\n");
+        }
+
+        if (i == 10)
+        {
+            printf("-- set frequency\n");
+            Usart1FillRxBuffer("frequency 20.50\r\n");            
         }
 
         if (i == 15)
@@ -387,7 +499,127 @@ void Test_Treatment_All_Chain_Soft_Overcurrent (void)
         
     }
     
-    printf("Testing Treatment All Chain: ");
+    printf("Testing Treatment All Chain with soft overcurrent: ");
+    if (some_err)
+        PrintERR();
+    else
+        PrintOK();
+
+    // backup data to file
+        ///////////////////////////
+    // Backup Data to a file //
+    ///////////////////////////
+    FILE * file = fopen("data.txt", "w");
+
+    if (file == NULL)
+    {
+        printf("data file not created!\n");
+        return;
+    }
+
+    Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
+    printf("\nRun by hand python3 simul_outputs.py\n");
+}
+
+
+void Test_Treatment_All_Chain_Soft_Overcurrent_Channel1_Stop (void)
+{
+    int some_err = 0;    
+    resp_e resp = resp_ok;
+
+    printf("\n-- Testing Treatment Manager All Chain --\n");    
+    printf("-- treat in standby\n");
+    for (int i = 0; i < 20; i++)
+        Treatment_Manager();
+
+    if (treat_state != TREATMENT_STANDBY)
+        some_err = 1;
+
+    printf("-- settings treatment params...\n");
+    for (int i = 0; i < 20; i++)
+    {
+        Treatment_Manager();
+        if (i == 0)
+        {
+            printf("-- set signal\n");
+            Usart1FillRxBuffer("signal square\r\n");
+        }
+
+        if (i == 5)
+        {
+            printf("-- set power\n");
+            Usart1FillRxBuffer("power 100\r\n");
+        }
+
+        if (i == 10)
+        {
+            printf("-- set frequency\n");
+            Usart1FillRxBuffer("frequency 20.50\r\n");            
+        }
+
+        if (i == 15)
+        {
+            printf("-- set time\n");
+            Usart1FillRxBuffer("duration,120\r\n");
+        }
+    }
+        
+    if (treat_state != TREATMENT_STANDBY)
+        some_err = 1;
+    
+    
+    if (!some_err)
+    {
+        printf("-- setting antennas connection\n");
+
+        // activate usarts callbacks
+        Usart2Callback(Usart2CB);
+        // Usart3Callback(Usart3CB);
+        // Uart4Callback(Uart4CB);
+        // Uart5Callback(Uart5CB);
+
+        // activate antennas answers
+        answer_params = 1;
+        answer_keepalive = 1;
+        answer_name = 1;
+    
+        for (int i = 0; i < 20000; i++)
+        {
+            AntennaUpdateStates ();
+            AntennaTimeouts ();
+        }
+        
+        if (treat_state != TREATMENT_STANDBY)
+            some_err = 1;
+        
+    }
+    
+    
+    if (!some_err)
+    {
+        printf("-- treat to running\n");
+
+        // activate overcurrent samples
+        overcurrent_samples = 2000;
+        
+        for (int i = 0; i < SIZEOF_SIGNALS; i++)
+        {
+            timer1_seq_ready = 1;
+            Treatment_Manager();
+            if (i == 0)
+            {
+                printf("-- set to run\n");
+                Usart1FillRxBuffer("start,\r\n");
+            }
+        }
+
+        if (treat_state != TREATMENT_STANDBY)
+            some_err = 1;
+        
+    }
+    
+    printf("Testing Treatment All Chain with soft overcurrent and STOP: ");
     if (some_err)
         PrintERR();
     else
@@ -547,6 +779,12 @@ void Usart2CB (char * msg)
     {
         AntennaSetName(CH1, "tunnel");
     }
+
+    if ((answer_temp) &&
+        (!strncmp(msg, "get_temp", sizeof("get_temp") - 1)))
+    {
+        AntennaSetCurrentTemp (CH1, 40, 0);
+    }
     
 }
 
@@ -578,6 +816,12 @@ void Usart3CB (char * msg)
         (!strncmp(msg, "get_name", sizeof("get_name") - 1)))
     {
         AntennaSetName(CH2, "tunnel");
+    }
+
+    if ((answer_temp) &&
+        (!strncmp(msg, "get_temp", sizeof("get_temp") - 1)))
+    {
+        AntennaSetCurrentTemp (CH2, 40, 0);
     }
     
 }
@@ -611,7 +855,12 @@ void Uart4CB (char * msg)
     {
         AntennaSetName(CH3, "tunnel");
     }
-    
+
+    if ((answer_temp) &&
+        (!strncmp(msg, "get_temp", sizeof("get_temp") - 1)))
+    {
+        AntennaSetCurrentTemp (CH3, 40, 0);
+    }        
 }
 
 
@@ -643,7 +892,12 @@ void Uart5CB (char * msg)
     {
         AntennaSetName(CH4, "tunnel");
     }
-    
+
+    if ((answer_temp) &&
+        (!strncmp(msg, "get_temp", sizeof("get_temp") - 1)))
+    {
+        AntennaSetCurrentTemp (CH4, 40, 0);
+    }    
 }
 
 void BuzzerCommands (unsigned char cmd, unsigned char number)
@@ -798,12 +1052,12 @@ void TIM5_Update_CH2 (unsigned short a)
     // printf("LR CH4: %d\n", a);
 }
 
-void Error_SetStatus (unsigned char error, unsigned char channel)
-{
-    error <<= 4;
-    error += channel + 1;
-    printf("error: 0x%02x\n", error);
-}
+// void Error_SetStatus (unsigned char error, unsigned char channel)
+// {
+//     error <<= 4;
+//     error += channel + 1;
+//     printf("error: 0x%02x\n", error);
+// }
 
 //--- end of file ---//
 

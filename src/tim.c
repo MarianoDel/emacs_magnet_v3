@@ -195,11 +195,6 @@ void TIM1_UP_IRQHandler (void)
 
     //Code Handler
     timer1_seq_ready = 1;
-
-    if (LED2)
-        LED2_OFF;
-    else
-        LED2_ON;
     
 }
 

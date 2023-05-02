@@ -14,10 +14,11 @@
 #include "usart.h"
 #include "tim.h"
 
-
 #include "antennas_defs.h"
 #include "antennas.h"
 #include "signals.h"
+#include "channels_defs.h"
+#include "errors.h"
 
 #include "comms_from_rasp.h"
 
@@ -60,9 +61,13 @@ volatile unsigned short millis = 0;
 unsigned short secs_end_treatment = 0;
 unsigned short secs_elapsed_up_to_now = 0;
 
-
-
 #define RPI_Flush_Comms (comms_messages_rpi &= ~COMM_RPI_ALL_MSG_MASK)
+
+
+// Module Private Functions ----------------------------------------------------
+void Treatment_Check_Channels_Loop (void);
+resp_e Treatment_Check_All_Errors (void);
+
 
 // Module Functions ------------------------------------------------------------
 void Treatment_Manager (void)
@@ -126,19 +131,26 @@ void Treatment_Manager (void)
                 AntennaGetParamsStruct(i, &ch_ant);
                 Signals_Set_Channel_PI_Parameters (i, &ch_ant);
 
-                // sprintf(buff_ch, "ch%d ", i);
+                Error_SetStatus_For_Checks(0x80, i);    // checks on this channel
                 sprintf(buff_ch, "ch%d ", i + 1);                
                 strcat(buff, buff_ch);
             }
             else
+            {
+                Error_SetStatus_For_Checks(0, i);    // no checks on this channel
                 Signals_Set_Reset_Channel_For_Treatment(i, 0);
+            }
             
         }
 
         if (some_channel)
         {
             treat_state = TREATMENT_STARTING;
-            
+
+            // resets all errors status
+            for (int i = 0; i < 4; i++)
+                Error_SetStatus(0, i);
+
             // show channels in treatment
             strcat (buff, "\r\n");
             RPI_Send(buff);
@@ -204,37 +216,13 @@ void Treatment_Manager (void)
             treat_state = TREATMENT_STOPPING;
         }
 
-        //reviso si hay algun canal con error
-//         if ((comms_messages_1 & COMM_POWER_ERROR_MASK) ||
-//             (comms_messages_2 & COMM_POWER_ERROR_MASK) ||
-//             (comms_messages_3 & COMM_POWER_ERROR_MASK))
-//         {
-//             PowerSendStop();
+        // checks channels for errors
+        Treatment_Check_Channels_Loop ();
+        resp = Treatment_Check_All_Errors ();
 
-//             LED1_ON;
-//             secs_in_treatment = 0;    //con 0 freno el timer
-//             sprintf (buff, "treat err, ch1: 0x%04x, ch2: 0x%04x, ch3: 0x%04x\r\n",
-//                      comms_messages_1,
-//                      comms_messages_2,
-//                      comms_messages_3);
-                    
-//             RPI_Send(buff);
-
-//             if (comms_messages_1 & COMM_POWER_ERROR_MASK)
-//                 Raspberry_Report_Errors(CH1, &comms_messages_1);
-
-//             if (comms_messages_2 & COMM_POWER_ERROR_MASK)
-//                 Raspberry_Report_Errors(CH2, &comms_messages_2);
-
-//             if (comms_messages_3 & COMM_POWER_ERROR_MASK)
-//                 Raspberry_Report_Errors(CH3, &comms_messages_3);
-
-// #ifdef USE_BUZZER_ON_ERROR
-//             BuzzerCommands(BUZZER_LONG_CMD, 1);
-// #endif                                
-//             LED1_OFF;
-//             treat_state = TREATMENT_WITH_ERRORS;
-//         }
+        if (resp == resp_error)
+            treat_state = TREATMENT_WITH_ERRORS;
+        
         RPI_Flush_Comms;
         break;
 
@@ -269,25 +257,26 @@ void Treatment_Manager (void)
         // RPI_Send(buff);
 
         RPI_Send("OK\r\n");
+        for (int i = 0; i < 4; i++)
+            AntennaEndTreatment(i);
+
         treat_state = TREATMENT_STANDBY;
         ChangeLed(LED_TREATMENT_STANDBY);
         break;
 
     case TREATMENT_WITH_ERRORS:
         Wait_ms(1000);
-        // Power_Send("chf flush errors\n");
+
+        for (int i = 0; i < 4; i++)
+            AntennaEndTreatment(i);
+        
         RPI_Send("STOP\r\n");
         Wait_ms(1000);
         RPI_Send("STOP\r\n");
         Wait_ms(1000);
         RPI_Send("Flushing errors\r\n");
-
-        // Power_Send("chf flush errors\n");
-        // comms_messages_1 &= ~COMM_POWER_ERROR_MASK;
-        // comms_messages_2 &= ~COMM_POWER_ERROR_MASK;
-        // comms_messages_3 &= ~COMM_POWER_ERROR_MASK;            
-            
         Wait_ms(1000);
+        
         treat_state = TREATMENT_STANDBY;
         ChangeLed(LED_TREATMENT_STANDBY);
         break;
@@ -304,6 +293,112 @@ void Treatment_Manager (void)
     UpdateLed();
     
     UpdateBuzzer();
+}
+
+
+int loop_ch = 0;
+void Treatment_Check_Channels_Loop (void)
+{
+    unsigned char error_ch = 0;    
+    char buff_err [30] = { 0 };
+    
+    if (loop_ch < CH4)
+        loop_ch++;
+    else
+        loop_ch = CH1;
+
+    error_ch = Error_GetStatus(loop_ch);
+
+    // channel need a report or not
+    if (!(error_ch & 0x80))
+        return;
+
+    // report already sended
+    if ((error_ch & 0x40))
+        return;
+
+    // else report the error
+    if (error_ch & 0x0F)
+    {
+        Error_SetString(buff_err, ((0x0F & error_ch) << 4) | (loop_ch + 1));
+        RPI_Send(buff_err);
+        Error_SetStatus_For_Checks((0x80 | 0x40), loop_ch);
+    }
+
+    // reports on antennas
+    // antenna disconnected
+    if (!AntennaGetConnection (loop_ch))
+    {
+        // set the error
+        Error_SetStatus(ERROR_ANTENNA_LOST, loop_ch);
+
+        // report the error
+        Error_SetString(buff_err, (ERROR_ANTENNA_LOST << 4) | (loop_ch + 1));
+        RPI_Send(buff_err);
+        Error_SetStatus_For_Checks((0x80 | 0x40), loop_ch);
+
+        // disable the channel
+        Signals_Stop_Single_Channel(loop_ch);
+        Signals_Set_Reset_Channel_For_Treatment(loop_ch, 0);        
+    }
+
+    // antenna temp
+    if (AntennaGetTempStatus (loop_ch))
+    {
+        // set the error
+        Error_SetStatus(ERROR_OVERTEMP, loop_ch);
+
+        // report the error
+        Error_SetString(buff_err, (ERROR_OVERTEMP << 4) | (loop_ch + 1));
+        RPI_Send(buff_err);
+        Error_SetStatus_For_Checks((0x80 | 0x40), loop_ch);
+
+        // disable the channel
+        Signals_Stop_Single_Channel(loop_ch);
+        Signals_Set_Reset_Channel_For_Treatment(loop_ch, 0);                
+    }
+}
+
+
+resp_e Treatment_Check_All_Errors (void)
+{
+    unsigned char error_ch1 = 0;
+    unsigned char error_ch2 = 0;
+    unsigned char error_ch3 = 0;
+    unsigned char error_ch4 = 0;    
+
+    error_ch1 = Error_GetStatus(CH1);
+    error_ch2 = Error_GetStatus(CH2);
+    error_ch3 = Error_GetStatus(CH3);
+    error_ch4 = Error_GetStatus(CH4);
+
+    // needs a report and was sended?
+    if (error_ch1 & 0x80)
+    {
+        if (!(error_ch1 & 0x40))
+            return resp_ok;
+    }
+
+    if (error_ch2 & 0x80)
+    {
+        if (!(error_ch2 & 0x40))
+            return resp_ok;
+    }
+
+    if (error_ch3 & 0x80)
+    {
+        if (!(error_ch3 & 0x40))
+            return resp_ok;
+    }
+
+    if (error_ch4 & 0x80)
+    {
+        if (!(error_ch4 & 0x40))
+            return resp_ok;
+    }
+
+    // printf(" error in all channels: %02x %02x %02x %02x\n", error_ch1, error_ch2, error_ch3, error_ch4);
+    return resp_error;
 }
 
 
@@ -329,27 +424,32 @@ signal_type_e Treatment_GetSignalType (void)
 
 resp_e Treatment_SetFrequency (unsigned char freq_int, unsigned char freq_dec)
 {
-    resp_e resp = resp_error;
-    unsigned int calc = 1000000;
-    unsigned int freq = 0;
-
-    //el synchro es un timer con tick cada 100us
-    //la cuenta para 2 decimales da 1M/(freq*100)
-    freq = freq_int * 100;
-    freq += freq_dec;
-    freq = freq * K_SYNCHRO_ADJUST;
-    freq = freq / 100;
-
-    calc = calc / freq;
-    if ((calc < TIMER_SYNCHRO_MAX) && (calc > TIMER_SYNCHRO_MIN))
-    {
-        treatment_conf.treatment_signal.freq_int = freq_int;
-        treatment_conf.treatment_signal.freq_dec = freq_dec;
-        // treatment_conf.timer_synchro = (unsigned short) calc;
-        resp = resp_ok;
-    }
+    treatment_conf.treatment_signal.freq_int = freq_int;
+    treatment_conf.treatment_signal.freq_dec = freq_dec;
     
-    return resp;
+    return resp_ok;
+
+    // resp_e resp = resp_error;
+    // unsigned int calc = 1000000;
+    // unsigned int freq = 0;
+
+    // //el synchro es un timer con tick cada 100us
+    // //la cuenta para 2 decimales da 1M/(freq*100)
+    // freq = freq_int * 100;
+    // freq += freq_dec;
+    // freq = freq * K_SYNCHRO_ADJUST;
+    // freq = freq / 100;
+
+    // calc = calc / freq;
+    // if ((calc < TIMER_SYNCHRO_MAX) && (calc > TIMER_SYNCHRO_MIN))
+    // {
+    //     treatment_conf.treatment_signal.freq_int = freq_int;
+    //     treatment_conf.treatment_signal.freq_dec = freq_dec;
+    //     // treatment_conf.timer_synchro = (unsigned short) calc;
+    //     resp = resp_ok;
+    // }
+    
+    // return resp;
 }
 
 
@@ -502,10 +602,10 @@ resp_e Treatment_AssertParams (void)
     if ((treatment_conf.treatment_signal.power > 100) || (treatment_conf.treatment_signal.power < 10))
         return resp;
 
-    //TODO: check this, freq is now extended
-    if ((treatment_conf.treatment_signal.freq_dec > 99) ||
-        (treatment_conf.treatment_signal.freq_int < FREQ_MIN_ALLOWED) ||
-        (treatment_conf.treatment_signal.freq_int > FREQ_MAX_ALLOWED))
+    // freq extended
+    float calc = 0.0;
+    calc = treatment_conf.treatment_signal.freq_int + treatment_conf.treatment_signal.freq_dec / 100.;
+    if ((calc < 0.5) && (calc > 99.99))
         return resp;
 
     if ((treatment_conf.treatment_signal.signal != SQUARE_SIGNAL) &&

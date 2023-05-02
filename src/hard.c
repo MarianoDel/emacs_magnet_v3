@@ -30,11 +30,6 @@ volatile unsigned short buzzer_timeout = 0;
 #define LED_ON    LED2_ON
 #define LED_OFF    LED2_OFF
 
-#ifdef MAGNETO_ESPECIAL_1CH
-volatile unsigned char switches_timer = 0;
-#endif
-
-
 // Module Private Functions ----------------------------------------------------
 
 
@@ -253,49 +248,6 @@ void Led1_Off (void)
 {
     LED1_OFF;
 }
-
-
-#ifdef MAGNETO_ESPECIAL_1CH
-#define SWITCHES_TIMER_RELOAD    5
-#define SWITCHES_THRESHOLD_FULL	1000		//5 segundos
-#define SWITCHES_THRESHOLD_HALF	100		//1 segundo
-#define SWITCHES_THRESHOLD_MIN	5		//25 ms
-
-unsigned short s1 = 0;
-resp_sw_t CheckS1 (void)	//cada check tiene SWITCHES_TIMER_RELOAD ms
-{
-    if (s1 > SWITCHES_THRESHOLD_FULL)
-        return SW_FULL;
-
-    if (s1 > SWITCHES_THRESHOLD_HALF)
-        return SW_HALF;
-
-    if (s1 > SWITCHES_THRESHOLD_MIN)
-        return SW_MIN;
-
-    return SW_NO;
-}
-
-#define S1_PIN    IN0
-void UpdateSwitches (void)
-{
-    //revisa los switches cada 10ms
-    if (!switches_timer)
-    {
-        if (S1_PIN)
-            s1++;
-        else if (s1 > 50)
-            s1 -= 50;
-        else if (s1 > 10)
-            s1 -= 5;
-        else if (s1)
-            s1--;
-        
-        switches_timer = SWITCHES_TIMER_RELOAD;
-    }
-}
-
-#endif
 
 
 //--- end of file ---//

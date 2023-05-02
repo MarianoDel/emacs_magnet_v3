@@ -109,8 +109,10 @@ resp_e ParseCommsWithChannels (char * str, unsigned char channel)
     if (!strncmp(str, (const char *)"temp", (sizeof("temp") - 1)))
     {
         if ((*(str + 4) == ',') &&
-            (*(str + 8) == '.') &&
-            (*(str + 11) == '\r'))
+            (*(str + 8) == '.'))
+        // if ((*(str + 4) == ',') &&
+        //     (*(str + 8) == '.') &&
+        //     (*(str + 11) == '\r'))
         {
             unsigned char temp_i = 0;
             unsigned char temp_d = 0;

@@ -1028,6 +1028,7 @@ void AntennaGetParamsStruct (unsigned char ch, antenna_st *ant)
     }        
 }
 
+
 //contesta a la sesion si la antena esta presente/contestando y tiene parametros
 unsigned char AntennaGetConnection (unsigned char ch)
 {
@@ -1073,6 +1074,35 @@ unsigned char AntennaGetCurrentTemp (unsigned char ch)
     return temp;
     
 }
+
+
+// answer 1 in error
+// 0 all ok
+unsigned char AntennaGetTempStatus (unsigned char channel)
+{
+    unsigned char ctemp = 0;
+    unsigned char stemp = 0;    
+
+    ctemp = AntennaGetCurrentTemp(channel);
+
+    if (channel == CH1)
+        stemp = antenna_conn_ch1.ant_temp_max_int;
+
+    if (channel == CH2)
+        stemp = antenna_conn_ch2.ant_temp_max_int;
+
+    if (channel == CH3)
+        stemp = antenna_conn_ch3.ant_temp_max_int;
+
+    if (channel == CH4)
+        stemp = antenna_conn_ch4.ant_temp_max_int;    
+
+    if (ctemp > stemp)
+        return 1;
+
+    return 0;
+}
+
 
 //llaman desde la sesion para saber si tiene antena presente y avisar del comienzo
 //de un nuevo tratamiento

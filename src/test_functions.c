@@ -54,6 +54,7 @@ void TF_Tim5_Channel4_Pwm (void);
 void TF_PROT_Input_Ch1_Ch2 (void);
 void TF_PROT_Input_Ch3_Ch4 (void);
 void TF_PROT_Inputs_Ch1_Ch2_Ch3_Ch4_With_Ints (void);
+void TF_PROT_Inputs_Ch1_Ch2_Ch3_Ch4_With_Ints_On_Off (void);
 
 void TF_Usart1_Tx (void);
 void TF_Usart1_Tx_String (void);
@@ -99,7 +100,8 @@ void TF_Hardware_Tests (void)
     
     // TF_PROT_Input_Ch1_Ch2 ();
     // TF_PROT_Input_Ch3_Ch4 ();
-    TF_PROT_Inputs_Ch1_Ch2_Ch3_Ch4_With_Ints ();
+    // TF_PROT_Inputs_Ch1_Ch2_Ch3_Ch4_With_Ints_On_Off ();
+    // TF_PROT_Inputs_Ch1_Ch2_Ch3_Ch4_With_Ints ();    
 
     // TF_Usart1_Tx ();
     // TF_Usart1_Tx_String ();
@@ -124,7 +126,7 @@ void TF_Hardware_Tests (void)
     // TF_Signal_PWM_Channel4 ();
 
     // TF_Antennas_Connection ();
-    // TF_Treatment_And_Antennas_Connection ();
+    TF_Treatment_And_Antennas_Connection ();
 }
 
 
@@ -288,6 +290,42 @@ void TF_PROT_Input_Ch3_Ch4 (void)
 
 volatile unsigned char ch_in_int = 0;
 void TF_PROT_Inputs_Ch1_Ch2_Ch3_Ch4_With_Ints (void)
+{
+    for (int i = 0; i < 5; i++)
+    {
+        LED1_ON;
+        LED2_ON;
+        Wait_ms(400);
+        LED1_OFF;
+        LED2_OFF;
+        Wait_ms(400);        
+    }
+
+    EXTIOn();
+    while (1)
+    {
+        if (ch_in_int)
+        {
+            for (int j = 0; j < 5; j++)
+            {
+                for (int i = 0; i < ch_in_int; i++)
+                {
+                    LED1_ON;
+                    Wait_ms(150);
+                    LED1_OFF;
+                    Wait_ms(150);                    
+                }
+
+                Wait_ms(1500 - 300 * ch_in_int);
+            }
+
+            ch_in_int = 0;
+        }
+    }    
+}
+
+
+void TF_PROT_Inputs_Ch1_Ch2_Ch3_Ch4_With_Ints_On_Off (void)
 {
     for (int i = 0; i < 5; i++)
     {
@@ -1528,6 +1566,8 @@ void TF_Treatment_And_Antennas_Connection (void)
     Usart3Config ();
     Uart4Config ();
     Uart5Config ();
+
+    //
     
 
     while (1)
@@ -1550,6 +1590,7 @@ void TF_Treatment_And_Antennas_Connection (void)
         if (!timer_standby)
         {
             timer_standby = 1;
+            // timer1_seq_ready = 1;    // comment this if no signals are needed ERROR(0x02N)
             AntennaTimeouts ();
             Treatment_Timeouts ();
             HARD_Timeouts();

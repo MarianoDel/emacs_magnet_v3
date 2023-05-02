@@ -68,6 +68,7 @@ void AntennaUpdateStates (void);
 
 void AntennaSetCurrentTemp (unsigned char channel, unsigned char tint, unsigned char tdec);
 unsigned char AntennaGetCurrentTemp (unsigned char channel);
+unsigned char AntennaGetTempStatus (unsigned char channel);
 
 void AntennaSetParamsStruct (unsigned char channel, antenna_st * pant);
 void AntennaGetParamsStruct (unsigned char channel, antenna_st * pant);

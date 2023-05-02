@@ -32,8 +32,10 @@ void Error_SetString (char * p_errstr, unsigned short err_num)
 void Error_SetStatus(unsigned char error, unsigned char ch)
 {
     if (ch < 4)
-        signals_errors_flags[ch] = error;
-    
+    {
+        signals_errors_flags[ch] &= 0xF0;
+        signals_errors_flags[ch] |= error & 0x0F;
+    }
 }
 
 
@@ -48,6 +50,12 @@ unsigned char Error_GetStatus(unsigned char ch)
 }
 
 
+void Error_SetStatus_For_Checks (unsigned char error, unsigned char ch)
+{
+    if (ch < 4)
+        signals_errors_flags[ch] = error & 0xF0;
+    
+}
 // void Error_SetString_FromStatus (char * p_errstr, unsigned char status_error)
 // {
 //     if (!status_error)

@@ -25,18 +25,10 @@
 
 
 // Module Private Types Constants and Macros -----------------------------------
-typedef enum {
-	ERROR_OK = 0,
-	ERROR_OVERCURRENT,
-	ERROR_NO_CURRENT,
-	ERROR_SOFT_OVERCURRENT,
-	ERROR_OVERTEMP
-
-} error_e;
-
-
 #define USE_SOFT_NO_CURRENT
 #define USE_SOFT_OVERCURRENT
+
+
 // Externals -------------------------------------------------------------------
 //del ADC
 // extern volatile unsigned char seq_ready;
@@ -412,6 +404,11 @@ void Signals_Setup_All_Channels (void)
     signal_no_current_threshold_ch2 >>= 1;    // threshold at 50%
     signal_no_current_threshold_ch3 >>= 1;    // threshold at 50%
     signal_no_current_threshold_ch4 >>= 1;    // threshold at 50%
+
+    signal_no_current_cnt_ch1 = 0;
+    signal_no_current_cnt_ch2 = 0;
+    signal_no_current_cnt_ch3 = 0;
+    signal_no_current_cnt_ch4 = 0;
     
 #ifdef TESTING_SHOW_INFO
     printf(" -- no current ch1 mean: %d threshold: %d\n", 
@@ -482,7 +479,7 @@ void Signals_Generate_All_Channels (void)
         return;
 
     timer1_seq_ready = 0;
-    // seq_ready_cnt++;
+    Led1_On();
     unsigned char signal_ended = 0;
                 
     // get the current SP
@@ -686,6 +683,7 @@ void Signals_Generate_All_Channels (void)
         }
     }
 #endif
+    Led1_Off();
     // end of check channels errors
     
 }    
