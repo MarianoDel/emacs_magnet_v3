@@ -105,7 +105,8 @@ resp_e ParseCommsWithChannels (char * str, unsigned char channel)
     resp_e resp = resp_error;
     char dummy_str [30] = { 0 };
     
-    //temp,055.00\r\n
+    // rcv temp,055.00\r\n
+    // snd temp,055.00,1\r\n    1 to 4
     if (!strncmp(str, (const char *)"temp", (sizeof("temp") - 1)))
     {
         if ((*(str + 4) == ',') &&
@@ -121,7 +122,7 @@ resp_e ParseCommsWithChannels (char * str, unsigned char channel)
             {
                 AntennaSetCurrentTemp (channel, temp_i, temp_d);
 
-                sprintf(dummy_str, ",%d\r\n", channel);
+                sprintf(dummy_str, ",%d\r\n", channel + 1);
                 strcpy((str + 11), dummy_str);
                 RpiSend(str);
                 resp = resp_ok;

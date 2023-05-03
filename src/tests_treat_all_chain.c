@@ -737,6 +737,17 @@ void HARD_L1_OFF (void)
     printf("Led1 -> OFF\n");
 }
 
+void Led1_On (void)
+{
+    // printf("Led1 -> ON\n");
+}
+
+
+void Led1_Off (void)
+{
+    // printf("Led1 -> OFF\n");    
+}
+
 void ChangeLed (unsigned char number)
 {
     printf("change led to %d bips\n", number);
