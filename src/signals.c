@@ -31,6 +31,8 @@
 // #define PI_CONTROL
 // #define PID_CONTROL
 #define OPENLOOP_CONTROL
+#define OPENLOOP_PREFILTER_WITH_POLE_RECALC
+
 
 #define USE_SOFT_NO_CURRENT
 #define USE_SOFT_OVERCURRENT
@@ -1462,26 +1464,24 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
     float Vin = 192.0;
     float fsampling = 7000.0;
     float Rsense = 0.055;
-    
+
     float La = ant->inductance_int + ant->inductance_dec / 100.0;
     La = La / 1000.0;    // convert mHy to Hy
 
     float Ra = ant->resistance_int + ant->resistance_dec / 100.0;
 
-    float max_antenna_current = ant->current_limit_int + ant->current_limit_dec / 100.0;
-    
     // float b0 = Rsense * Ao;
     float b0 = 0.715;    
     b0 = b0 / (La * fsampling);
 
     float a1 = -1.0 + (Ra + Rsense)/(La * fsampling);
     float a1_pos = -a1;
-
-    // float multi = max_antenna_current * 887. / 1000.;
-    float multi = max_antenna_current * 887.;    
     float gain = b0 /(1. - a1_pos);
+    float ant_pole = Ra/(La * 6.28);
 
-    float ant_pole = Ra/(La * 6.28);    
+    // max current allowed in this antenna
+    float max_antenna_current = ant->current_limit_int + ant->current_limit_dec / 100.0;
+    float multi = max_antenna_current * 887.;    //887 adc points for 1amp
 
     // setting max current adc points
     if (which_channel == CH1)
@@ -1576,6 +1576,7 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
     // adjust duty for max current
     float max_c = 0.715 / (Vin * gain);
     max_c = max_c * max_antenna_current;    //adjust for antenna current
+    max_c = max_c * global_signals.power / 100.;    //adjust for power
     unsigned short max_duty = (unsigned short) (max_c * 1000);
     
 #ifdef TESTING_SHOW_INFO_OPENLOOP
@@ -1622,11 +1623,42 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
 //     }
 
     // pre filter with original duty and corrections
-    // float zero_gain = 1. - a1_pos;    //for 28Hz
+#ifdef OPENLOOP_PREFILTER_WITH_POLE_RECALC
+    // recalc on fsampling
+    // float freq = global_signals.freq_int + global_signals.freq_dec / 100.0;
+    // float calc = freq * 256 * 256 / fsampling;
+    
+    fsampling = global_signals.freq_int + global_signals.freq_dec / 100.0;
+    fsampling = fsampling * 256.;
+    a1 = -1.0 + (Ra + Rsense)/(La * fsampling);
+    a1_pos = -a1;
+
+#ifdef TESTING_SHOW_INFO_OPENLOOP
+    printf(" prefilter recalc fs: %f pole: %f\n", fsampling, a1_pos);
+#endif    
+    
+#endif    //OPENLOOP_PREFILTER_WITH_POLE_RECALC
+    
+    float zero_gain = 1. - a1_pos;    //for 27.34Hz
     // a1_pos = 0.9605;    //for 14Hz
-    a1_pos = 0.9210;    //for 7Hz    
-    float zero_gain = 1. - a1_pos;
+    // a1_pos = 0.9210;    //for 7Hz    
     float comp_gain = max_c / zero_gain;
+
+    if (comp_gain > 30.0)
+    {
+        float comp_gain_reduction = comp_gain;
+        //reduce power here!!!
+        for (int i = 9; i > 1; i--)
+        {
+            comp_gain_reduction = comp_gain * i / 10.;
+            if (comp_gain_reduction < 30.0)
+                break;
+        }
+#ifdef TESTING_SHOW_INFO_OPENLOOP
+        printf(" comp_gain to hi!!! comp_gain: %f reduced: %f\n", comp_gain, comp_gain_reduction);
+#endif
+        comp_gain = comp_gain_reduction;
+    }
 #ifdef TESTING_SHOW_INFO_OPENLOOP
     printf(" zero gain: %f max_c: %f comp_gain: %f\n", zero_gain, max_c, comp_gain);
     float adc_pts = max_antenna_current * 0.715 * 4095. / 3.3;
