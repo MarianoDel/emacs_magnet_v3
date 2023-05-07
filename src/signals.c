@@ -21,13 +21,22 @@
 #include "antennas_defs.h"
 #include "errors.h"
 
+// to report errors
+#include "usart.h"
+
 #include <stdio.h>
 
 
 // Module Private Types Constants and Macros -----------------------------------
+// #define PI_CONTROL
+// #define PID_CONTROL
+#define OPENLOOP_CONTROL
+
 #define USE_SOFT_NO_CURRENT
 #define USE_SOFT_OVERCURRENT
 
+// to report errors
+#define RPI_Send(X)    Usart1Send(X)
 
 // Externals -------------------------------------------------------------------
 //del ADC
@@ -266,12 +275,34 @@ void Signals_Setup_Phase_Accumulator (unsigned char freq_int,
 
 
 // Module Functions ------------------------------------------------------------
+// For signals with Feedback
 const unsigned short * p_table_inphase;
 const unsigned short * p_table_outphase;
+
+// Using PI
+#ifdef PI_CONTROL
 pi_data_obj_t pi_ch1;
 pi_data_obj_t pi_ch2;
 pi_data_obj_t pi_ch3;
 pi_data_obj_t pi_ch4;
+#endif
+
+// Using PID
+#ifdef PID_CONTROL
+pid_data_obj_t pid_ch1;
+pid_data_obj_t pid_ch2;
+pid_data_obj_t pid_ch3;
+pid_data_obj_t pid_ch4;
+#endif
+
+// For signals OpenLoop
+#ifdef OPENLOOP_CONTROL
+short * p_table_ch1;
+short * p_table_ch2;
+short * p_table_ch3;
+short * p_table_ch4;
+#endif
+
 unsigned short ch1_max_current = 0;
 unsigned short ch2_max_current = 0;
 unsigned short ch3_max_current = 0;
@@ -292,14 +323,16 @@ signals_struct_t global_signals = {
     // by channel things    
     .kp_ch1 = 50,
     .ki_ch1 = 3,
+    .kd_ch1 = 0,
     .kp_ch2 = 10,
     .ki_ch2 = 10,
-    // .kp_ch2 = 0,
-    // .ki_ch2 = 0,
+    .kd_ch2 = 0,    
     .kp_ch3 = 5,
     .ki_ch3 = 2,
+    .kd_ch3 = 0,    
     .kp_ch4 = 1,
     .ki_ch4 = 30,
+    .kd_ch4 = 0,    
 
     // .max_c_ch1 = 870,
     .max_c_ch1 = 1590,    
@@ -365,6 +398,7 @@ void Signals_Setup_All_Channels (void)
     ch3_max_current = global_signals.max_c_ch3;
     ch4_max_current = global_signals.max_c_ch4;
 
+#ifdef PI_CONTROL
     PI_roof_Flush (&pi_ch1);
     PI_roof_Flush (&pi_ch2);
     PI_roof_Flush (&pi_ch3);
@@ -380,7 +414,32 @@ void Signals_Setup_All_Channels (void)
     pi_ch3.ki = global_signals.ki_ch3;
 
     pi_ch4.kp = global_signals.kp_ch4;
-    pi_ch4.ki = global_signals.ki_ch4;
+    pi_ch4.ki = global_signals.ki_ch4;    
+#endif
+
+#ifdef PID_CONTROL
+    PID_Flush_Errors (&pid_ch1);
+    PID_Flush_Errors (&pid_ch2);
+    PID_Flush_Errors (&pid_ch3);
+    PID_Flush_Errors (&pid_ch4);
+
+    pid_ch1.kp = global_signals.kp_ch1;
+    pid_ch1.ki = global_signals.ki_ch1;
+    pid_ch1.kd = global_signals.kd_ch1;
+
+    pid_ch2.kp = global_signals.kp_ch2;
+    pid_ch2.ki = global_signals.ki_ch2;
+    pid_ch2.kd = global_signals.kd_ch2;
+
+    pid_ch3.kp = global_signals.kp_ch3;
+    pid_ch3.ki = global_signals.ki_ch3;
+    pid_ch3.kd = global_signals.kd_ch3;
+
+    pid_ch4.kp = global_signals.kp_ch4;
+    pid_ch4.ki = global_signals.ki_ch4;
+    pid_ch4.kd = global_signals.kd_ch4;
+#endif
+    
 
 #ifdef USE_SOFT_NO_CURRENT
     if (phase_accum == 0)
@@ -400,11 +459,16 @@ void Signals_Setup_All_Channels (void)
     signal_no_current_threshold_ch3 = mean_current * ch3_max_current;    //antenna current peak value
     signal_no_current_threshold_ch4 = mean_current * ch4_max_current;    //antenna current peak value    
 
-    signal_no_current_threshold_ch1 >>= 1;    // threshold at 50%
-    signal_no_current_threshold_ch2 >>= 1;    // threshold at 50%
-    signal_no_current_threshold_ch3 >>= 1;    // threshold at 50%
-    signal_no_current_threshold_ch4 >>= 1;    // threshold at 50%
+    signal_no_current_threshold_ch1 >>= 2;    // threshold at 25%
+    signal_no_current_threshold_ch2 >>= 2;    // threshold at 25%
+    signal_no_current_threshold_ch3 >>= 2;    // threshold at 25%
+    signal_no_current_threshold_ch4 >>= 2;    // threshold at 25%
 
+    // signal_no_current_threshold_ch1 >>= 1;    // threshold at 50%
+    // signal_no_current_threshold_ch2 >>= 1;    // threshold at 50%
+    // signal_no_current_threshold_ch3 >>= 1;    // threshold at 50%
+    // signal_no_current_threshold_ch4 >>= 1;    // threshold at 50%
+    
     signal_no_current_cnt_ch1 = 0;
     signal_no_current_cnt_ch2 = 0;
     signal_no_current_cnt_ch3 = 0;
@@ -423,12 +487,11 @@ void Signals_Setup_All_Channels (void)
 #endif
 
 #ifdef USE_SOFT_OVERCURRENT
-    // soft overcurrent is 20% above the maximun current with 100% power
-
-    signal_ovcp_threshold_ch1 = 12 * ch1_max_current / 10;
-    signal_ovcp_threshold_ch2 = 12 * ch2_max_current / 10;
-    signal_ovcp_threshold_ch3 = 12 * ch3_max_current / 10;
-    signal_ovcp_threshold_ch4 = 12 * ch4_max_current / 10;
+    // soft overcurrent is 30% above the maximun current with 100% power
+    signal_ovcp_threshold_ch1 = 13 * ch1_max_current / 10;
+    signal_ovcp_threshold_ch2 = 13 * ch2_max_current / 10;
+    signal_ovcp_threshold_ch3 = 13 * ch3_max_current / 10;
+    signal_ovcp_threshold_ch4 = 13 * ch4_max_current / 10;
     
     MA8_U16Circular_Reset(&signal_ovcp_filter_ch1);
     MA8_U16Circular_Reset(&signal_ovcp_filter_ch2);
@@ -541,6 +604,11 @@ void Signals_Generate_All_Channels (void)
                     Signals_Stop_Single_Channel(CH1);
                     global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
                     Error_SetStatus(ERROR_NO_CURRENT, CH1);
+                    char buff_err [30] = { 0 };
+                    sprintf(buff_err,"no curr: %d thres: %d\r\n",
+                            signal_integral_ch1,
+                            signal_no_current_threshold_ch1);
+                    RPI_Send(buff_err);
                 }
             }
         }
@@ -688,93 +756,17 @@ void Signals_Generate_All_Channels (void)
     
 }    
 
-short p_inphase_ch1 [256] = { 0 };
-void Signals_Reference_Reset (void)
-{
-    for (int i = 0; i < 256; i++)
-        *(p_inphase_ch1 + i) = 0;
-    
-}
-
-void Signals_Generate_Single_Channel_OpenLoop (void)
-{
-    if (!timer1_seq_ready)
-        return;
-
-    timer1_seq_ready = 0;
-    // seq_ready_cnt++;
-    unsigned char signal_ended = 0;
-                
-    // get the current SP
-    unsigned char s_index = signal_index >> 8;
-    short ref_inphase = *(p_inphase_ch1 + s_index);
-
-    // index update (modulo 16?)
-    if (signal_index < 65535)
-        signal_index += phase_accum;
-    else
-    {
-        signal_index += phase_accum;    //modulo 16 roundup
-        signal_ended = 1;
-    }
-    
-    if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
-        Signals_Generate_Channel_OpenLoop (CH1, ref_inphase);
-
-    // now check channels for errors
-#ifdef USE_SOFT_NO_CURRENT
-    if (signal_ended)
-    {
-        if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
-        {
-            if (signal_integral_ch1 < signal_no_current_threshold_ch1)
-            {
-                if (signal_no_current_cnt_ch1 < NO_CURRENT_THRESHOLD_CNT)
-                    signal_no_current_cnt_ch1++;
-                else
-                {
-                    global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
-                    Error_SetStatus(ERROR_NO_CURRENT, CH1);
-                }
-            }
-        }
-        
-        signal_integral_ch1 = 0;
-    }
-    else
-    {
-        signal_integral_ch1 += IS_CH1;
-    }
-#endif    // USE_SOFT_NO_CURRENT
-
-#ifdef USE_SOFT_OVERCURRENT
-        if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
-        {
-            unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch1, IS_CH1);
-            if (filter_c > signal_ovcp_threshold_ch1)
-            {
-                // printf("ch1 current filtered: %d threshold: %d sample: %d index: %d\n",
-                //        filter_c,
-                //        signal_ovcp_threshold_ch1,
-                //        IS_CH1,
-                //        signal_index);
-
-                Signals_Stop_Single_Channel(CH1);
-                global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
-                Error_SetStatus(ERROR_SOFT_OVERCURRENT, CH1);
-            }
-        }
-#endif
-    // end of check channels errors
-    
-}    
-
 
 void (* pf_high_left) (unsigned short);
 void (* pf_low_right) (unsigned short);
 void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_sp)
 {
+#ifdef PI_CONTROL
     pi_data_obj_t * p_pi;
+#endif
+#ifdef PID_CONTROL
+    pid_data_obj_t * p_pid;
+#endif
     unsigned short sample = 0;
     unsigned short max_c = 0;
     
@@ -783,7 +775,12 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
     case CH1:
         pf_high_left = TIM8_Update_CH3;
         pf_low_right = TIM8_Update_CH4;
+#ifdef PI_CONTROL
         p_pi = &pi_ch1;
+#endif
+#ifdef PID_CONTROL
+        p_pid = &pid_ch1;
+#endif
         sample = IS_CH1;
         max_c = ch1_max_current;
         // printf("is_ch1: %d sp_ch1: %d\n", IS_CH1, new_sp);
@@ -792,7 +789,12 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
     case CH2:
         pf_high_left = TIM8_Update_CH2;
         pf_low_right = TIM8_Update_CH1;
+#ifdef PI_CONTROL
         p_pi = &pi_ch2;
+#endif
+#ifdef PID_CONTROL
+        p_pid = &pid_ch2;
+#endif
         sample = IS_CH2;
         max_c = ch2_max_current;        
         break;
@@ -800,7 +802,12 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
     case CH3:
         pf_high_left = TIM4_Update_CH2;
         pf_low_right = TIM4_Update_CH3;
+#ifdef PI_CONTROL
         p_pi = &pi_ch3;
+#endif
+#ifdef PID_CONTROL
+        p_pid = &pid_ch3;
+#endif
         sample = IS_CH3;
         max_c = ch3_max_current;        
         break;
@@ -808,7 +815,12 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
     case CH4:
         pf_high_left = TIM5_Update_CH1;
         pf_low_right = TIM5_Update_CH2;
+#ifdef PI_CONTROL
         p_pi = &pi_ch4;
+#endif
+#ifdef PID_CONTROL
+        p_pid = &pid_ch4;
+#endif        
         sample = IS_CH4;
         max_c = ch4_max_current;        
         // printf("is_ch4: %d sp_ch4: %d\n", IS_CH4, new_sp);        
@@ -835,21 +847,37 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
 #endif
     
     // set duty cycle and save pi current data
+#ifdef PI_CONTROL
     p_pi->sample = sample;
     p_pi->setpoint = sp;
+#endif
+#ifdef PID_CONTROL
+    p_pid->sample = sample;
+    p_pid->setpoint = sp;    
+#endif
     
     if (sp == 0)
     {
         //fast discharge
         pf_high_left (DUTY_NONE);
         pf_low_right (DUTY_NONE);
+#ifdef PI_CONTROL
         PI_roof_Flush (p_pi);
+#endif
+#ifdef PID_CONTROL
+        PID_Flush_Errors (p_pid);
+#endif
     }
     else
     {
         // normal emission
-        short duty = PI_roof (p_pi);        
-        
+        short duty = 0;
+#ifdef PI_CONTROL
+        duty = PI_roof (p_pi);
+#endif
+#ifdef PID_CONTROL
+        duty = PID (p_pid);
+#endif        
         if (duty > 0)
         {
             if (duty > DUTY_95_PERCENT)
@@ -883,71 +911,12 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
             duty = -duty;
         }
         // set the roof on duty
+#ifdef PI_CONTROL
         p_pi->last_d = duty;
-    }
-}
-
-
-void Signals_Generate_Channel_OpenLoop (unsigned char which_channel, short new_ref)
-{
-    switch (which_channel)
-    {
-    case CH1:
-        pf_high_left = TIM8_Update_CH3;
-        pf_low_right = TIM8_Update_CH4;
-        break;
-
-    case CH2:
-        pf_high_left = TIM8_Update_CH2;
-        pf_low_right = TIM8_Update_CH1;
-        break;
-
-    case CH3:
-        pf_high_left = TIM4_Update_CH2;
-        pf_low_right = TIM4_Update_CH3;
-        break;
-
-    case CH4:
-        pf_high_left = TIM5_Update_CH1;
-        pf_low_right = TIM5_Update_CH2;
-        break;
-    }
-
-    if (new_ref == 0)
-    {
-        //fast discharge
-        pf_high_left (DUTY_NONE);
-        pf_low_right (DUTY_NONE);
-    }
-    else
-    {
-        if (new_ref > 0)
-        {
-            if (new_ref > DUTY_95_PERCENT)
-                new_ref = DUTY_95_PERCENT;
-                        
-            pf_high_left (new_ref);
-            pf_low_right (DUTY_ALWAYS);
-        }
-        else if (new_ref == 0)
-        {
-            pf_high_left (DUTY_NONE);
-            pf_low_right (DUTY_ALWAYS);
-        }
-        else    // duty negative
-        {
-            // fixt duty
-            new_ref = -new_ref;
-                
-            if (new_ref > DUTY_95_PERCENT)
-                new_ref = DUTY_95_PERCENT;
-                                                
-            pf_high_left (DUTY_NONE);
-            pf_low_right (new_ref);                        
-                
-            // fixt duty
-            new_ref = -new_ref;
-        }
+#endif
+#ifdef PID_CONTROL
+        p_pid->last_d = duty;
+#endif
     }
 }
 
@@ -993,6 +962,7 @@ void Signals_Set_Reset_Channel_For_Treatment (unsigned char which_channel, unsig
     }        
 }
 
+
 // typical values
 // float Vin = 192.0;
 // float Rsense = 0.055;
@@ -1025,51 +995,768 @@ void Signals_Set_Channel_PI_Parameters (unsigned char which_channel, antenna_st 
     float multi = max_antenna_current * 887.;    
 
     float gain = b0 /(1. - a1_pos);
-    float gain_five_perc = 19. /(gain * Vin);
-#ifdef TESTING_SHOW_INFO
-    printf(" filter gain: %f prop gain: %f gain 5 perc: %f\n", gain, gain * Vin, gain_five_perc);
+    // float gain_five_perc = 19. /(gain * Vin);    // gain to 5% 0.95/0.05=19
+    // float gain_five_perc = 9. /(gain * Vin);    // gain to 10% 0.9/0.1=9
+    float gain_five_perc = 4. /(gain * Vin);    // gain to 20% 0.8/0.2=4
+    // float gain_five_perc = 1. /(gain * Vin);    // gain to 50% 0.5/0.5=1    
+#ifdef TESTING_SHOW_INFO_PI
+    printf(" filter gain: %f w/vin gain: %f gain 5 perc: %f\n", gain, gain * Vin, gain_five_perc);
 #endif
+    short ki = 0;
+    short kp = 0;
+    short kd = 0;
+#ifdef PI_CONTROL    
     // calc ki from kp and zero eq to pole freq
     float zero_eq_pole = Ra/(La * 6.28);
-    float ki_gain = zero_eq_pole * gain_five_perc * 6.28 * 128. * 10. / fsampling;
+    // float ki_gain = zero_eq_pole * gain_five_perc * 6.28 * 128. * 50. / fsampling;
+    // float ki_gain = zero_eq_pole * gain_five_perc * 6.28 * 128. * 10. / fsampling;    
+    float ki_gain = zero_eq_pole * gain_five_perc * 6.28 * 128. * 2. / fsampling;    
+    // float ki_gain = 1;
+    // float ki_gain = 0;    
     
-    short ki = (short) ki_gain;    //ki = kp * 2 * np.pi * 20 / fs    
-    short kp = (short) (gain_five_perc * 128);
-#ifdef TESTING_SHOW_INFO
+    ki = (short) ki_gain;    //ki = kp * 2 * np.pi * 20 / fs    
+    kp = (short) (gain_five_perc * 128);
+    kd = 0;    
+#ifdef TESTING_SHOW_INFO_PI
     printf(" pid values ki: %d kp: %d\n", ki, kp);
-    printf(" zero from ki_eff: %f to kp: %fHz\n",
-           (float) ki * fsampling,
+    printf(" zero from ki_eff: %f to kp: %fHz\n\n",
+           (float) ki * fsampling / 128.,
            (float) ki * fsampling / (6.28 * (float) kp));
 #endif
+#endif    //PI_CONTROL
+
+#ifdef PID_CONTROL    
+    // calc ki from kp and zero eq to pole freq
+    float zero_eq_pole = Ra/(La * 6.28);
+    // float ki_gain = zero_eq_pole * gain_five_perc * 6.28 * 128. * 50. / fsampling;
+    // float ki_gain = zero_eq_pole * gain_five_perc * 6.28 * 128. * 10. / fsampling;    
+    float ki_gain = zero_eq_pole * gain_five_perc * 6.28 * 128. * 2. / fsampling;    
+    // float ki_gain = 1;
+    // float ki_gain = 0;    
     
+    ki = (short) ki_gain;    //ki = kp * 2 * np.pi * 20 / fs    
+    kp = (short) (gain_five_perc * 128);
+    // float kd_f = (float) kp * 10. / (128. * 6.28 * fsampling * zero_eq_pole);
+    // short kd = (short) kd_f;
+    kd = 0;
+#ifdef TESTING_SHOW_INFO_PI
+    printf(" pid values ki: %d kp: %d kd: %d\n", ki, kp, kd);
+    printf(" zero from ki_eff: %f to kp: %fHz second zero from kp to kd: %fHz\n\n",
+           (float) ki * fsampling / 128.,
+           (float) ki * fsampling / (6.28 * (float) kp),
+           (float) kp * 10. / (6.28 * fsampling * ((float) kd / 128.)));
+#endif
+#endif    //PID_CONTROL
+    
+    // with PI_CONTROL kd is set but not used
     switch (which_channel)
     {
     case CH1:
         global_signals.ki_ch1 = ki;        
         global_signals.kp_ch1 = kp;
+        global_signals.kd_ch1 = kd;        
         global_signals.max_c_ch1 = (unsigned short) multi;
         break;
 
     case CH2:
         global_signals.ki_ch2 = ki;
         global_signals.kp_ch2 = kp;
+        global_signals.kd_ch2 = kd;        
         global_signals.max_c_ch2 = (unsigned short) multi;        
         break;
 
     case CH3:
         global_signals.ki_ch3 = ki;
         global_signals.kp_ch3 = kp;
+        global_signals.kd_ch3 = kd;        
         global_signals.max_c_ch3 = (unsigned short) multi;        
         break;
 
     case CH4:
         global_signals.ki_ch4 = ki;
         global_signals.kp_ch4 = kp;
+        global_signals.kd_ch4 = kd;        
         global_signals.max_c_ch4 = (unsigned short) multi;        
         break;
-    }        
+    }
 }
 
+
+////////////////////////////
+// For OpenLoop Functions //
+////////////////////////////
+#ifdef OPENLOOP_CONTROL
+short table_ch1 [256] = { 0 };
+short table_ch2 [256] = { 0 };
+short table_ch3 [256] = { 0 };
+short table_ch4 [256] = { 0 };
+
+// short p_inphase_ch1 [256] = { 0 };
+// void Signals_Reference_Reset (void)
+// {
+//     for (int i = 0; i < 256; i++)
+//         *(p_inphase_ch1 + i) = 0;
+    
+// }
+
+void Signals_Setup_All_Channels_Open_Loop (void)
+{
+    unsigned char signal_mean = 0;
+    
+    switch (global_signals.signal)
+    {
+    case SINUSOIDAL_SIGNAL:
+        signal_mean = 32;
+        break;
+
+    case SQUARE_SIGNAL:
+        signal_mean = 50;        
+        break;
+
+    case TRIANGULAR_SIGNAL:
+        signal_mean = 25;
+        break;
+        
+    }
+
+    p_table_ch1 = table_ch1;
+    p_table_ch2 = table_ch2;
+    p_table_ch3 = table_ch3;
+    p_table_ch4 = table_ch4;    
+    
+    signal_index = 0;
+
+    // phase accum calc and signal index increment
+    Signals_Setup_Phase_Accumulator (
+        global_signals.freq_int,
+        global_signals.freq_dec,
+        &phase_accum);
+
+#ifdef TESTING_SHOW_INFO
+    printf(" -- freq: %d.%02dHz phase_accum: %d --\n", 
+           global_signals.freq_int,
+           global_signals.freq_dec,           
+           phase_accum);
+#endif
+    
+    ch1_max_current = global_signals.max_c_ch1;
+    ch2_max_current = global_signals.max_c_ch2;
+    ch3_max_current = global_signals.max_c_ch3;
+    ch4_max_current = global_signals.max_c_ch4;
+
+#ifdef USE_SOFT_NO_CURRENT
+    if (phase_accum == 0)
+    {
+        phase_accum = 256;    //default for 27.34Hz
+#ifdef TESTING_SHOW_INFO
+        printf("ERROR phase_accum is 0 on Signals_Setup_All_Channels\n");
+#endif                
+    }
+
+    unsigned int mean_current = 65536 / phase_accum;
+    mean_current = mean_current * global_signals.power * signal_mean;
+    mean_current = mean_current / 10000;    //adjust power, mean and phase_accum
+
+    signal_no_current_threshold_ch1 = mean_current * ch1_max_current;    //antenna current peak value
+    signal_no_current_threshold_ch2 = mean_current * ch2_max_current;    //antenna current peak value
+    signal_no_current_threshold_ch3 = mean_current * ch3_max_current;    //antenna current peak value
+    signal_no_current_threshold_ch4 = mean_current * ch4_max_current;    //antenna current peak value    
+
+    signal_no_current_threshold_ch1 >>= 2;    // threshold at 25%
+    signal_no_current_threshold_ch2 >>= 2;    // threshold at 25%
+    signal_no_current_threshold_ch3 >>= 2;    // threshold at 25%
+    signal_no_current_threshold_ch4 >>= 2;    // threshold at 25%
+
+    // signal_no_current_threshold_ch1 >>= 1;    // threshold at 50%
+    // signal_no_current_threshold_ch2 >>= 1;    // threshold at 50%
+    // signal_no_current_threshold_ch3 >>= 1;    // threshold at 50%
+    // signal_no_current_threshold_ch4 >>= 1;    // threshold at 50%
+    
+    signal_no_current_cnt_ch1 = 0;
+    signal_no_current_cnt_ch2 = 0;
+    signal_no_current_cnt_ch3 = 0;
+    signal_no_current_cnt_ch4 = 0;
+    
+#ifdef TESTING_SHOW_INFO
+    printf(" -- no current ch1 mean: %d threshold: %d\n", 
+           mean_current * ch1_max_current,
+           signal_no_current_threshold_ch1);
+#endif
+    
+    signal_integral_ch1 = 0;
+    signal_integral_ch2 = 0;
+    signal_integral_ch3 = 0;
+    signal_integral_ch4 = 0;    
+#endif
+
+#ifdef USE_SOFT_OVERCURRENT
+    // soft overcurrent is 30% above the maximun current with 100% power
+    signal_ovcp_threshold_ch1 = 13 * ch1_max_current / 10;
+    signal_ovcp_threshold_ch2 = 13 * ch2_max_current / 10;
+    signal_ovcp_threshold_ch3 = 13 * ch3_max_current / 10;
+    signal_ovcp_threshold_ch4 = 13 * ch4_max_current / 10;
+    
+    MA8_U16Circular_Reset(&signal_ovcp_filter_ch1);
+    MA8_U16Circular_Reset(&signal_ovcp_filter_ch2);
+    MA8_U16Circular_Reset(&signal_ovcp_filter_ch3);
+    MA8_U16Circular_Reset(&signal_ovcp_filter_ch4);
+    
+#endif    
+}
+
+
+void Signals_Generate_All_Channels_Open_Loop (void)
+{
+    if (!timer1_seq_ready)
+        return;
+
+    timer1_seq_ready = 0;
+    Led1_On();
+    unsigned char signal_ended = 0;
+                
+    // get the current SP
+    unsigned char s_index = signal_index >> 8;
+    short sp_ch1 = *(p_table_ch1 + s_index);
+    short sp_ch2 = *(p_table_ch2 + s_index);
+    short sp_ch3 = *(p_table_ch3 + s_index);
+    short sp_ch4 = *(p_table_ch4 + s_index);
+
+    unsigned char with_signal_ch1 = 0;
+    unsigned char with_signal_ch2 = 0;
+    unsigned char with_signal_ch3 = 0;
+    unsigned char with_signal_ch4 = 0;    
+    if (s_index < 128)
+    {
+        with_signal_ch1 = 1;
+        with_signal_ch2 = 1;
+        with_signal_ch3 = 0;
+        with_signal_ch4 = 0;        
+    }
+    else
+    {
+        with_signal_ch1 = 0;
+        with_signal_ch2 = 0;
+        with_signal_ch3 = 1;
+        with_signal_ch4 = 1;        
+    }
+
+    // index update for next SP or end of signal
+    unsigned int total_phase = signal_index + phase_accum;
+    if (total_phase < 65535)
+    {
+        signal_index += phase_accum;
+    }
+    else
+    {
+        signal_index += phase_accum;    //modulo 16 roundup
+        signal_ended = 1;
+    }
+    
+    if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+    {
+#ifdef TESTING_SHOW_INFO_OPENLOOP_INDEX
+        printf("signal_index: %d s_index: %d sp_ch1: %d\n",
+               signal_index,
+               s_index,
+               sp_ch1);
+#endif
+        Signals_Generate_Channel_OpenLoop (CH1, sp_ch1, with_signal_ch1);
+    }
+
+    if (global_signals.treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
+        Signals_Generate_Channel_OpenLoop (CH2, sp_ch2, with_signal_ch2);
+
+    if (global_signals.treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
+        Signals_Generate_Channel_OpenLoop (CH3, sp_ch3, with_signal_ch3);
+
+    if (global_signals.treat_in_ch4 == CHANNEL_CONNECTED_GOOD)
+        Signals_Generate_Channel_OpenLoop (CH4, sp_ch4, with_signal_ch4);
+
+    // now check channels for errors
+#ifdef USE_SOFT_NO_CURRENT
+    if (signal_ended)
+    {
+        if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+        {
+#ifdef TESTING_SHOW_INFO
+            printf(" -- ch1 integral: %d threshold: %d --\n", 
+                   signal_integral_ch1,
+                   signal_no_current_threshold_ch1);
+#endif
+            if (signal_integral_ch1 < signal_no_current_threshold_ch1)
+            {
+                if (signal_no_current_cnt_ch1 < NO_CURRENT_THRESHOLD_CNT)
+                    signal_no_current_cnt_ch1++;
+                else
+                {
+#ifdef TESTING_SHOW_INFO
+                    printf("stop no current on ch1 integral: %d threshold: %d\n", 
+                           signal_integral_ch1,
+                           signal_no_current_threshold_ch1);
+#endif
+                    Signals_Stop_Single_Channel(CH1);
+                    global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
+                    Error_SetStatus(ERROR_NO_CURRENT, CH1);
+                    char buff_err [30] = { 0 };
+                    sprintf(buff_err,"no curr: %d thres: %d\r\n",
+                            signal_integral_ch1,
+                            signal_no_current_threshold_ch1);
+                    RPI_Send(buff_err);
+                }
+            }
+        }
+
+        if (global_signals.treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
+        {
+            if (signal_integral_ch2 < signal_no_current_threshold_ch2)
+            {
+                if (signal_no_current_cnt_ch2 < NO_CURRENT_THRESHOLD_CNT)
+                    signal_no_current_cnt_ch2++;
+                else
+                {
+                    Signals_Stop_Single_Channel(CH2);
+                    global_signals.treat_in_ch2 = CHANNEL_DISCONNECT;
+                    Error_SetStatus(ERROR_NO_CURRENT, CH2);
+                }
+            }
+        }
+
+        if (global_signals.treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
+        {
+            if (signal_integral_ch3 < signal_no_current_threshold_ch3)
+            {
+                if (signal_no_current_cnt_ch3 < NO_CURRENT_THRESHOLD_CNT)
+                    signal_no_current_cnt_ch3++;
+                else
+                {
+                    Signals_Stop_Single_Channel(CH3);
+                    global_signals.treat_in_ch3 = CHANNEL_DISCONNECT;
+                    Error_SetStatus(ERROR_NO_CURRENT, CH3);
+                }
+            }
+        }
+
+        if (global_signals.treat_in_ch4 == CHANNEL_CONNECTED_GOOD)
+        {
+            if (signal_integral_ch4 < signal_no_current_threshold_ch4)
+            {
+                if (signal_no_current_cnt_ch4 < NO_CURRENT_THRESHOLD_CNT)
+                    signal_no_current_cnt_ch4++;
+                else
+                {
+                    Signals_Stop_Single_Channel(CH4);
+                    global_signals.treat_in_ch4 = CHANNEL_DISCONNECT;
+                    Error_SetStatus(ERROR_NO_CURRENT, CH4);
+                }
+            }
+        }        
+        
+        signal_integral_ch1 = 0;
+        signal_integral_ch2 = 0;
+        signal_integral_ch3 = 0;
+        signal_integral_ch4 = 0;
+    }
+    else
+    {
+        signal_integral_ch1 += IS_CH1;
+        signal_integral_ch2 += IS_CH2;
+        signal_integral_ch3 += IS_CH3;
+        signal_integral_ch4 += IS_CH4;                
+    }
+#endif    // USE_SOFT_NO_CURRENT
+
+#ifdef USE_SOFT_OVERCURRENT
+    if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+    {
+        unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch1, IS_CH1);
+#ifdef TESTING_SHOW_INFO
+        printf("ch1 current filtered: %d threshold: %d sample: %d index: %d\n",
+               filter_c,
+               signal_ovcp_threshold_ch1,
+               IS_CH1,
+               signal_index);
+#endif
+        
+        if (filter_c > signal_ovcp_threshold_ch1)
+        {
+#ifdef TESTING_SHOW_INFO
+            printf("ch1 current filtered: %d threshold: %d sample: %d index: %d\n",
+                   filter_c,
+                   signal_ovcp_threshold_ch1,
+                   IS_CH1,
+                   signal_index);
+#endif
+
+            Signals_Stop_Single_Channel(CH1);
+            global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
+            Error_SetStatus(ERROR_SOFT_OVERCURRENT, CH1);
+        }
+    }
+
+    if (global_signals.treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
+    {
+        unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch2, IS_CH2);
+        if (filter_c > signal_ovcp_threshold_ch2)
+        {
+            // printf("ch2 current filtered: %d threshold: %d sample: %d index: %d\n",
+            //        filter_c,
+            //        signal_ovcp_threshold_ch2,
+            //        IS_CH2,
+            //        signal_index);
+
+            Signals_Stop_Single_Channel(CH2);                
+            global_signals.treat_in_ch2 = CHANNEL_DISCONNECT;
+            Error_SetStatus(ERROR_SOFT_OVERCURRENT, CH2);
+        }
+    }
+
+    if (global_signals.treat_in_ch3 == CHANNEL_CONNECTED_GOOD)
+    {
+        unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch3, IS_CH3);
+        if (filter_c > signal_ovcp_threshold_ch3)
+        {
+            // printf("ch3 current filtered: %d threshold: %d sample: %d index: %d\n",
+            //        filter_c,
+            //        signal_ovcp_threshold_ch3,
+            //        IS_CH3,
+            //        signal_index);
+
+            Signals_Stop_Single_Channel(CH3);                
+            global_signals.treat_in_ch3 = CHANNEL_DISCONNECT;
+            Error_SetStatus(ERROR_SOFT_OVERCURRENT, CH3);
+        }
+    }
+
+    if (global_signals.treat_in_ch4 == CHANNEL_CONNECTED_GOOD)        
+    {
+        unsigned short filter_c = MA8_U16Circular(&signal_ovcp_filter_ch4, IS_CH4);
+        if (filter_c > signal_ovcp_threshold_ch4)
+        {
+            // printf("ch4 current filtered: %d threshold: %d sample: %d index: %d\n",
+            //        filter_c,
+            //        signal_ovcp_threshold_ch4,
+            //        IS_CH4,
+            //        signal_index);
+
+            Signals_Stop_Single_Channel(CH4);
+            global_signals.treat_in_ch4 = CHANNEL_DISCONNECT;
+            Error_SetStatus(ERROR_SOFT_OVERCURRENT, CH4);
+        }
+    }
+#endif
+    Led1_Off();
+    // end of check channels errors
+    
+}    
+
+
+// typical values
+// float Vin = 192.0;
+// float Rsense = 0.055;
+// float Ao = 13.0;
+// float La = 0.142;
+// float Ra = 11.0;
+// float fsampling = 7000.0;
+void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_st * ant)
+{
+    float Vin = 192.0;
+    float fsampling = 7000.0;
+    float Rsense = 0.055;
+    
+    float La = ant->inductance_int + ant->inductance_dec / 100.0;
+    La = La / 1000.0;    // convert mHy to Hy
+
+    float Ra = ant->resistance_int + ant->resistance_dec / 100.0;
+
+    float max_antenna_current = ant->current_limit_int + ant->current_limit_dec / 100.0;
+    
+    // float b0 = Rsense * Ao;
+    float b0 = 0.715;    
+    b0 = b0 / (La * fsampling);
+
+    float a1 = -1.0 + (Ra + Rsense)/(La * fsampling);
+    float a1_pos = -a1;
+
+    // float multi = max_antenna_current * 887. / 1000.;
+    float multi = max_antenna_current * 887.;    
+    float gain = b0 /(1. - a1_pos);
+
+    float ant_pole = Ra/(La * 6.28);    
+
+    // setting max current adc points
+    if (which_channel == CH1)
+        global_signals.max_c_ch1 = (unsigned short) multi;
+    else if (which_channel == CH2)
+        global_signals.max_c_ch2 = (unsigned short) multi;            
+    else if (which_channel == CH3)
+        global_signals.max_c_ch3 = (unsigned short) multi;
+    else
+        global_signals.max_c_ch4 = (unsigned short) multi;            
+    
+#ifdef TESTING_SHOW_INFO_OPENLOOP
+    printf(" filter gain: %f w/vin gain: %f antenna pole: %fHz\n", gain, gain * Vin, ant_pole);
+#endif
+
+    // with the pre filter set the channel table
+    short * dst_table;
+    const short * ori_table;    
+
+    switch (global_signals.signal)
+    {
+    case TRIANGULAR_SIGNAL:
+        if (which_channel == CH1)
+        {
+            ori_table = triangular_table_inphase;
+            dst_table = table_ch1;
+        }
+        else if (which_channel == CH2)
+        {
+            ori_table = triangular_table_inphase;            
+            dst_table = table_ch2;
+        }
+        else if (which_channel == CH3)
+        {
+            ori_table = triangular_table_outphase;
+            dst_table = table_ch3;
+        }
+        else
+        {
+            ori_table = triangular_table_outphase;
+            dst_table = table_ch4;
+        }
+        break;
+
+    case SQUARE_SIGNAL:
+        if (which_channel == CH1)
+        {
+            ori_table = square_table_inphase;
+            dst_table = table_ch1;
+        }
+        else if (which_channel == CH2)
+        {
+            ori_table = square_table_inphase;            
+            dst_table = table_ch2;
+        }
+        else if (which_channel == CH3)
+        {
+            ori_table = square_table_outphase;
+            dst_table = table_ch3;
+        }
+        else
+        {
+            ori_table = square_table_outphase;
+            dst_table = table_ch4;
+        }
+        break;
+
+    case SINUSOIDAL_SIGNAL:
+        if (which_channel == CH1)
+        {
+            ori_table = sinusoidal_table_inphase;
+            dst_table = table_ch1;
+        }
+        else if (which_channel == CH2)
+        {
+            ori_table = sinusoidal_table_inphase;
+            dst_table = table_ch2;
+        }
+        else if (which_channel == CH3)
+        {
+            ori_table = sinusoidal_table_outphase;
+            dst_table = table_ch3;
+        }
+        else
+        {
+            ori_table = sinusoidal_table_outphase;
+            dst_table = table_ch4;
+        }
+        break;
+    }
+
+    // adjust duty for max current
+    float max_c = 0.715 / (Vin * gain);
+    max_c = max_c * max_antenna_current;    //adjust for antenna current
+    unsigned short max_duty = (unsigned short) (max_c * 1000);
+    
+#ifdef TESTING_SHOW_INFO_OPENLOOP
+    printf(" adj_c gain: %f current: %f max_duty: %d\n",
+           max_c,
+           max_antenna_current,
+           max_duty);
+#endif    
+
+//     short n_duty_table [256] = { 0 };
+//     int n_duty = 0;
+//     for (int i = 0; i < 127; i++)
+//     {
+//         n_duty = (*(ori_table + i) * max_duty / 1000);
+//         *(n_duty_table + i) = (short) n_duty;
+//     }
+// #ifdef TESTING_SHOW_INFO_OPENLOOP
+//     if (which_channel == CH1)
+//     {
+//         printf("new duty table:\n");    
+//         for (int i = 0; i < 255; i++)
+//             printf("index: %d new_duty %d orig_duty: %d\n",
+//                    i,
+//                    *(n_duty_table + i),
+//                    *(ori_table + i));
+//     }
+// #endif    
+    
+
+    // pre filter with modified duty
+//     float zero_gain = 1. - a1_pos;
+//     float comp_gain = 1. / zero_gain;
+// #ifdef TESTING_SHOW_INFO_OPENLOOP
+//     printf(" zero gain: %f comp_gain: %f", zero_gain, comp_gain);
+// #endif    
+
+//     // k = 0 * comp_gain
+//     *(dst_table + 0) =  (short) (*(n_duty_table + 0) * comp_gain);
+
+//     // k = 1..n * comp_gain
+//     for (int i = 1; i < 127; i++)
+//     {
+//         *(dst_table + i) = (short) (*(n_duty_table + i) * comp_gain - a1_pos * comp_gain * (*(n_duty_table + i - 1)));
+//     }
+
+    // pre filter with original duty and corrections
+    // float zero_gain = 1. - a1_pos;    //for 28Hz
+    // a1_pos = 0.9605;    //for 14Hz
+    a1_pos = 0.9210;    //for 7Hz    
+    float zero_gain = 1. - a1_pos;
+    float comp_gain = max_c / zero_gain;
+#ifdef TESTING_SHOW_INFO_OPENLOOP
+    printf(" zero gain: %f max_c: %f comp_gain: %f\n", zero_gain, max_c, comp_gain);
+    float adc_pts = max_antenna_current * 0.715 * 4095. / 3.3;
+    printf(" max_c in adc points: %d\n\n", (int) adc_pts);
+#endif    
+
+    // k = 0 * comp_gain
+    *(dst_table + 0) =  (short) (*(ori_table + 0) * comp_gain);
+
+    // k = 1..n * comp_gain
+    for (int i = 1; i < 127; i++)
+    {
+        *(dst_table + i) = (short) (*(ori_table + i) * comp_gain - a1_pos * comp_gain * (*(ori_table + i - 1)));
+    }
+
+    // // k = 0 * comp_gain
+    // *(dst_table + 0) =  (short) (*(ori_table + 0) * comp_gain);
+
+    // // k = 1..n * comp_gain
+    // for (int i = 1; i < 127; i++)
+    // {
+    //     *(dst_table + i) = (short) (*(ori_table + i) * comp_gain - a1_pos * comp_gain * (*(ori_table + i - 1)));
+    // }
+
+    // // k = 0 * 10
+    // *(dst_table + 0) =  (short) (*(ori_table + 0) * 10);
+
+    // // k = 1..n * 10
+    // for (int i = 1; i < 127; i++)
+    // {
+    //     *(dst_table + i) = (short) (*(ori_table + i) * 10 - a1_pos * 10 * (*(ori_table + i - 1)));
+    // }
+    
+    // // k = 0
+    // *(dst_table + 0) =  (short) (*(ori_table + 0));
+
+    // // k = 1..n
+    // for (int i = 1; i < 127; i++)
+    // {
+    //     *(dst_table + i) = (short) (*(ori_table + i) - a1_pos * (*(ori_table + i - 1)));
+    // }
+    
+    // zero out the rest
+    for (int i = 128; i < 255; i++)
+    {
+        *(dst_table + i) = 0;
+    }
+    // end of pre filter original duty
+
+    // fixt max current on duty
+//     float comb_gain = gain * Vin * zero_gain;
+//     float gain_one_amp = comb_gain / 0.715;
+//     float gain_calc = gain_one_amp * max_antenna_current;
+//     short new_duty = 0;
+// #ifdef TESTING_SHOW_INFO_OPENLOOP
+//     printf(" comb gain: %f gain_one_amp: %f\n", comb_gain, gain_one_amp);
+//     printf(" gain max curr: %f new duty: %d\n", gain_calc, new_duty);
+// #endif    
+    // int fixt_duty = 0;
+    // for (int i = 0; i < 127; i++)
+    // {
+    //     fixt_duty = 
+    // }    
+    // end of fixt max current on duty
+}
+
+
+void Signals_Generate_Channel_OpenLoop (unsigned char which_channel, short new_ref, unsigned char with_signal)
+{
+    switch (which_channel)
+    {
+    case CH1:
+        pf_high_left = TIM8_Update_CH3;
+        pf_low_right = TIM8_Update_CH4;
+        break;
+
+    case CH2:
+        pf_high_left = TIM8_Update_CH2;
+        pf_low_right = TIM8_Update_CH1;
+        break;
+
+    case CH3:
+        pf_high_left = TIM4_Update_CH2;
+        pf_low_right = TIM4_Update_CH3;
+        break;
+
+    case CH4:
+        pf_high_left = TIM5_Update_CH1;
+        pf_low_right = TIM5_Update_CH2;
+        break;
+    }
+
+
+    if (new_ref > 0)
+    {
+        if (new_ref > DUTY_95_PERCENT)
+            new_ref = DUTY_95_PERCENT;
+                        
+        pf_high_left (new_ref);
+        pf_low_right (DUTY_ALWAYS);
+    }
+    else if (new_ref == 0)
+    {
+        if (with_signal)
+        {
+            pf_high_left (DUTY_NONE);
+            pf_low_right (DUTY_ALWAYS);
+        }
+        else
+        {
+            pf_high_left (DUTY_NONE);
+            pf_low_right (DUTY_NONE);
+        }
+    }
+    else    // duty negative
+    {
+        // fixt duty
+        new_ref = -new_ref;
+                
+        if (new_ref > DUTY_95_PERCENT)
+            new_ref = DUTY_95_PERCENT;
+                                                
+        pf_high_left (DUTY_NONE);
+        pf_low_right (new_ref);                        
+                
+        // fixt duty
+        new_ref = -new_ref;
+    }
+}
+#endif    //OPENLOOP_CONTROL
 
 void Signals_Stop_All_Channels (void)
 {

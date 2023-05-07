@@ -25,7 +25,7 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
 void Signals_Stop_All_Channels (void);
 void Signals_Stop_Single_Channel (unsigned char which_channel);
 
-void Signals_Generate_Channel_OpenLoop (unsigned char which_channel, short new_ref);
+void Signals_Generate_Channel_OpenLoop (unsigned char which_channel, short new_ref, unsigned char with_signal);
 void Signals_Set_Reset_Channel_For_Treatment (unsigned char which_channel, unsigned char state);
 void Signals_Set_Channel_PI_Parameters (unsigned char which_channel, antenna_st * ant);
 void Signals_Setup_Treatment_Data (signals_struct_t * new_treat_data);

@@ -364,6 +364,17 @@ void Error_SetStatus (unsigned char error, unsigned char channel)
     printf("error: 0x%02x\n", error);
 }
 
+void Led1_On (void)
+{
+    // printf("Led1 -> ON\n");
+}
+
+
+void Led1_Off (void)
+{
+    // printf("Led1 -> OFF\n");    
+}
+
 //--- end of file ---//
 
 

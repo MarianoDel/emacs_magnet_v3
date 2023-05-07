@@ -46,6 +46,10 @@ typedef enum {
 #define CHX_MASK        0x0F
 
 
+// #define TREATMENT_USE_SIGNALS_WITH_FEEDBACK
+#define TREATMENT_USE_SIGNALS_OPEN_LOOP
+
+
 // Externals -------------------------------------------------------------------
 extern unsigned short comms_messages_rpi;
 
@@ -127,9 +131,14 @@ void Treatment_Manager (void)
                 
                 some_channel++;
                 Signals_Set_Reset_Channel_For_Treatment(i, 1);
-
                 AntennaGetParamsStruct(i, &ch_ant);
+#if (defined TREATMENT_USE_SIGNALS_WITH_FEEDBACK)
                 Signals_Set_Channel_PI_Parameters (i, &ch_ant);
+#elif (defined TREATMENT_USE_SIGNALS_OPEN_LOOP)
+                Signals_Set_Channel_Table_Open_Loop (i, &ch_ant);
+#else
+#error "Select type of generation signal on treatment.c"
+#endif
 
                 Error_SetStatus_For_Checks(0x80, i);    // checks on this channel
                 sprintf(buff_ch, "ch%d ", i + 1);                
@@ -172,11 +181,25 @@ void Treatment_Manager (void)
 #ifdef USE_BUZZER_ON_START
         BuzzerCommands(BUZZER_HALF_CMD, 1);
 #endif
+
+#if (defined TREATMENT_USE_SIGNALS_WITH_FEEDBACK)
         Signals_Setup_All_Channels ();    // consecutive starts and stops will always use this info
+#elif (defined TREATMENT_USE_SIGNALS_OPEN_LOOP)
+        Signals_Setup_All_Channels_Open_Loop ();
+#else
+#error "Select type of generation signal on treatment.c"
+#endif
         break;
 
     case TREATMENT_RUNNING:
+#if (defined TREATMENT_USE_SIGNALS_WITH_FEEDBACK)
         Signals_Generate_All_Channels ();
+#elif (defined TREATMENT_USE_SIGNALS_OPEN_LOOP)
+        Signals_Generate_All_Channels_Open_Loop ();
+#else
+#error "Select type of generation signal on treatment.c"
+#endif
+
         
         if (comms_messages_rpi & COMM_PAUSE_TREAT)
         {

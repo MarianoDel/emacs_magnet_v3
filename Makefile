@@ -227,9 +227,11 @@ tests_treat_all_chain:
 	gcc -c src/utils.c -I. $(INCDIR)
 	gcc -c src/antennas.c -I. $(INCDIR) $(DDEFS)
 	gcc -c src/errors.c -I. $(INCDIR) $(DDEFS)
+	# gcc -c src/signals.c -I. $(INCDIR) $(DDEFS)
 	# gcc -c src/signals.c -I. $(INCDIR) $(DDEFS) -DTESTING_SHOW_INFO
+	# gcc -c src/signals.c -I. $(INCDIR) $(DDEFS) -DTESTING_SHOW_INFO_PI -DTESTING_SHOW_INFO_OPENLOOP
+	gcc -c src/signals.c -I. $(INCDIR) $(DDEFS) -DTESTING_SHOW_INFO_OPENLOOP
 	# gcc -c src/signals.c -I. $(INCDIR) $(DDEFS) -DTESTING_SHOW_INFO -DTESTING_SHOW_INFO_INDEX_SP
-	gcc -c src/signals.c -I. $(INCDIR) $(DDEFS)
 	gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
 	# second auxiliary helper modules
 	gcc -c src/tests_ok.c -I $(INCDIR)

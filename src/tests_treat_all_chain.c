@@ -29,11 +29,11 @@
 
 // Types Constants and Macros --------------------------------------------------
 // #define SIZEOF_SIGNALS    256    // one signal or one complete table
-// #define SIZEOF_SIGNALS    (256 * 8)
+#define SIZEOF_SIGNALS    (256 * 2)
 // #define SIZEOF_SIGNALS    (506)
 // #define SIZEOF_SIGNALS    (1020)
 // #define SIZEOF_SIGNALS    (132)
-#define SIZEOF_SIGNALS    (20000)
+// #define SIZEOF_SIGNALS    (20000)
 
 //ESTADOS DEL BUZZER copied from hard.h
 typedef enum
@@ -130,8 +130,8 @@ unsigned short Adc10BitsConvertion (float sample);
 int main (int argc, char *argv[])
 {
 
-    // Test_Treatment_All_Chain();
-    Test_Treatment_All_Chain_No_Vectors ();    //no saved vectors 
+    Test_Treatment_All_Chain();
+    // Test_Treatment_All_Chain_No_Vectors ();    //no saved vectors 
 
     // Test_Treatment_All_Chain_Soft_Overcurrent_Channel1_Stop ();
     // Test_Treatment_All_Chain_Soft_Overcurrent_Channel1_Continue ();
@@ -174,9 +174,9 @@ void Test_Treatment_All_Chain (void)
         if (i == 0)
         {
             printf("-- set signal\n");
-            Usart1FillRxBuffer("signal square\r\n");
+            // Usart1FillRxBuffer("signal square\r\n");
             // Usart1FillRxBuffer("signal triangular\r\n");
-            // Usart1FillRxBuffer("signal sinusoidal\r\n");            
+            Usart1FillRxBuffer("signal sinusoidal\r\n");            
         }
 
         if (i == 5)
@@ -199,6 +199,7 @@ void Test_Treatment_All_Chain (void)
             // Usart1FillRxBuffer("frequency 14.00\r\n");
             // Usart1FillRxBuffer("frequency 10.50\r\n");
             Usart1FillRxBuffer("frequency 07.00\r\n");
+            // Usart1FillRxBuffer("frequency 01.00\r\n");            
         }
 
         if (i == 15)
@@ -323,12 +324,12 @@ void Test_Treatment_All_Chain_No_Vectors (void)
             // Usart1FillRxBuffer("frequency 90.99\r\n");
             // Usart1FillRxBuffer("frequency 86.22\r\n");            
             // Usart1FillRxBuffer("frequency 56.00\r\n");
-            // Usart1FillRxBuffer("frequency 28.00\r\n");            
+            Usart1FillRxBuffer("frequency 28.00\r\n");            
             // Usart1FillRxBuffer("frequency 20.50\r\n");            
             // Usart1FillRxBuffer("frequency 15.00\r\n");
             // Usart1FillRxBuffer("frequency 14.00\r\n");
             // Usart1FillRxBuffer("frequency 10.50\r\n");
-            Usart1FillRxBuffer("frequency 07.00\r\n");
+            // Usart1FillRxBuffer("frequency 07.00\r\n");
         }
 
         if (i == 15)
@@ -773,10 +774,20 @@ void Usart2CB (char * msg)
         // Usart2FillRxBuffer((char *) s_antena);
 
         // mock process string
+        int my_ant_index = 0;
+        // int my_ant_index = 1;
+        // int my_ant_index = 2;
+        // int my_ant_index = 3;
+        // int my_ant_index = 4;
+        // int my_ant_index = 5;
+        // int my_ant_index = 6;
+        // int my_ant_index = 7;
+        // int my_ant_index = 8;
+        // int my_ant_index = 9;        
         antenna_st my_ant;
-        TSP_Get_Know_Single_Antenna(&my_ant, 0);        
+        TSP_Get_Know_Single_Antenna(&my_ant, my_ant_index);
         AntennaSetParamsStruct (CH1, &my_ant);
-        Set_Recursive_From_Single_Antenna(&plant_ch1, 0);
+        Set_Recursive_From_Single_Antenna(&plant_ch1, my_ant_index);
     }
 
     if ((answer_keepalive) &&
@@ -1000,9 +1011,7 @@ void TIM8_Update_CH3 (unsigned short a)
             v_adc_ch1[pwm_cnt] = IS_CH1;
         
         v_duty_ch1[pwm_cnt] = a;
-        pwm_cnt++;
     }
-    
 }
 
 void TIM8_Update_CH4 (unsigned short a)
@@ -1015,7 +1024,6 @@ void TIM8_Update_CH4 (unsigned short a)
         Plant_Out_PI_Flush (CH1);
         v_adc_ch1[pwm_cnt] = IS_CH1;
         v_duty_ch1[pwm_cnt] = a;        
-        pwm_cnt++;
     }
     else if (a < 950)    // regulation on negative
     {
@@ -1025,12 +1033,12 @@ void TIM8_Update_CH4 (unsigned short a)
         IS_CH1 = Adc12BitsConvertion (output);
         v_adc_ch1[pwm_cnt] = IS_CH1;
         v_duty_ch1[pwm_cnt] = -a;
-        pwm_cnt++;
     }
     else
     {
         // regulation by positive, do nothing in here
-    }    
+    }
+    pwm_cnt++;
 }
 
 void TIM8_Update_CH2 (unsigned short a)
