@@ -104,6 +104,14 @@ short v_adc_ch1 [SIZEOF_SIGNALS] = { 0 };
 short v_ref_ch1 [SIZEOF_SIGNALS] = { 0 };
 short v_signal_ch1 [SIZEOF_SIGNALS] = { 0 };
 
+float b_vector_ch3 [B_SIZE] = { 0.6445 };
+float a_vector_ch3 [A_SIZE] = { 1., -0.94809 };
+float ins_vector_ch3 [B_SIZE] = { 0.0 };
+float outs_vector_ch3 [A_SIZE] = { 0.0 };
+recursive_filter_t plant_ch3;
+
+short v_duty_ch3 [SIZEOF_SIGNALS] = { 0 };
+short v_adc_ch3 [SIZEOF_SIGNALS] = { 0 };
 
 // Module Functions to Test ----------------------------------------------------
 void Test_Treatment_All_Chain (void);
@@ -117,7 +125,9 @@ void Usart2CB (char * msg);
 void Usart3CB (char * msg);
 void Uart4CB (char * msg);
 void Uart5CB (char * msg);
-void Set_Recursive_From_Single_Antenna (recursive_filter_t * f, unsigned char antenna_index);
+void Set_Recursive_From_Single_Antenna (recursive_filter_t * f,
+                                        unsigned char antenna_index,
+                                        unsigned char which_channel);
 float Plant_Out_Recursive (recursive_filter_t * f, short duty);
 unsigned short Adc12BitsConvertion (float sample);
 unsigned short Adc10BitsConvertion (float sample);
@@ -182,8 +192,8 @@ void Test_Treatment_All_Chain (void)
         if (i == 5)
         {
             printf("-- set power\n");
-            Usart1FillRxBuffer("power 100\r\n");
-            // Usart1FillRxBuffer("power 050\r\n");
+            // Usart1FillRxBuffer("power 100\r\n");
+            Usart1FillRxBuffer("power 050\r\n");
             // Usart1FillRxBuffer("power 010\r\n");            
         }
 
@@ -219,9 +229,9 @@ void Test_Treatment_All_Chain (void)
 
         // activate usarts callbacks
         Usart2Callback(Usart2CB);
-        Usart3Callback(Usart3CB);
+        // Usart3Callback(Usart3CB);
         Uart4Callback(Uart4CB);
-        Uart5Callback(Uart5CB);
+        // Uart5Callback(Uart5CB);
 
         // activate antennas answers
         answer_params = 1;
@@ -281,6 +291,8 @@ void Test_Treatment_All_Chain (void)
 
     Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
     Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "duty3", v_duty_ch3, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "adc3", v_adc_ch3, SIZEOF_SIGNALS);
     printf("\nRun by hand python3 simul_outputs.py\n");
 }
 
@@ -650,16 +662,31 @@ float Ao = 13.0;
 float La = 0.142;
 float Ra = 11.0;
 float fsampling = 7000.0;
-void Set_Recursive_From_Single_Antenna (recursive_filter_t * f, unsigned char antenna_index)
+void Set_Recursive_From_Single_Antenna (recursive_filter_t * f,
+                                        unsigned char antenna_index,
+                                        unsigned char which_channel)
 {
     antenna_st my_antenna;
-    
-    f->b_params = b_vector_ch1;
-    f->a_params = a_vector_ch1;
-    f->b_size = B_SIZE;
-    f->a_size = A_SIZE;
-    f->last_inputs = ins_vector_ch1;
-    f->last_outputs = outs_vector_ch1;
+
+    if (which_channel == CH1)
+    {
+        f->b_params = b_vector_ch1;
+        f->a_params = a_vector_ch1;
+        f->b_size = B_SIZE;
+        f->a_size = A_SIZE;
+        f->last_inputs = ins_vector_ch1;
+        f->last_outputs = outs_vector_ch1;
+    }
+
+    if (which_channel == CH3)
+    {
+        f->b_params = b_vector_ch3;
+        f->a_params = a_vector_ch3;
+        f->b_size = B_SIZE;
+        f->a_size = A_SIZE;
+        f->last_inputs = ins_vector_ch3;
+        f->last_outputs = outs_vector_ch3;        
+    }
 
     TSP_Get_Know_Single_Antenna (&my_antenna, antenna_index);
 
@@ -674,16 +701,32 @@ void Set_Recursive_From_Single_Antenna (recursive_filter_t * f, unsigned char an
     float a0 = 1.0;
     float a1 = -1.0 + (Ra + Rsense)/(La * fsampling);
 
-    b_vector_ch1[0] = b0;
-    a_vector_ch1[0] = a0;
-    a_vector_ch1[1] = a1;        
+    if (which_channel == CH1)
+    {
+        b_vector_ch1[0] = b0;
+        a_vector_ch1[0] = a0;
+        a_vector_ch1[1] = a1;
 
-    for (int i = 0; i < B_SIZE; i++)
-        ins_vector_ch1[i] = 0.0;
+        for (int i = 0; i < B_SIZE; i++)
+            ins_vector_ch1[i] = 0.0;
 
-    for (int i = 0; i < A_SIZE; i++)
-        outs_vector_ch1[i] = 0.0;
+        for (int i = 0; i < A_SIZE; i++)
+            outs_vector_ch1[i] = 0.0;
+    }
 
+    if (which_channel == CH3)
+    {
+        b_vector_ch3[0] = b0;
+        a_vector_ch3[0] = a0;
+        a_vector_ch3[1] = a1;
+
+        for (int i = 0; i < B_SIZE; i++)
+            ins_vector_ch3[i] = 0.0;
+
+        for (int i = 0; i < A_SIZE; i++)
+            outs_vector_ch3[i] = 0.0;
+    }
+    
     printf("b params: %f\n", f->b_params[0]);
     printf("a params: %f %f\n", f->a_params[0], f->a_params[1]);
 
@@ -787,7 +830,7 @@ void Usart2CB (char * msg)
         antenna_st my_ant;
         TSP_Get_Know_Single_Antenna(&my_ant, my_ant_index);
         AntennaSetParamsStruct (CH1, &my_ant);
-        Set_Recursive_From_Single_Antenna(&plant_ch1, my_ant_index);
+        Set_Recursive_From_Single_Antenna(&plant_ch1, my_ant_index, CH1);
     }
 
     if ((answer_keepalive) &&
@@ -860,10 +903,20 @@ void Uart4CB (char * msg)
         // Uart4FillRxBuffer(s_antena);
 
         // mock process string
+        // int my_ant_index = 0;
+        // int my_ant_index = 1;
+        // int my_ant_index = 2;
+        // int my_ant_index = 3;
+        // int my_ant_index = 4;
+        // int my_ant_index = 5;
+        // int my_ant_index = 6;
+        // int my_ant_index = 7;
+        int my_ant_index = 8;
+        // int my_ant_index = 9;        
         antenna_st my_ant;
-        TSP_Get_Know_Single_Antenna(&my_ant, 2);
-        
+        TSP_Get_Know_Single_Antenna(&my_ant, my_ant_index);
         AntennaSetParamsStruct (CH3, &my_ant);
+        Set_Recursive_From_Single_Antenna(&plant_ch3, my_ant_index, CH3);
     }
 
     if ((answer_keepalive) &&
@@ -1054,11 +1107,49 @@ void TIM8_Update_CH1 (unsigned short a)
 void TIM4_Update_CH2 (unsigned short a)
 {
     // printf("HL CH3: %d\n", a);
+    if (a)
+    {
+        float output = 0.0;
+        output = Plant_Out_Recursive(&plant_ch3, a);
+
+        IS_CH3 = Adc12BitsConvertion (output);
+
+        if (overcurrent_samples)
+        {
+            v_adc_ch3[pwm_cnt] = overcurrent_samples;
+            IS_CH3 = overcurrent_samples;
+        }
+        else
+            v_adc_ch3[pwm_cnt] = IS_CH3;
+        
+        v_duty_ch3[pwm_cnt] = a;
+    }    
 }
 
 void TIM4_Update_CH3 (unsigned short a)
 {
     // printf("LR CH3: %d\n", a);
+    if (a == 0)    // no emition no adc data
+    {
+        IS_CH3 = 0;
+        Plant_Out_Recursive_Reset (CH3, &plant_ch3);
+        Plant_Out_PI_Flush (CH3);
+        v_adc_ch3[pwm_cnt] = IS_CH3;
+        v_duty_ch3[pwm_cnt] = a;        
+    }
+    else if (a < 950)    // regulation on negative
+    {
+        float output = 0.0;
+        output = Plant_Out_Recursive(&plant_ch3, -a);
+        // output = Plant_Out_Recursive(&plant_ch3, -a << 5);    // simulate a fast discharge     
+        IS_CH3 = Adc12BitsConvertion (output);
+        v_adc_ch3[pwm_cnt] = IS_CH3;
+        v_duty_ch3[pwm_cnt] = -a;
+    }
+    else
+    {
+        // regulation by positive, do nothing in here
+    }    
 }
 
 void TIM5_Update_CH1 (unsigned short a)

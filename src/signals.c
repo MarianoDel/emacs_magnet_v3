@@ -1646,16 +1646,23 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
 
     if (comp_gain > 30.0)
     {
+        int r = 0;
         float comp_gain_reduction = comp_gain;
         //reduce power here!!!
         for (int i = 9; i > 1; i--)
         {
             comp_gain_reduction = comp_gain * i / 10.;
             if (comp_gain_reduction < 30.0)
+            {
+                r = i;
                 break;
+            }
         }
 #ifdef TESTING_SHOW_INFO_OPENLOOP
-        printf(" comp_gain to hi!!! comp_gain: %f reduced: %f\n", comp_gain, comp_gain_reduction);
+        printf(" comp_gain to hi!!! comp_gain: %f reduced: %f perc: %d\%\n",
+               comp_gain,
+               comp_gain_reduction,
+               r * 10);
 #endif
         comp_gain = comp_gain_reduction;
     }
@@ -1669,7 +1676,7 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
     *(dst_table + 0) =  (short) (*(ori_table + 0) * comp_gain);
 
     // k = 1..n * comp_gain
-    for (int i = 1; i < 127; i++)
+    for (int i = 1; i < 255; i++)
     {
         *(dst_table + i) = (short) (*(ori_table + i) * comp_gain - a1_pos * comp_gain * (*(ori_table + i - 1)));
     }
@@ -1702,10 +1709,17 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
     // }
     
     // zero out the rest
-    for (int i = 128; i < 255; i++)
+    if ((which_channel == CH1) || (which_channel == CH2))
     {
-        *(dst_table + i) = 0;
+        for (int i = 128; i < 255; i++)
+            *(dst_table + i) = 0;
     }
+    else
+    {
+        for (int i = 0; i < 127; i++)
+            *(dst_table + i) = 0;        
+    }
+
     // end of pre filter original duty
 
     // fixt max current on duty
