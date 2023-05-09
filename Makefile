@@ -230,7 +230,7 @@ tests_treat_all_chain:
 	# gcc -c src/signals.c -I. $(INCDIR) $(DDEFS)
 	# gcc -c src/signals.c -I. $(INCDIR) $(DDEFS) -DTESTING_SHOW_INFO
 	# gcc -c src/signals.c -I. $(INCDIR) $(DDEFS) -DTESTING_SHOW_INFO_PI -DTESTING_SHOW_INFO_OPENLOOP
-	gcc -c src/signals.c -I. $(INCDIR) $(DDEFS) -DTESTING_SHOW_INFO_OPENLOOP
+	gcc -c src/signals.c -I. $(INCDIR) $(DDEFS)  -DTESTING_SHOW_INFO_OPENLOOP -DTESTING_SHOW_INFO_OPENLOOP_INDEX
 	# gcc -c src/signals.c -I. $(INCDIR) $(DDEFS) -DTESTING_SHOW_INFO -DTESTING_SHOW_INFO_INDEX_SP
 	gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
 	# second auxiliary helper modules

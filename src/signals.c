@@ -1229,7 +1229,7 @@ void Signals_Generate_All_Channels_Open_Loop (void)
     unsigned char with_signal_ch4 = 0;    
     if (s_index < 128)
     {
-        Led1_On();
+        // Led1_On();
         
         with_signal_ch1 = 1;
         with_signal_ch2 = 1;
@@ -1238,7 +1238,7 @@ void Signals_Generate_All_Channels_Open_Loop (void)
     }
     else
     {
-        Led1_Off();
+        // Led1_Off();
         
         with_signal_ch1 = 0;
         with_signal_ch2 = 0;
@@ -1248,7 +1248,7 @@ void Signals_Generate_All_Channels_Open_Loop (void)
 
     // index update for next SP or end of signal
     unsigned int total_phase = signal_index + phase_accum;
-    if (total_phase < 65535)
+    if (total_phase <= 65535)
     {
         signal_index += phase_accum;
     }
@@ -1256,15 +1256,30 @@ void Signals_Generate_All_Channels_Open_Loop (void)
     {
         signal_index += phase_accum;    //modulo 16 roundup
         signal_ended = 1;
+        if (Led1_Is_On())
+            Led1_Off();
+        else
+            Led1_On();
+
+#ifdef TESTING_SHOW_INFO_OPENLOOP_INDEX
+        printf("signal ended: %d signal_index: %d phase_accum: %d total: %d\n",
+               signal_ended,
+               signal_index,
+               phase_accum,
+               total_phase);
+#endif
+        
+        
     }
     
     if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
     {
 #ifdef TESTING_SHOW_INFO_OPENLOOP_INDEX
-        printf("signal_index: %d s_index: %d sp_ch1: %d\n",
-               signal_index,
-               s_index,
-               sp_ch1);
+        if (signal_ended)
+            printf("signal_index: %d s_index: %d sp_ch1: %d\n",
+                   signal_index,
+                   s_index,
+                   sp_ch1);
 #endif
         Signals_Generate_Channel_OpenLoop (CH1, sp_ch1, with_signal_ch1);
     }

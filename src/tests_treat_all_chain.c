@@ -29,11 +29,11 @@
 
 // Types Constants and Macros --------------------------------------------------
 // #define SIZEOF_SIGNALS    256    // one signal or one complete table
-#define SIZEOF_SIGNALS    (256 * 2)
+// #define SIZEOF_SIGNALS    (256 * 2)
 // #define SIZEOF_SIGNALS    (506)
 // #define SIZEOF_SIGNALS    (1020)
 // #define SIZEOF_SIGNALS    (132)
-// #define SIZEOF_SIGNALS    (20000)
+#define SIZEOF_SIGNALS    (20000)
 
 //ESTADOS DEL BUZZER copied from hard.h
 typedef enum
@@ -140,8 +140,8 @@ unsigned short Adc10BitsConvertion (float sample);
 int main (int argc, char *argv[])
 {
 
-    Test_Treatment_All_Chain();
-    // Test_Treatment_All_Chain_No_Vectors ();    //no saved vectors 
+    // Test_Treatment_All_Chain();
+    Test_Treatment_All_Chain_No_Vectors ();    //no saved vectors 
 
     // Test_Treatment_All_Chain_Soft_Overcurrent_Channel1_Stop ();
     // Test_Treatment_All_Chain_Soft_Overcurrent_Channel1_Continue ();
@@ -336,12 +336,12 @@ void Test_Treatment_All_Chain_No_Vectors (void)
             // Usart1FillRxBuffer("frequency 90.99\r\n");
             // Usart1FillRxBuffer("frequency 86.22\r\n");            
             // Usart1FillRxBuffer("frequency 56.00\r\n");
-            Usart1FillRxBuffer("frequency 28.00\r\n");            
+            // Usart1FillRxBuffer("frequency 28.00\r\n");            
             // Usart1FillRxBuffer("frequency 20.50\r\n");            
             // Usart1FillRxBuffer("frequency 15.00\r\n");
             // Usart1FillRxBuffer("frequency 14.00\r\n");
             // Usart1FillRxBuffer("frequency 10.50\r\n");
-            // Usart1FillRxBuffer("frequency 07.00\r\n");
+            Usart1FillRxBuffer("frequency 07.83\r\n");
         }
 
         if (i == 15)
@@ -361,9 +361,9 @@ void Test_Treatment_All_Chain_No_Vectors (void)
 
         // activate usarts callbacks
         Usart2Callback(Usart2CB);
-        Usart3Callback(Usart3CB);
-        Uart4Callback(Uart4CB);
-        Uart5Callback(Uart5CB);
+        // Usart3Callback(Usart3CB);
+        // Uart4Callback(Uart4CB);
+        // Uart5Callback(Uart5CB);
 
         // activate antennas answers
         answer_params = 1;
@@ -780,6 +780,13 @@ void HARD_L1_OFF (void)
 {
     printf("Led1 -> OFF\n");
 }
+
+unsigned char Led1_Is_On (void)
+{
+    // printf("Led1 -> ON\n");
+    return 1;
+}
+
 
 void Led1_On (void)
 {
