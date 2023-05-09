@@ -274,7 +274,7 @@ void Signals_Generate_Channel (unsigned char which_channel, unsigned short new_s
 void Signals_Setup_Phase_Accumulator (unsigned char freq_int,
                                       unsigned char freq_dec,
                                       unsigned short * phase_accum);
-
+void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, antenna_st * ant);
 
 // Module Functions ------------------------------------------------------------
 // For signals with Feedback
@@ -1213,7 +1213,7 @@ void Signals_Generate_All_Channels_Open_Loop (void)
         return;
 
     timer1_seq_ready = 0;
-    Led1_On();
+    // Led1_On();    
     unsigned char signal_ended = 0;
                 
     // get the current SP
@@ -1229,6 +1229,8 @@ void Signals_Generate_All_Channels_Open_Loop (void)
     unsigned char with_signal_ch4 = 0;    
     if (s_index < 128)
     {
+        Led1_On();
+        
         with_signal_ch1 = 1;
         with_signal_ch2 = 1;
         with_signal_ch3 = 0;
@@ -1236,6 +1238,8 @@ void Signals_Generate_All_Channels_Open_Loop (void)
     }
     else
     {
+        Led1_Off();
+        
         with_signal_ch1 = 0;
         with_signal_ch2 = 0;
         with_signal_ch3 = 1;
@@ -1446,7 +1450,7 @@ void Signals_Generate_All_Channels_Open_Loop (void)
         }
     }
 #endif
-    Led1_Off();
+    // Led1_Off();
     // end of check channels errors
     
 }    
@@ -1461,6 +1465,12 @@ void Signals_Generate_All_Channels_Open_Loop (void)
 // float fsampling = 7000.0;
 void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_st * ant)
 {
+    if (global_signals.signal == SQUARE_SIGNAL)
+    {
+        Signals_Set_Channel_Table_Open_Loop_Square(which_channel, ant);
+        return;
+    }
+    
     float Vin = 192.0;
     float fsampling = 7000.0;
     float Rsense = 0.055;
@@ -1477,7 +1487,6 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
     float a1 = -1.0 + (Ra + Rsense)/(La * fsampling);
     float a1_pos = -a1;
     float gain = b0 /(1. - a1_pos);
-    float ant_pole = Ra/(La * 6.28);
 
     // max current allowed in this antenna
     float max_antenna_current = ant->current_limit_int + ant->current_limit_dec / 100.0;
@@ -1494,12 +1503,13 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
         global_signals.max_c_ch4 = (unsigned short) multi;            
     
 #ifdef TESTING_SHOW_INFO_OPENLOOP
+    float ant_pole = Ra/(La * 6.28);    
     printf(" filter gain: %f w/vin gain: %f antenna pole: %fHz\n", gain, gain * Vin, ant_pole);
 #endif
 
     // with the pre filter set the channel table
     short * dst_table;
-    const short * ori_table;    
+    const unsigned short * ori_table;    
 
     switch (global_signals.signal)
     {
@@ -1577,57 +1587,18 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
     float max_c = 0.715 / (Vin * gain);
     max_c = max_c * max_antenna_current;    //adjust for antenna current
     max_c = max_c * global_signals.power / 100.;    //adjust for power
-    unsigned short max_duty = (unsigned short) (max_c * 1000);
     
 #ifdef TESTING_SHOW_INFO_OPENLOOP
+    unsigned short max_duty = (unsigned short) (max_c * 1000);    
     printf(" adj_c gain: %f current: %f max_duty: %d\n",
            max_c,
            max_antenna_current,
            max_duty);
 #endif    
 
-//     short n_duty_table [256] = { 0 };
-//     int n_duty = 0;
-//     for (int i = 0; i < 127; i++)
-//     {
-//         n_duty = (*(ori_table + i) * max_duty / 1000);
-//         *(n_duty_table + i) = (short) n_duty;
-//     }
-// #ifdef TESTING_SHOW_INFO_OPENLOOP
-//     if (which_channel == CH1)
-//     {
-//         printf("new duty table:\n");    
-//         for (int i = 0; i < 255; i++)
-//             printf("index: %d new_duty %d orig_duty: %d\n",
-//                    i,
-//                    *(n_duty_table + i),
-//                    *(ori_table + i));
-//     }
-// #endif    
-    
-
-    // pre filter with modified duty
-//     float zero_gain = 1. - a1_pos;
-//     float comp_gain = 1. / zero_gain;
-// #ifdef TESTING_SHOW_INFO_OPENLOOP
-//     printf(" zero gain: %f comp_gain: %f", zero_gain, comp_gain);
-// #endif    
-
-//     // k = 0 * comp_gain
-//     *(dst_table + 0) =  (short) (*(n_duty_table + 0) * comp_gain);
-
-//     // k = 1..n * comp_gain
-//     for (int i = 1; i < 127; i++)
-//     {
-//         *(dst_table + i) = (short) (*(n_duty_table + i) * comp_gain - a1_pos * comp_gain * (*(n_duty_table + i - 1)));
-//     }
-
     // pre filter with original duty and corrections
 #ifdef OPENLOOP_PREFILTER_WITH_POLE_RECALC
-    // recalc on fsampling
-    // float freq = global_signals.freq_int + global_signals.freq_dec / 100.0;
-    // float calc = freq * 256 * 256 / fsampling;
-    
+
     fsampling = global_signals.freq_int + global_signals.freq_dec / 100.0;
     fsampling = fsampling * 256.;
     a1 = -1.0 + (Ra + Rsense)/(La * fsampling);
@@ -1646,7 +1617,9 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
 
     if (comp_gain > 30.0)
     {
+#ifdef TESTING_SHOW_INFO_OPENLOOP        
         int r = 0;
+#endif
         float comp_gain_reduction = comp_gain;
         //reduce power here!!!
         for (int i = 9; i > 1; i--)
@@ -1654,7 +1627,9 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
             comp_gain_reduction = comp_gain * i / 10.;
             if (comp_gain_reduction < 30.0)
             {
+#ifdef TESTING_SHOW_INFO_OPENLOOP
                 r = i;
+#endif
                 break;
             }
         }
@@ -1740,6 +1715,129 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
 }
 
 
+void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, antenna_st * ant)
+{
+    float Vin = 192.0;
+    float fsampling = 7000.0;
+    float Rsense = 0.055;
+
+    float La = ant->inductance_int + ant->inductance_dec / 100.0;
+    La = La / 1000.0;    // convert mHy to Hy
+
+    float Ra = ant->resistance_int + ant->resistance_dec / 100.0;
+
+    // float b0 = Rsense * Ao;
+    float b0 = 0.715;    
+    b0 = b0 / (La * fsampling);
+
+    float a1 = -1.0 + (Ra + Rsense)/(La * fsampling);
+    float a1_pos = -a1;
+    float gain = b0 /(1. - a1_pos);
+
+    // max current allowed in this antenna
+    float max_antenna_current = ant->current_limit_int + ant->current_limit_dec / 100.0;
+    float multi = max_antenna_current * 887.;    //887 adc points for 1amp
+
+    // setting max current adc points
+    if (which_channel == CH1)
+        global_signals.max_c_ch1 = (unsigned short) multi;
+    else if (which_channel == CH2)
+        global_signals.max_c_ch2 = (unsigned short) multi;            
+    else if (which_channel == CH3)
+        global_signals.max_c_ch3 = (unsigned short) multi;
+    else
+        global_signals.max_c_ch4 = (unsigned short) multi;            
+    
+#ifdef TESTING_SHOW_INFO_OPENLOOP
+    float ant_pole = Ra/(La * 6.28);
+    printf(" filter gain: %f w/vin gain: %f antenna pole: %fHz\n", gain, gain * Vin, ant_pole);
+#endif
+
+    // adjust duty for max current
+    // float max_c = 0.715 / (Vin * gain);
+    float max_c = 0.715 / (0.95 * Vin * gain);   //adjust for duty max 950 
+    max_c = max_c * max_antenna_current;    //adjust for antenna current
+    max_c = max_c * global_signals.power / 100.;    //adjust for power
+    unsigned short max_duty = (unsigned short) (max_c * 1000);
+
+#ifdef TESTING_SHOW_INFO_OPENLOOP
+    printf(" adj_c gain: %f current: %f max_duty: %d\n",
+           max_c,
+           max_antenna_current,
+           max_duty);
+#endif    
+
+    short * dst_table;
+
+    if (which_channel == CH1)
+    {
+        dst_table = table_ch1;
+
+        for (int i = 0; i < 127; i++)
+            *(dst_table + i) = max_duty;
+
+        for (int i = 128; i < 255; i++)
+            *(dst_table + i) = 0;
+        
+    }
+    else if (which_channel == CH2)
+    {
+        dst_table = table_ch2;
+
+        for (int i = 0; i < 127; i++)
+            *(dst_table + i) = max_duty;
+
+        for (int i = 128; i < 255; i++)
+            *(dst_table + i) = 0;
+
+    }
+    else if (which_channel == CH3)
+    {
+        dst_table = table_ch3;
+
+        for (int i = 128; i < 255; i++)
+            *(dst_table + i) = max_duty;
+
+        for (int i = 0; i < 127; i++)
+            *(dst_table + i) = 0;
+    }        
+    else
+    {
+        dst_table = table_ch4;
+    
+        for (int i = 128; i < 255; i++)
+            *(dst_table + i) = max_duty;
+
+        for (int i = 0; i < 127; i++)
+            *(dst_table + i) = 0;
+    }
+
+    // correct the current
+    max_antenna_current = max_antenna_current * global_signals.power / 100.;
+    float t = max_antenna_current * La / (0.95 * Vin - max_antenna_current * Ra);
+    fsampling = global_signals.freq_int + global_signals.freq_dec / 100.0;
+    fsampling = fsampling * 256.;
+    float pts = fsampling * t;
+
+    if ((which_channel == CH1) || (which_channel == CH2))
+    {
+        for (int i = 0; i < (short) pts; i++)
+            *(dst_table + i) = 950;
+    }
+    else
+    {
+        for (int i = 128; i < (128 + (short) pts); i++)
+            *(dst_table + i) = 950;        
+    }
+
+        
+#ifdef TESTING_SHOW_INFO_OPENLOOP
+    printf(" t: %f tms: %f fs: %f pts: %f\n", t, t * 1000, fsampling, pts);
+#endif    
+    
+}
+
+
 void Signals_Generate_Channel_OpenLoop (unsigned char which_channel, short new_ref, unsigned char with_signal)
 {
     switch (which_channel)
@@ -1787,19 +1885,14 @@ void Signals_Generate_Channel_OpenLoop (unsigned char which_channel, short new_r
             pf_low_right (DUTY_NONE);
         }
     }
-    else    // duty negative
+    else    // duty is negative
     {
         // fixt duty
-        new_ref = -new_ref;
+        new_ref = DUTY_ALWAYS + new_ref;
                 
-        if (new_ref > DUTY_95_PERCENT)
-            new_ref = DUTY_95_PERCENT;
-                                                
         pf_high_left (DUTY_NONE);
         pf_low_right (new_ref);                        
                 
-        // fixt duty
-        new_ref = -new_ref;
     }
 }
 #endif    //OPENLOOP_CONTROL

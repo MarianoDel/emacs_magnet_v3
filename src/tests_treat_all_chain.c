@@ -184,29 +184,29 @@ void Test_Treatment_All_Chain (void)
         if (i == 0)
         {
             printf("-- set signal\n");
-            // Usart1FillRxBuffer("signal square\r\n");
+            Usart1FillRxBuffer("signal square\r\n");
             // Usart1FillRxBuffer("signal triangular\r\n");
-            Usart1FillRxBuffer("signal sinusoidal\r\n");            
+            // Usart1FillRxBuffer("signal sinusoidal\r\n");            
         }
 
         if (i == 5)
         {
             printf("-- set power\n");
-            // Usart1FillRxBuffer("power 100\r\n");
-            Usart1FillRxBuffer("power 050\r\n");
+            Usart1FillRxBuffer("power 100\r\n");
+            // Usart1FillRxBuffer("power 050\r\n");
             // Usart1FillRxBuffer("power 010\r\n");            
         }
 
         if (i == 10)
         {
             printf("-- set frequency\n");
-            Usart1FillRxBuffer("frequency 90.99\r\n");
+            // Usart1FillRxBuffer("frequency 90.99\r\n");
             // Usart1FillRxBuffer("frequency 86.22\r\n");            
             // Usart1FillRxBuffer("frequency 56.00\r\n");
             // Usart1FillRxBuffer("frequency 28.00\r\n");            
             // Usart1FillRxBuffer("frequency 20.50\r\n");            
             // Usart1FillRxBuffer("frequency 15.00\r\n");
-            // Usart1FillRxBuffer("frequency 14.00\r\n");
+            Usart1FillRxBuffer("frequency 14.00\r\n");
             // Usart1FillRxBuffer("frequency 10.50\r\n");
             // Usart1FillRxBuffer("frequency 07.00\r\n");
             // Usart1FillRxBuffer("frequency 01.00\r\n");            
