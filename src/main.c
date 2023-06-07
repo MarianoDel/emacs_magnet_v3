@@ -20,6 +20,8 @@
 #include "dma.h"
 
 #include "treatment.h"
+#include "signals.h"
+#include "channels_defs.h"
 #include "comms_from_rasp.h"
 #include "comms.h"
 #include "test_functions.h"
@@ -161,8 +163,8 @@ void EXTI2_IRQHandler (void)
 {
     if(EXTI->PR & EXTI_PR_PR2)    //Line2
     {
-        // Overcurrent_Shutdown();
-        TF_Prot_Int_Handler (3);    // PROT_CH3
+        Signals_Overcurrent_Handler (CH3);
+        // TF_Prot_Int_Handler (3);    // PROT_CH3 for tests
         EXTI->PR |= EXTI_PR_PR2;
     }
 }
@@ -172,8 +174,8 @@ void EXTI4_IRQHandler (void)
 {
     if(EXTI->PR & EXTI_PR_PR4)    //Line4
     {
-        // Overcurrent_Shutdown();
-        TF_Prot_Int_Handler (4);    // PROT_CH4
+        Signals_Overcurrent_Handler (CH4);        
+        // TF_Prot_Int_Handler (4);    // PROT_CH4 for tests
         EXTI->PR |= EXTI_PR_PR4;
     }
 }
@@ -183,14 +185,14 @@ void EXTI15_10_IRQHandler (void)
 {
     if(EXTI->PR & EXTI_PR_PR13)    //Line13
     {
-        // Overcurrent_Shutdown();
-        TF_Prot_Int_Handler (2);    // PROT_CH2        
+        Signals_Overcurrent_Handler (CH2);
+        // TF_Prot_Int_Handler (2);    // PROT_CH2 for tests
         EXTI->PR |= EXTI_PR_PR13;
     }
     else if (EXTI->PR & EXTI_PR_PR15)    //Line15
     {
-        // Overcurrent_Shutdown();
-        TF_Prot_Int_Handler (1);    // PROT_CH1        
+        Signals_Overcurrent_Handler (CH1);        
+        // TF_Prot_Int_Handler (1);    // PROT_CH1 for tests
         EXTI->PR |= EXTI_PR_PR15;
     }
 }

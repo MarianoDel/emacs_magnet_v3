@@ -34,6 +34,8 @@ void Signals_Setup_All_Channels_Open_Loop (void);
 void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_st * ant);
 void Signals_Generate_All_Channels_Open_Loop (void);
 
+void Signals_Overcurrent_Handler (unsigned char which_channel);
+
 #endif    /* _SIGNALS_H_ */
 
 //--- end of file ---//

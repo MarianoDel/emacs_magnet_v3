@@ -21,6 +21,7 @@
 #include "errors.h"
 
 #include "comms_from_rasp.h"
+#include "gpio.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -176,6 +177,9 @@ void Treatment_Manager (void)
         secs_in_treatment = 1;    // a 1 here starts the timer
         secs_elapsed_up_to_now = 0;
 
+        // enable the ints protecction
+        EXTIOn ();
+            
         treat_state = TREATMENT_RUNNING;
         ChangeLed(LED_TREATMENT_GENERATING);
 #ifdef USE_BUZZER_ON_START
@@ -283,6 +287,9 @@ void Treatment_Manager (void)
         for (int i = 0; i < 4; i++)
             AntennaEndTreatment(i);
 
+        // disable the ints protecction
+        EXTIOff ();
+        
         treat_state = TREATMENT_STANDBY;
         ChangeLed(LED_TREATMENT_STANDBY);
         break;

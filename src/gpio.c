@@ -89,7 +89,7 @@ void Tamper_Config(void)
 //      las funciones alternativas de los pines estan directamente conectadad al
 //      periferico en el modo input
 //      CNFx 00 Analog
-//      CNFx 01 Floating (reset)
+//      CNFx 01 Input Floating (reset)
 //      CNFx 10 Input (pull up / dwn)
 //      CNFx 11 Reserved
 //
@@ -99,7 +99,7 @@ void Tamper_Config(void)
 //      CNFx 10 Alternate func Push Pull
 //      CNFx 11 Alternate func Open Drain
 //
-//      Pull-Up Pull-Dwn si el pin es Input el registro ODR coloca pull-up (1) o pull-dwn (0)
+//      Pull-Up Pull-Dwn si el pin es Input Pup Pdwn el registro ODR coloca pull-up (1) o pull-dwn (0)
 //      GPIOx->ODR 0xNNNN, 1 bit por pin
 //
 
@@ -126,13 +126,13 @@ void GpioInit (void)
     //PA1 Alternative TIM5_CH2
     //PA2 alternative Tx Usart2
     //PA3 alternative Rx Usart2
-    //PA4 PROT_CH4 input
+    //PA4 PROT_CH4 input pupd
     //PA5 NC
     //PA6 NC
     //PA7 NC
     temp = GPIOA->CRL;
     temp &= 0xFFF00000;
-    temp |= 0x00048BAA;
+    temp |= 0x00088BAA;
     GPIOA->CRL = temp;
 
     //--- GPIOA High Side ------------------//
@@ -150,9 +150,9 @@ void GpioInit (void)
     GPIOA->CRH = temp;
 
     //--- GPIOA Pull-Up Pull-Dwn ------------------//
-    temp = GPIOA->ODR;    //PA3 PA8 pull-up
-    temp &= 0xFEF7;
-    temp |= 0x0108;
+    temp = GPIOA->ODR;    //PA3 pull-up PA4 pull-down
+    temp &= 0xFFE7;
+    temp |= 0x0008;
     GPIOA->ODR = temp;
 
     //--- GPIOB Low Side -------------------//
