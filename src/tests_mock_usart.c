@@ -24,6 +24,8 @@ unsigned char usart1_have_data = 0;
 char usart1_msg_received [200] = { 0 };
 char usart1_msg_sended [200] = { 0 };
 
+void (*pU1Cb) (char *);
+
 // Mock the Usart2
 unsigned char usart2_have_data = 0;
 unsigned char usart2_have_activation_buffer = 0;
@@ -61,7 +63,16 @@ void Usart1Send (char * msg)
 {
     strcpy(usart1_msg_sended, msg);
     PrintYellow("usart1 tx -> ");
-    printf("%s\n", msg);    
+    printf("%s\n", msg);
+    if (pU1Cb != NULL)
+        pU1Cb(msg);
+    
+}
+
+
+void Usart1Callback (void (* pCb) (char *))
+{
+    pU1Cb = pCb;
 }
 
 

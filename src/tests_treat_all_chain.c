@@ -202,9 +202,9 @@ void Test_Treatment_All_Chain (void)
             printf("-- set frequency\n");
             // Usart1FillRxBuffer("frequency 90.99\r\n");
             // Usart1FillRxBuffer("frequency 86.22\r\n");            
-            // Usart1FillRxBuffer("frequency 56.00\r\n");
+            Usart1FillRxBuffer("frequency 56.00\r\n");
             // Usart1FillRxBuffer("frequency 28.00\r\n");
-            Usart1FillRxBuffer("frequency 27.34\r\n");
+            // Usart1FillRxBuffer("frequency 27.34\r\n");
             // Usart1FillRxBuffer("frequency 20.50\r\n");            
             // Usart1FillRxBuffer("frequency 15.00\r\n");
             // Usart1FillRxBuffer("frequency 14.00\r\n");

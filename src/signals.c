@@ -1672,87 +1672,104 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
     printf(" filter gain: %f w/vin gain: %f antenna pole: %fHz\n", gain, gain * Vin, ant_pole);
 #endif
 
-    // adjust duty for max current
-    // float max_c = 0.715 / (Vin * gain);
-    float max_c = 0.715 / (0.95 * Vin * gain);   //adjust for duty max 950 
-    max_c = max_c * max_antenna_current;    //adjust for antenna current
-    max_c = max_c * global_signals.power / 100.;    //adjust for power
-    unsigned short max_duty = (unsigned short) (max_c * 1000);
-
-#ifdef TESTING_SHOW_INFO_OPENLOOP
-    printf(" adj_c gain: %f current: %f max_duty: %d\n",
-           max_c,
-           max_antenna_current,
-           max_duty);
-#endif    
 
     short * dst_table;
 
     if (which_channel == CH1)
     {
         dst_table = table_ch1;
-
-        for (int i = 0; i < 127; i++)
-            *(dst_table + i) = max_duty;
-
-        for (int i = 128; i < 255; i++)
-            *(dst_table + i) = 0;
-        
     }
     else if (which_channel == CH2)
     {
         dst_table = table_ch2;
-
-        for (int i = 0; i < 127; i++)
-            *(dst_table + i) = max_duty;
-
-        for (int i = 128; i < 255; i++)
-            *(dst_table + i) = 0;
-
     }
     else if (which_channel == CH3)
     {
         dst_table = table_ch3;
-
-        for (int i = 128; i < 255; i++)
-            *(dst_table + i) = max_duty;
-
-        for (int i = 0; i < 127; i++)
-            *(dst_table + i) = 0;
     }        
     else
     {
         dst_table = table_ch4;
-    
-        for (int i = 128; i < 255; i++)
-            *(dst_table + i) = max_duty;
-
-        for (int i = 0; i < 127; i++)
-            *(dst_table + i) = 0;
     }
 
     // correct the current for first edge
     max_antenna_current = max_antenna_current * global_signals.power / 100.;
-    float t = max_antenna_current * La / (0.95 * Vin - max_antenna_current * Ra);
-    fsampling = global_signals.freq_int + global_signals.freq_dec / 100.0;
-    fsampling = fsampling * 256.;
-    float pts = fsampling * t;
+    float max_curr_reduced = max_antenna_current;
+    int r = 0;
+    float t = 0.0;
+    float pts = 0.0;
+    
+    for (int i = 100; i > 10; i -= 10)
+    {
+        // power reduction
+        max_curr_reduced = max_antenna_current * i / 100.0;
+
+        t = max_curr_reduced * La / (0.95 * Vin - max_curr_reduced * Ra);
+        fsampling = global_signals.freq_int + global_signals.freq_dec / 100.0;
+        fsampling = fsampling * 256.;
+        pts = fsampling * t;
+
+        if (pts < 35.0)
+        {            
+#ifdef TESTING_SHOW_INFO_OPENLOOP
+            if (i != 100)
+            {
+                printf(" current to hi!!! max_antenna_current: %f reduced: %f perc: %d\%\n",
+                       max_antenna_current,
+                       max_curr_reduced,
+                       i);
+            }
+#endif
+            r = i;
+            break;
+        }
+    }
+
+    // plateau calcs, adjust duty for max current (or reduced current)
+    float max_c = 0.715 / (0.95 * Vin * gain);   //adjust for duty max 950 
+    max_c = max_c * max_antenna_current;    //adjust for antenna current
+    max_c = max_c * global_signals.power / 100.;    //adjust for power
+    max_c = max_c * r / 100.;    //adjust for power reduction
+    unsigned short max_duty = (unsigned short) (max_c * 1000);
+
+#ifdef TESTING_SHOW_INFO_OPENLOOP
+    printf(" adj_c gain: %f current: %f reduced: %f max_duty: %d\n",
+           max_c,
+           max_antenna_current,
+           max_antenna_current * r / 100.,
+           max_duty);
+#endif    
+    
 
     if ((which_channel == CH1) || (which_channel == CH2))
     {
         for (int i = 0; i < (short) pts; i++)
             *(dst_table + i) = 950;
+
+        for (int i = (short) pts; i < 127; i++)
+            *(dst_table + i) = max_duty;
+
+        for (int i = 128; i < 255; i++)
+            *(dst_table + i) = 0;
+        
     }
     else
     {
         for (int i = 128; i < (128 + (short) pts); i++)
-            *(dst_table + i) = 950;        
-    }
+            *(dst_table + i) = 950;
 
+        for (int i = 128 + (short) pts; i < 255; i++)
+            *(dst_table + i) = max_duty;
+
+        for (int i = 0; i < 127; i++)
+            *(dst_table + i) = 0;
+        
+    }
         
 #ifdef TESTING_SHOW_INFO_OPENLOOP
     printf(" t: %f tms: %f fs: %f pts: %f\n", t, t * 1000, fsampling, pts);
 #endif    
+
     
 }
 

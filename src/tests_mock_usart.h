@@ -18,6 +18,9 @@
 void Usart1Send (char * msg);
 unsigned char Usart1ReadBuffer (unsigned char * bout, unsigned short max_len);
 void Usart1FillRxBuffer (char * msg);
+unsigned char Usart1HaveData (void);
+void Usart1HaveDataReset (void);
+void Usart1Callback (void (* pCb) (char *));
 
 void Usart2Send (char * msg);
 unsigned char Usart2ReadBuffer (unsigned char * bout, unsigned short max_len);

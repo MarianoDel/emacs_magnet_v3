@@ -11,38 +11,48 @@
 #include "comms_from_rasp.h"
 #include "treatment.h"
 #include "comms.h"
+#include "signals_defs.h"
+#include "tests_mock_usart.h"
+#include "tests_ok.h"
+
 
 
 #include <stdio.h>
 #include <string.h>
 // #include <math.h>
 
+
 // Types Constants and Macros --------------------------------------------------
 
 
-// Externals -------------------------------------------------------------------
-volatile unsigned short adc_ch [2];
-volatile unsigned char usart1_have_data = 0;
+// Externals -- Globals on Tested Module ---------------------------------------
+
+
+// Globals -- Externals on Tested Module ---------------------------------------
+volatile unsigned short adc_ch [7];
 unsigned short comms_messages_rpi = 0;
+
 
 // Globals ---------------------------------------------------------------------
 char s_test [100] = { 0 };
+int cb_usart_value = 0;
+int cb_gpio = 0;
 
-// Module Functions to Test ----------------------------------------------------
-void Test_Comm_From_Rasp_Module (void);
-void Test_Functions (void);
 
-// Module Auxiliary Functions --------------------------------------------------
+
+// Module Auxialiary Functions -------------------------------------------------
+void CB_Usart (char * s);
+
+
+// Module Mocked Functions -----------------------------------------------------
 void HARD_L1_ON (void);
 void HARD_L1_OFF (void);
-void Usart1Send (char * s);
-unsigned char ReadUsart1Buffer (char * bout, unsigned short max_len);
 void BuzzerCommands(unsigned char command, unsigned char multiple);
 
 
-// Tests Module Auxiliary or General Functions ---------------------------------
-void PrintOK (void);
-void PrintERR (void);
+// Module Functions for Tests --------------------------------------------------
+void Test_Comm_From_Rasp_Module (void);
+void Test_Functions (void);
 
 
 // Module Functions ------------------------------------------------------------
@@ -59,291 +69,325 @@ void Test_Comm_From_Rasp_Module (void)
 {
     int some_err = 0;
 
+    // set callback on usart1
+    Usart1Callback(CB_Usart);    
+
     //////////////////////
     // Test Signal Type //
     //////////////////////
-    signal_type_t signal;    
-    strcpy(s_test, "signal triangular\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    signal_type_e signal;
 
-    signal = TreatmentGetSignalType();
-    if ((rpi_have_data != 0) || (signal != TRIANGULAR_SIGNAL))
+    if (!some_err)
     {
-        printf("\nSignal type error: %d ", signal);
-        some_err = 1;
+        strcpy(s_test, "signal triangular\r\n");
+        Usart1FillRxBuffer(s_test);
+        UpdateRaspberryMessages();
+
+        signal = Treatment_GetSignalType();
+        if (signal != TRIANGULAR_SIGNAL)
+        {
+            printf("\nSignal type error: %d ", signal);
+            some_err = 1;
+        }
     }
 
-    strcpy(s_test, "signal square\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        strcpy(s_test, "signal square\r\n");
+        Usart1FillRxBuffer(s_test);
+        UpdateRaspberryMessages();
 
-    signal = TreatmentGetSignalType();
-    if ((rpi_have_data != 0) || (signal != SQUARE_SIGNAL))
-    {
-        printf("\nSignal type error: %d ", signal);
-        some_err = 1;
+        signal = Treatment_GetSignalType();
+        if (signal != SQUARE_SIGNAL)
+        {
+            printf("\nSignal type error: %d ", signal);
+            some_err = 1;
+        }
     }
 
-    strcpy(s_test, "signal sinusoidal\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        strcpy(s_test, "signal sinusoidal\r\n");
+        Usart1FillRxBuffer(s_test);
+        UpdateRaspberryMessages();
 
-    signal = TreatmentGetSignalType();
-    if ((rpi_have_data != 0) || (signal != SINUSOIDAL_SIGNAL))
-    {
-        printf("\nSignal type error: %d ", signal);
-        some_err = 1;
+        signal = Treatment_GetSignalType();
+        if (signal != SINUSOIDAL_SIGNAL)
+        {
+            printf("\nSignal type error: %d ", signal);
+            some_err = 1;
+        }
     }
 
     ////////////////
     // Test Power //
     ////////////////
     unsigned char power = 0;
-    strcpy(s_test, "power 010\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
 
-    power = TreatmentGetPower();
-    if ((rpi_have_data != 0) || (power != 10))
+    if (!some_err)
     {
-        printf("\nPower error: %d ", power);
-        some_err = 1;
+        strcpy(s_test, "power 010\r\n");
+        Usart1FillRxBuffer(s_test);    
+        UpdateRaspberryMessages();
+
+        power = Treatment_GetPower();
+        if (power != 10)
+        {
+            printf("\nPower error: %d ", power);
+            some_err = 1;
+        }
     }
 
     ////////////////////
     // Test Frequency //
     ////////////////////
-    unsigned char f_int = 10;
-    unsigned char f_dec = 20;
-    sprintf(s_test, "frequency %02d.%02d\r\n", f_int, f_dec);
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    unsigned char f_int = 0;
+    unsigned char f_dec = 0;
 
-    TreatmentGetFrequency(&f_int, &f_dec);
-    if ((rpi_have_data != 0) || (f_int != 10) || f_dec != 20)
+    if (!some_err)
     {
-        printf("\nFrequency error: %d.%d ", f_int, f_dec);
-        some_err = 1;
+        f_int = 10;
+        f_dec = 20;
+        sprintf(s_test, "frequency %02d.%02d\r\n", f_int, f_dec);
+        Usart1FillRxBuffer(s_test);
+        UpdateRaspberryMessages();
+
+        Treatment_GetFrequency(&f_int, &f_dec);
+        if ((f_int != 10) || (f_dec != 20))
+        {
+            printf("\nFrequency error: %d.%d ", f_int, f_dec);
+            some_err = 1;
+        }
     }
 
-    ///////////////////
-    // Test Channels //
-    ///////////////////
-    strcpy(s_test, "enable channel 1\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
-    strcpy(s_test, "enable channel 2\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
-    strcpy(s_test, "enable channel 3\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        f_int = 86;
+        f_dec = 22;
+        sprintf(s_test, "frequency %03d.%02d\r\n", f_int, f_dec);
+        Usart1FillRxBuffer(s_test);
+        UpdateRaspberryMessages();
 
-    unsigned char channels = TreatmentGetChannelsFlag ();
-    if (channels != ((ENABLE_CH1_FLAG | ENABLE_CH2_FLAG | ENABLE_CH3_FLAG) & 0x0f))
-    {
-        printf("\nChannels error getted: %d ", channels);
-        some_err = 1;
+        Treatment_GetFrequency(&f_int, &f_dec);
+        if ((f_int != 86) || (f_dec != 22))
+        {
+            printf("\nFrequency error: %d.%d ", f_int, f_dec);
+            some_err = 1;
+        }
     }
 
-    strcpy(s_test, "disable channel 1\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
-    strcpy(s_test, "disable channel 2\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
-    strcpy(s_test, "disable channel 3\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        f_int = 200;
+        f_dec = 0;
+        sprintf(s_test, "frequency %03d.%02d\r\n", f_int, f_dec);
+        Usart1FillRxBuffer(s_test);
+        UpdateRaspberryMessages();
 
-    channels = TreatmentGetChannelsFlag ();
-    if (channels != 0)
-    {
-        printf("\nChannels error getted: %d ", channels);
-        some_err = 1;
+        Treatment_GetFrequency(&f_int, &f_dec);
+        if ((f_int != 200) || (f_dec != 0))
+        {
+            printf("\nFrequency error: %d.%d ", f_int, f_dec);
+            some_err = 1;
+        }
     }
 
-    ////////////////////////////
-    // Test Stretcher Up-Down //
-    ////////////////////////////
-    strcpy(s_test, "stretcher up\r\n");
-    comms_messages_rpi = 0;
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        f_int = 199;
+        f_dec = 99;
+        sprintf(s_test, "frequency %03d.%02d\r\n", f_int, f_dec);
+        Usart1FillRxBuffer(s_test);
+        UpdateRaspberryMessages();
 
-    if ((rpi_have_data != 0) || (comms_messages_rpi != COMM_STRETCHER_UP))
-    {
-        printf("\nUpDwn error getted: %d ", comms_messages_rpi);
-        some_err = 1;
+        Treatment_GetFrequency(&f_int, &f_dec);
+        if ((f_int != 199) || (f_dec != 99))
+        {
+            printf("\nFrequency error: %d.%d ", f_int, f_dec);
+            some_err = 1;
+        }
     }
-
-    strcpy(s_test, "stretcher autoup on\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
-
-    updwn_e updwn = TreatmentGetUpDwn ();
-    if ((rpi_have_data != 0) || (updwn != UPDWN_AUTO))
-    {
-        printf("\nUpDwn error getted: %d ", updwn);
-        some_err = 1;
-    }
-
-    strcpy(s_test, "stretcher autoup off\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
-
-    updwn = TreatmentGetUpDwn ();
-    if ((rpi_have_data != 0) || (updwn != UPDWN_MANUAL))
-    {
-        printf("\nUpDwn error getted: %d ", updwn);
-        some_err = 1;
-    }
-
+    
     //////////////////////
     // Test Bridge Mode //
     //////////////////////
-    strcpy(s_test, "goto bridge mode\r\n");
-    comms_messages_rpi = 0;
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        strcpy(s_test, "goto bridge mode\r\n");
+        comms_messages_rpi = 0;
+        Usart1FillRxBuffer(s_test);
+        UpdateRaspberryMessages();
 
-    if ((rpi_have_data != 0) || (comms_messages_rpi != COMM_GOTO_BRIDGE))
-    {
-        printf("\nUpDwn error getted: %d ", comms_messages_rpi);
-        some_err = 1;
+        if (comms_messages_rpi != COMM_GOTO_BRIDGE)
+        {
+            printf("\nUpDwn error getted: %d ", comms_messages_rpi);
+            some_err = 1;
+        }
     }
 
     //////////////////
     // Test Voltage //
     //////////////////
-    adc_ch[0] = 3000;
-    adc_ch[1] = 2500;
+    if (!some_err)
+    {    
+        adc_ch[5] = 3000;
+        adc_ch[6] = 2500;
 
-    strcpy(s_test, "voltage\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
-    
-    if (rpi_have_data != 0)
-    {
-        printf("\nVoltage with some error ");
-        some_err = 1;
+        strcpy(s_test, "voltage\r\n");
+        Usart1FillRxBuffer(s_test);
+        cb_usart_value = 0;
+        UpdateRaspberryMessages();
+
+        if (cb_usart_value != 1)
+        {
+            printf("\nVoltage with some error ");
+            some_err = 1;        
+        }
     }
-
+    
     //////////////////////
     // Test Hard & Soft //
     //////////////////////
-    strcpy(s_test, "hard_soft\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        strcpy(s_test, "hard_soft\r\n");
+        Usart1FillRxBuffer(s_test);
+        cb_usart_value = 0;    
+        UpdateRaspberryMessages();
     
-    if (rpi_have_data != 0)
-    {
-        printf("\nVoltage with some error ");
-        some_err = 1;
+        if (cb_usart_value != 2)
+        {
+            printf("\nHard or Soft with some error ");
+            some_err = 1;
+        }
     }
 
     /////////////////
     // Test Buzzer //
     /////////////////
-    strcpy(s_test, "buzzer short 3\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        strcpy(s_test, "buzzer short 3\r\n");
+        Usart1FillRxBuffer(s_test);
+        cb_gpio = 0;
+        UpdateRaspberryMessages();
     
-    if (rpi_have_data != 0)
-    {
-        printf("\nBuzzer with errors ");
-        some_err = 1;
+        if (cb_gpio != 1)
+        {
+            printf("\nBuzzer with errors ");
+            some_err = 1;
+        }
     }
 
-    strcpy(s_test, "buzzer half 2\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        strcpy(s_test, "buzzer half 2\r\n");
+        Usart1FillRxBuffer(s_test);
+        cb_gpio = 0;
+        UpdateRaspberryMessages();
     
-    if (rpi_have_data != 0)
-    {
-        printf("\nBuzzer with errors ");
-        some_err = 1;
+        if (cb_gpio != 2)
+        {
+            printf("\nBuzzer with errors ");
+            some_err = 1;
+        }
     }
 
-    strcpy(s_test, "buzzer long 1\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        strcpy(s_test, "buzzer long 1\r\n");
+        Usart1FillRxBuffer(s_test);
+        cb_gpio = 0;
+        UpdateRaspberryMessages();
     
-    if (rpi_have_data != 0)
-    {
-        printf("\nBuzzer with errors ");
-        some_err = 1;
+        if (cb_gpio != 3)
+        {
+            printf("\nBuzzer with errors ");
+            some_err = 1;
+        }
     }
 
     ////////////////////
     // Test keepalive //
     ////////////////////
-    strcpy(s_test, "keepalive,\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        strcpy(s_test, "keepalive,\r\n");
+        Usart1FillRxBuffer(s_test);
+        cb_usart_value = 0;
+        UpdateRaspberryMessages();
     
-    if (rpi_have_data != 0)
-    {
-        printf("\nNo keepalive ");
-        some_err = 1;
+        if (cb_usart_value != 3)
+        {
+            printf("\nNo keepalive ");
+            some_err = 1;
+        }
     }
 
     ///////////////////
     // Test Duration //
     ///////////////////
-    strcpy(s_test, "duration,100\r\n");
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        strcpy(s_test, "duration,100\r\n");
+        Usart1FillRxBuffer(s_test);
+        UpdateRaspberryMessages();
 
-    unsigned short time = TreatmentGetTime ();
-    if ((rpi_have_data != 0) || (time != (100*60)))
-    {
-        printf("\nTime error getted: %d ", time);
-        some_err = 1;
+        unsigned short time = Treatment_GetTime ();
+        if (time != (100*60))
+        {
+            printf("\nTime error getted: %d ", time);
+            some_err = 1;
+        }
     }
 
 
     ///////////////////////////
     // Test Stop Pause Start //
     ///////////////////////////
-    strcpy(s_test, "stop,\r\n");
-    comms_messages_rpi = 0;
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        strcpy(s_test, "stop,\r\n");
+        comms_messages_rpi = 0;
+        Usart1FillRxBuffer(s_test);
+        UpdateRaspberryMessages();
 
-    if ((rpi_have_data != 0) || (comms_messages_rpi != COMM_STOP_TREAT))
-    {
-        printf("\nStop error getted: %d ", comms_messages_rpi);
-        some_err = 1;
+        if (comms_messages_rpi != COMM_STOP_TREAT)
+        {
+            printf("\nStop error getted: %d ", comms_messages_rpi);
+            some_err = 1;
+        }
     }
 
-    strcpy(s_test, "start,\r\n");
-    comms_messages_rpi = 0;
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        strcpy(s_test, "start,\r\n");
+        comms_messages_rpi = 0;
+        Usart1FillRxBuffer(s_test);
+        UpdateRaspberryMessages();
 
-    if ((rpi_have_data != 0) || (comms_messages_rpi != COMM_START_TREAT))
-    {
-        printf("\nStart error getted: %d ", comms_messages_rpi);
-        some_err = 1;
+        if (comms_messages_rpi != COMM_START_TREAT)
+        {
+            printf("\nStart error getted: %d ", comms_messages_rpi);
+            some_err = 1;
+        }
     }
 
-    strcpy(s_test, "pause,\r\n");
-    comms_messages_rpi = 0;
-    rpi_have_data = 1;
-    UpdateRaspberryMessages();
+    if (!some_err)
+    {    
+        strcpy(s_test, "pause,\r\n");
+        comms_messages_rpi = 0;
+        Usart1FillRxBuffer(s_test);    
+        UpdateRaspberryMessages();
 
-    if ((rpi_have_data != 0) || (comms_messages_rpi != COMM_PAUSE_TREAT))
-    {
-        printf("\nPause error getted: %d ", comms_messages_rpi);
-        some_err = 1;
+        if (comms_messages_rpi != COMM_PAUSE_TREAT)
+        {
+            printf("\nPause error getted: %d ", comms_messages_rpi);
+            some_err = 1;
+        }
     }
-    
 
-    
-    
-    
+    printf("\n All Tests done results: ");
     if (some_err)
         PrintERR();
     else
@@ -351,6 +395,28 @@ void Test_Comm_From_Rasp_Module (void)
     
 }
 
+
+// Module Auxiliary Functions --------------------------------------------------
+void CB_Usart (char * s)
+{
+    if (strncmp(s, "High Supply:", sizeof("High Supply:") - 1) == 0)
+        cb_usart_value = 1;
+
+    if (strncmp(s, "Hardware Version:", sizeof("Hardware Version:") - 1) == 0)
+        cb_usart_value = 2;
+
+    if (strncmp(s, "OK", sizeof("OK") - 1) == 0)
+        cb_usart_value = 3;
+    
+    // if (strncmp(s, "ok", sizeof("ok") - 1) == 0)
+    //     cb_usart_value = 4;
+
+    // if (strncmp(s, "Hrd 2.0 Soft 1.1", sizeof("Hrd 2.0 Soft 1.1") - 1) == 0)
+    //     cb_usart_value = 5;
+}
+
+
+// Module Mocked Functions -----------------------------------------------------
 void HARD_L1_ON (void)
 {
     printf("Led1 -> ON\n");
@@ -361,45 +427,115 @@ void HARD_L1_OFF (void)
     printf("Led1 -> OFF\n");
 }
 
-void Usart1Send (char * s)
-{
-    printf("sended: %s\n", s);
-}
-
 void BuzzerCommands(unsigned char command, unsigned char multiple)
 {
     printf("buzzer cmd: %d multiple: %d\n", command, multiple);
-}
 
-unsigned char ReadUsart1Buffer (char * bout, unsigned short max_len)
-{
-    unsigned char len = 0;
-    strcpy(bout, s_test);
-    len = strlen(bout);
-    return len;
-}
+    if ((command == 8) && (multiple == 3))
+        cb_gpio = 1;
 
+    if ((command == 5) && (multiple == 2))
+        cb_gpio = 2;
 
-void Test_Functions (void)
-{
-    printf("tested ok!\n");
-    PrintOK();
+    if ((command == 2) && (multiple == 1))
+        cb_gpio = 3;
 }
 
 
-void PrintOK (void)
+void ChangeLed (unsigned char how_many)
 {
-    printf("\033[0;32m");    //green
-    printf("OK\n");
-    printf("\033[0m");    //reset
+    printf("toggle led %d times\n", how_many);
 }
 
 
-void PrintERR (void)
+void Wait_ms (unsigned short millis)
 {
-    printf("\033[0;31m");    //red
-    printf("ERR\n");
-    printf("\033[0m");    //reset
+    printf("wait %d ms\n", millis);
+}
+
+// Mocked Signals Module
+void Signals_Setup_Treatment_Data (void)
+{
+}
+
+void Signals_Set_Reset_Channel_For_Treatment (void)
+{
+}
+
+void Signals_Set_Channel_Table_Open_Loop (void)
+{
+}
+
+void Signals_Setup_All_Channels_Open_Loop (void)
+{
+}
+
+void Signals_Generate_All_Channels_Open_Loop (void)
+{
+}
+
+void Signals_Stop_All_Channels (void)
+{
+}
+
+void Signals_Stop_Single_Channel (void)
+{
+}
+// Mocked Antenna Module
+void AntennaSendKnowInfoWithTimer (void)
+{
+}
+
+void AntennaVerifyForTreatment (void)
+{
+}
+
+void AntennaGetParamsStruct (void)
+{
+}
+
+void AntennaEndTreatment (void)
+{
+}
+
+void AntennaGetConnection (void)
+{
+}
+
+void AntennaGetTempStatus (void)
+{
+}
+// Mocked Error Module
+void Error_SetStatus_For_Checks (unsigned char error, unsigned char ch)
+{
+}
+
+void Error_SetStatus (unsigned char error, unsigned char ch)
+{
+}
+
+void Error_GetStatus (void)
+{
+}
+
+void Error_SetString (void)
+{
+}
+// Mocked General
+void EXTIOn (void)
+{
+}
+
+void EXTIOff (void)
+{
+}
+
+void UpdateLed (void)
+{
+}
+
+void UpdateBuzzer (void)
+{
 }
 //--- end of file ---//
 

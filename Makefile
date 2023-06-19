@@ -362,7 +362,10 @@ tests_comms_rasp:
 	gcc -c src/comms_from_rasp.c -I. $(INCDIR) -DSTM32F10X_HD
 	gcc -c src/treatment.c -I. $(INCDIR)
 	gcc -c src/utils.c -I. $(INCDIR)
-	gcc src/tests_comms_rasp.c comms_from_rasp.o treatment.o utils.o
+	# second auxiliary helper modules
+	gcc -c src/tests_ok.c -I $(INCDIR)
+	gcc -c src/tests_mock_usart.c -I $(INCDIR)
+	gcc src/tests_comms_rasp.c comms_from_rasp.o treatment.o utils.o tests_ok.o tests_mock_usart.o -I $(INCDIR) $(DDEFS)
 	./a.out
 
 

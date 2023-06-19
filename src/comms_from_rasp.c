@@ -74,7 +74,7 @@ static void Raspberry_Messages (char * msg)
     const char s_frequency [] = {"frequency"};
     unsigned short new_freq_int = 0;
     unsigned short new_freq_dec = 0;
-    unsigned char decimales = 0;
+    unsigned char figures = 0;
 
 
     //mensajes nuevos
@@ -131,17 +131,15 @@ static void Raspberry_Messages (char * msg)
         
         msg += sizeof(s_frequency);    //normalizo al payload, hay un espacio
 
-        //lo que viene es E.DD o EE.DD, siempre 2 posiciones decimales
-        decimales = StringIsANumber(msg, &new_freq_int);
-        // sprintf(to_send, "dec: %d freq: %d\n", decimales, new_freq_int);
-        // RpiSend(to_send);
+        // what we get is E.DD | EE.DD | EEE.DD, always two decimal positions
+        figures = StringIsANumber(msg, &new_freq_int);
 
-        if ((decimales) && (decimales < 3))
+        if ((figures) && (figures <= 3) && (new_freq_int < 210))
         {
-            msg += decimales + 1;    //normalizo con el punto
-            decimales = StringIsANumber(msg, &new_freq_dec);
+            msg += figures + 1;    //normalizo con el punto
+            figures = StringIsANumber(msg, &new_freq_dec);
 
-            if ((decimales > 1) && (decimales < 3))
+            if ((figures > 1) && (figures < 3))
             {
                 resp = Treatment_SetFrequency ((unsigned char) new_freq_int, (unsigned char) new_freq_dec);
                 if (resp == resp_ok)
@@ -154,79 +152,6 @@ static void Raspberry_Messages (char * msg)
         else
             RpiSend(s_ans_nok);
     }
-
-    // else if (!strncmp(msg, (const char *)"enable channel ", (sizeof("enable channel ") - 1)))
-    // {
-    //     if (*(msg + 15) == '1')
-    //     {
-    //         Treatment_SetChannelsFlag(ENABLE_CH1_FLAG);
-    //         RpiSend(s_ans_ok);
-    //     }
-
-    //     else if (*(msg + 15) == '2')
-    //     {
-    //         Treatment_SetChannelsFlag(ENABLE_CH2_FLAG);
-    //         RpiSend(s_ans_ok);
-    //     }
-
-    //     else if (*(msg + 15) == '3')
-    //     {
-    //         Treatment_SetChannelsFlag(ENABLE_CH3_FLAG);
-    //         RpiSend(s_ans_ok);
-    //     }
-
-    //     else
-    //         RpiSend(s_ans_nok);
-
-        
-    // }
-
-    // else if (!strncmp(msg, (const char *)"disable channel ", (sizeof("disable channel ") - 1)))
-    // {
-    //     if (*(msg + 16) == '1')
-    //     {
-    //         Treatment_SetChannelsFlag(DISABLE_CH1_FLAG);
-    //         RpiSend(s_ans_ok);
-    //     }
-
-    //     else if (*(msg + 16) == '2')
-    //     {
-    //         Treatment_SetChannelsFlag(DISABLE_CH2_FLAG);
-    //         RpiSend(s_ans_ok);
-    //     }
-
-    //     else if (*(msg + 16) == '3')
-    //     {
-    //         Treatment_SetChannelsFlag(DISABLE_CH3_FLAG);
-    //         RpiSend(s_ans_ok);
-    //     }
-
-    //     else
-    //         RpiSend(s_ans_nok);
-            
-    // }
-
-    // else if (!strncmp(msg, (const char *)"stretcher up", (sizeof("stretcher up") - 1)))
-    // {
-    //     comms_messages_rpi |= COMM_STRETCHER_UP;
-    //     RpiSend(s_ans_ok);        
-    // }
-
-    // else if (!strncmp(msg,
-    //                   (const char *)"stretcher autoup on",
-    //                   (sizeof("stretcher autoup on") - 1)))
-    // {
-    //     // TreatmentSetUpDwn(UPDWN_AUTO);
-    //     RpiSend(s_ans_ok);        
-    // }
-
-    // else if (!strncmp(msg,
-    //                   (const char *)"stretcher autoup off",
-    //                   (sizeof("stretcher autoup off") - 1)))
-    // {
-    //     // TreatmentSetUpDwn(UPDWN_MANUAL);
-    //     RpiSend(s_ans_ok);        
-    // }
     
     else if (!strncmp(msg, "goto bridge mode", sizeof("goto bridge mode") - 1))
     {
@@ -258,8 +183,6 @@ static void Raspberry_Messages (char * msg)
         sprintf(to_send, "Low Supply: %3d.%01dV\r\n", volt_int, volt_dec);
         RpiSend(to_send);
         
-        // sprintf(to_send, "High supply: %d, Low supply: %d\r\n", Sense_200V, Sense_15V);                
-        // RpiSend(to_send);
     }
     
     else if (!strncmp(msg, "hard_soft", sizeof("hard_soft") - 1))
@@ -278,8 +201,8 @@ static void Raspberry_Messages (char * msg)
         msg += sizeof(s_buzzer_short);		//normalizo al payload, hay un espacio
 
         //lo que viene es un byte de 1 a 9
-        decimales = StringIsANumber(msg, &bips_qtty);
-        if (decimales == 1)
+        figures = StringIsANumber(msg, &bips_qtty);
+        if (figures == 1)
         {
             BuzzerCommands(BUZZER_SHORT_CMD, (unsigned char) bips_qtty);
             RpiSend(s_ans_ok);
@@ -295,8 +218,8 @@ static void Raspberry_Messages (char * msg)
         msg += sizeof(s_buzzer_half);		//normalizo al payload, hay un espacio
 
         //lo que viene es un byte de 1 a 9
-        decimales = StringIsANumber(msg, &bips_qtty);
-        if (decimales == 1)
+        figures = StringIsANumber(msg, &bips_qtty);
+        if (figures == 1)
         {
             BuzzerCommands(BUZZER_HALF_CMD, (unsigned char) bips_qtty);
             RpiSend(s_ans_ok);
@@ -313,8 +236,8 @@ static void Raspberry_Messages (char * msg)
         msg += sizeof(s_buzzer_long);		//normalizo al payload, hay un espacio
 
         //lo que viene es un byte de 1 a 9
-        decimales = StringIsANumber(msg, &bips_qtty);
-        if (decimales == 1)
+        figures = StringIsANumber(msg, &bips_qtty);
+        if (figures == 1)
             BuzzerCommands(BUZZER_LONG_CMD, (unsigned char) bips_qtty);
         else
             resp = resp_error;
@@ -342,17 +265,17 @@ static void Raspberry_Messages (char * msg)
             unsigned char hours = (*(msg + 0) - '0') * 10 + *(msg + 1) - '0';
             unsigned char minutes = (*(msg + 3) - '0') * 10 + *(msg + 4) - '0';
 
-            decimales = 3;
+            figures = 3;
             new_time = hours * 60 + minutes;
         }
         else
         {
             // new conf type
             //lo que viene son tres bytes con el tiempo de 1 a 120 se supone
-            decimales = StringIsANumber(msg, &new_time);
+            figures = StringIsANumber(msg, &new_time);
         }
         
-        if (decimales == 3)
+        if (figures == 3)
         {
             if (Treatment_SetTimeinMinutes(new_time) == resp_ok)
             {
