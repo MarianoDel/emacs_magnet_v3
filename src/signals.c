@@ -1576,12 +1576,13 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
     // a1_pos = 0.9605;    //for 14Hz
     // a1_pos = 0.9210;    //for 7Hz    
     float comp_gain = max_c / zero_gain;
-
+    
     if (comp_gain > 30.0)
     {
-#ifdef TESTING_SHOW_INFO_OPENLOOP        
         int r = 0;
-#endif
+        int orig_max_c = 0;
+        int reduc_max_c = 0;
+
         float comp_gain_reduction = comp_gain;
         //reduce power here!!!
         for (int i = 9; i > 1; i--)
@@ -1589,9 +1590,32 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
             comp_gain_reduction = comp_gain * i / 10.;
             if (comp_gain_reduction < 30.0)
             {
-#ifdef TESTING_SHOW_INFO_OPENLOOP
+                if (which_channel == CH1)
+                {
+                    orig_max_c = global_signals.max_c_ch1;
+                    reduc_max_c = orig_max_c * i / 10;
+                    global_signals.max_c_ch1 = reduc_max_c;
+                }
+                else if (which_channel == CH2)
+                {
+                    orig_max_c = global_signals.max_c_ch2;
+                    reduc_max_c = orig_max_c * i / 10;
+                    global_signals.max_c_ch2 = reduc_max_c;
+                }
+                else if (which_channel == CH3)
+                {
+                    orig_max_c = global_signals.max_c_ch3;
+                    reduc_max_c = orig_max_c * i / 10;
+                    global_signals.max_c_ch3 = reduc_max_c;
+                }        
+                else
+                {
+                    orig_max_c = global_signals.max_c_ch4;
+                    reduc_max_c = orig_max_c * i / 10;
+                    global_signals.max_c_ch4 = reduc_max_c;
+                }
+
                 r = i;
-#endif
                 break;
             }
         }
@@ -1600,13 +1624,16 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
                comp_gain,
                comp_gain_reduction,
                r * 10);
+
+        printf(" CH%d original current: %d reduced to: %d\n",
+               which_channel + 1,
+               orig_max_c,
+               reduc_max_c);
 #endif
         comp_gain = comp_gain_reduction;
     }
 #ifdef TESTING_SHOW_INFO_OPENLOOP
     printf(" zero gain: %f max_c: %f comp_gain: %f\n", zero_gain, max_c, comp_gain);
-    float adc_pts = max_antenna_current * 0.715 * 4095. / 3.3;
-    printf(" max_c in adc points: %d\n\n", (int) adc_pts);
 #endif    
 
     // k = 0 * comp_gain
@@ -1672,7 +1699,6 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
     printf(" filter gain: %f w/vin gain: %f antenna pole: %fHz\n", gain, gain * Vin, ant_pole);
 #endif
 
-
     short * dst_table;
 
     if (which_channel == CH1)
@@ -1698,7 +1724,10 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
     int r = 0;
     float t = 0.0;
     float pts = 0.0;
-    
+
+    int orig_max_c = 0;
+    int reduc_max_c = 0;
+
     for (int i = 100; i > 10; i -= 10)
     {
         // power reduction
@@ -1711,6 +1740,31 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
 
         if (pts < 35.0)
         {            
+            if (which_channel == CH1)
+            {
+                orig_max_c = global_signals.max_c_ch1;
+                reduc_max_c = orig_max_c * i / 100;
+                global_signals.max_c_ch1 = reduc_max_c;
+            }
+            else if (which_channel == CH2)
+            {
+                orig_max_c = global_signals.max_c_ch2;
+                reduc_max_c = orig_max_c * i / 100;
+                global_signals.max_c_ch2 = reduc_max_c;
+            }
+            else if (which_channel == CH3)
+            {
+                orig_max_c = global_signals.max_c_ch3;
+                reduc_max_c = orig_max_c * i / 100;
+                global_signals.max_c_ch3 = reduc_max_c;
+            }        
+            else
+            {
+                orig_max_c = global_signals.max_c_ch4;
+                reduc_max_c = orig_max_c * i / 100;
+                global_signals.max_c_ch4 = reduc_max_c;
+            }
+            
 #ifdef TESTING_SHOW_INFO_OPENLOOP
             if (i != 100)
             {
@@ -1718,6 +1772,12 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
                        max_antenna_current,
                        max_curr_reduced,
                        i);
+
+                printf(" CH%d original current: %d reduced to: %d\n",
+                       which_channel + 1,
+                       orig_max_c,
+                       reduc_max_c);
+                       
             }
 #endif
             r = i;

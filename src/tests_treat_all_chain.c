@@ -194,15 +194,17 @@ void Test_Treatment_All_Chain (void)
             printf("-- set power\n");
             Usart1FillRxBuffer("power 100\r\n");
             // Usart1FillRxBuffer("power 050\r\n");
+            // Usart1FillRxBuffer("power 025\r\n");            
             // Usart1FillRxBuffer("power 010\r\n");            
         }
 
         if (i == 10)
         {
             printf("-- set frequency\n");
+            // Usart1FillRxBuffer("frequency 200.00\r\n");            
             // Usart1FillRxBuffer("frequency 90.99\r\n");
-            // Usart1FillRxBuffer("frequency 86.22\r\n");            
-            Usart1FillRxBuffer("frequency 56.00\r\n");
+            Usart1FillRxBuffer("frequency 86.22\r\n");            
+            // Usart1FillRxBuffer("frequency 56.00\r\n");            
             // Usart1FillRxBuffer("frequency 28.00\r\n");
             // Usart1FillRxBuffer("frequency 27.34\r\n");
             // Usart1FillRxBuffer("frequency 20.50\r\n");            
