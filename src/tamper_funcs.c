@@ -43,6 +43,9 @@ tamper_state_e Tamper_GetStatus (parameters_typedef * conf)
 
     // check vbat second
     // -- vbat is good by default
+    if ((AdcGetVBat() < 2048) &&
+        (Tamper_Pin()))
+        return TAMPER_ENABLE_LOW_BAT;
     
     // check tamper_pin
     if (Tamper_Pin())
@@ -56,7 +59,7 @@ tamper_state_e Tamper_GetStatus (parameters_typedef * conf)
 tamper_state_e Tamper_SetStatus (parameters_typedef * conf, tamper_state_e new_state)
 {
     // check validity
-    if ((new_state != TAMPER_ENABLE) ||
+    if ((new_state != TAMPER_ENABLE) &&
         (new_state != TAMPER_DISABLE))
         return TAMPER_ERROR;
     
