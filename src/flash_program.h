@@ -1,52 +1,62 @@
-#ifndef FLASH_PROGRAM_H_
-#define FLASH_PROGRAM_H_
-
-#include "GTK_Estructura.h"
-#include "stm32f10x.h"
-
-#define SIZE_SLOT	82
-#define SLOT_BASE_ADDR (uint32_t)0x08060000
-#define SLOT1_START_ADDR 	(SLOT_BASE_ADDR) //84 bytes.
-#define SLOT2_START_ADDR 	(SLOT_BASE_ADDR + 1 * SIZE_SLOT) //84 bytes.
-#define SLOT3_START_ADDR 	(SLOT_BASE_ADDR + 2 * SIZE_SLOT) //84 bytes.
-#define SLOT4_START_ADDR 	(SLOT_BASE_ADDR + 3 * SIZE_SLOT) //84 bytes.
-#define SLOT5_START_ADDR 	(SLOT_BASE_ADDR + 4 * SIZE_SLOT) //84 bytes.
-#define SLOT6_START_ADDR 	(SLOT_BASE_ADDR + 5 * SIZE_SLOT) //84 bytes.
-#define SLOT7_START_ADDR 	(SLOT_BASE_ADDR + 6 * SIZE_SLOT) //84 bytes.
-#define SLOT8_START_ADDR 	(SLOT_BASE_ADDR + 7 * SIZE_SLOT) //84 bytes.
-#define SLOT9_START_ADDR 	(SLOT_BASE_ADDR + 8 * SIZE_SLOT) //84 bytes.
-#define SLOT10_START_ADDR 	(SLOT_BASE_ADDR + 9 * SIZE_SLOT) //84 bytes.
-#define SLOT11_START_ADDR 	(SLOT_BASE_ADDR + 10 * SIZE_SLOT) //84 bytes.
-#define SLOT12_START_ADDR 	(SLOT_BASE_ADDR + 11 * SIZE_SLOT) //84 bytes.
-#define SLOT13_START_ADDR 	(SLOT_BASE_ADDR + 12 * SIZE_SLOT) //84 bytes.
-#define SLOT14_START_ADDR 	(SLOT_BASE_ADDR + 13 * SIZE_SLOT) //84 bytes.
-#define SLOT15_START_ADDR 	(SLOT_BASE_ADDR + 14 * SIZE_SLOT) //84 bytes.
-#define SLOT16_START_ADDR 	(SLOT_BASE_ADDR + 15 * SIZE_SLOT) //84 bytes.
+//------------------------------------------------------
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ## @CPU:    STM32F103
+// ##
+// #### FLASH_PROGRAM.H ################################
+//------------------------------------------------------
+#ifndef __FLASH_PROGRAM_H_
+#define __FLASH_PROGRAM_H_
 
 
-/*#define SLOT1_START_ADDR 	0x8060000
-#define SLOT2_START_ADDR 	0x8060060
-#define SLOT3_START_ADDR 	0x80600C0
-#define SLOT4_START_ADDR 	0x8060120
-#define SLOT5_START_ADDR 	0x8060180
-#define SLOT6_START_ADDR 	0x80601E0
-#define SLOT7_START_ADDR 	0x8060240
-#define SLOT8_START_ADDR 	0x80602A0
-#define SLOT9_START_ADDR 	0x8060300
-#define SLOT10_START_ADDR 	0x8060360
-#define SLOT11_START_ADDR 	0x80603C0
-#define SLOT12_START_ADDR 	0x8060420
-#define SLOT13_START_ADDR 	0x8060480
-#define SLOT14_START_ADDR 	0x80604E0
-#define SLOT15_START_ADDR 	0x8060540
-#define SLOT16_START_ADDR 	0x80605A0
-*/
+//-- Configurations Defines --------------------
+//--- Device ---------------
+#define HIGH_DENSITY    //STM32F103RC
+// #define MEDIUM_DENSITY    //STM32F103R8
 
-char FLASH_Program(session_typedef * pslot, unsigned char slot);
-void saveData(char * pData, char fin, uint32_t addInicial);
-void saveData2(unsigned int * pMemory, session_typedef * pslot, unsigned int start_addr, unsigned char slot);
-void checkData(char * pData, char fin, uint32_t addInicial);
-void checkData2(unsigned int * pData, uint32_t addInicial);
-unsigned char readDataFromFlash(session_typedef * pslot, unsigned char slot);
+//--- Backup Page ----------
+#define FLASH_PAGE_FOR_BKP    PAGE126    // this page saves the configuration
 
+
+//-- Internal Defines --------------------
+typedef enum {FAILED = 0, PASSED = !FAILED} TestStatus;
+
+// High Density from 256KB to 512KB, page size 2KB
+// Medium Density from 64KB to 128KB, page size 1KB
+#ifdef HIGH_DENSITY
+#define FLASH_TOTAL_PAGES    128
+#define FLASH_PAGE_SIZE    2048
+#endif    //HIGH_DENSITY
+
+
+#ifdef MEDIUM_DENSITY
+#define FLASH_TOTAL_PAGES    64
+#define FLASH_PAGE_SIZE    1024
+#endif    //MEDIUM_DENSITY
+
+// Most used Pages for Backup
+#define PAGE62    (0x08000000 + FLASH_PAGE_SIZE * 62)
+#define PAGE63    (0x08000000 + FLASH_PAGE_SIZE * 63)
+#define PAGE126    (0x08000000 + FLASH_PAGE_SIZE * 126)
+#define PAGE127    (0x08000000 + FLASH_PAGE_SIZE * 127)
+
+
+//-- Sanity Checks -----------------------
+#if (defined HIGH_DENSITY) && (defined MEDIUM_DENSITY)
+#error "Select High or Medium Density Device"
 #endif
+
+#if (FLASH_PAGE_FOR_BKP > (0x08000000 + FLASH_PAGE_SIZE * (FLASH_TOTAL_PAGES - 1)))
+#error "Flash Page selected too high"
+#endif
+
+#if (FLASH_PAGE_FOR_BKP <= (0x08000000))
+#error "Flash Page selected it's wrong"
+#endif
+
+
+// Module Exported Functions ---------------------------------------------------
+unsigned char Flash_WriteConfigurations (void);
+
+#endif    /* __FLASH_PROGRAM_H_ */

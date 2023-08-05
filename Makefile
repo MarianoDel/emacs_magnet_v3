@@ -369,5 +369,17 @@ tests_comms_rasp:
 	gcc src/tests_comms_rasp.c comms_from_rasp.o treatment.o utils.o tests_ok.o tests_mock_usart.o -I $(INCDIR) $(DDEFS)
 	./a.out
 
+tests_tamper_funcs:
+	# compile first modules in this test
+	# first module objects to test
+	gcc -c --coverage src/tamper_funcs.c -I. $(INCDIR) $(DDEFS)
+	# second auxiliary helper modules
+	gcc -c src/tests_ok.c -I $(INCDIR)
+	# link everything
+	gcc --coverage src/tests_tamper_funcs.c tamper_funcs.o tests_ok.o -I $(INCDIR) $(DDEFS)
+	./a.out
+	# process coverage
+	gcov tamper_funcs.c -m
+
 
 # *** EOF ***

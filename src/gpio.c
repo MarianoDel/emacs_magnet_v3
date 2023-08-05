@@ -176,11 +176,11 @@ void GpioInit (void)
     //PB11 alternative Rx Usart3
     //PB12 NC
     //PB13 PROT_CH2 input
-    //PB14 OUT4
+    //PB14 check tamper_funcs module
     //PB15 PROT_CH1 input
     temp = GPIOB->CRH;
-    temp &= 0x000F00F0;
-    temp |= 0x42408B0A;
+    temp &= 0x0F0F00F0;
+    temp |= 0x40408B0A;
     GPIOB->CRH = temp;    
     
     //--- GPIOC Low Side -------------------//

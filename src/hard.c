@@ -250,4 +250,46 @@ void Led1_Off (void)
 }
 
 
+unsigned char Tamper_Pin (void)
+{
+    return TAMPER_PIN;
+}
+
+
+void Pb14_To_Output (void)
+{
+    unsigned long temp;
+
+    temp = GPIOB->CRH;
+    temp &= 0xF0FFFFFF;
+    temp |= 0x02000000;
+    GPIOB->CRH = temp;
+    
+}
+
+
+void Pb14_To_Input (void)
+{
+    unsigned long temp;
+
+    temp = GPIOB->CRH;
+    temp &= 0xF0FFFFFF;
+    temp |= 0x04000000;
+    GPIOB->CRH = temp;
+    
+}
+
+
+void Pb14_Off (void)
+{
+    PB14_OFF;
+}
+
+
+void Pb14_On (void)
+{
+    PB14_ON;
+}
+
+
 //--- end of file ---//

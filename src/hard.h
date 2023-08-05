@@ -93,6 +93,60 @@ enum bool
 
 //--- Configuracion de leds ---//
 #ifdef HARDWARE_VERSION_3_0
+
+// PA defines ----
+// PA0 PA1 Alternative TIM5_CH1 TIM5_CH2
+
+// PA2 PA3 Alternative Usart2 Tx Rx
+
+// PA4 Input
+#define PROT_CH4    ((GPIOA->IDR & 0x0010) != 0)
+
+// PA5 Analog Channel 5 (IS_CH4)
+// PA6 Analog Channel 6 (IS_CH3)
+
+// PA7 NC
+
+// PA8 
+#define BUZZER    ((GPIOA->ODR & 0x0100) != 0)
+#define BUZZER_ON    (GPIOA->BSRR = 0x00000100)
+#define BUZZER_OFF    (GPIOA->BSRR = 0x01000000)
+
+// PA9 PA10 Alternative Usart1 Tx Rx
+
+// PA11 Alternative TIM1_CH4 for SYNC_IN
+
+// PA12 PA13 PA14 PA15 NC
+
+// PB defines ----
+// PB0 Analog Channel 8 (IS_CH2)
+// PB1 Analog Channel 9 (IS_CH1)
+
+// PB2 Input
+#define PROT_CH3    ((GPIOB->IDR & 0x0004) != 0)
+
+// PB3 PB4 PB5 PB6 NC
+
+// PB7 PB8 Alternative TIM4_CH2 TIM4_CH3
+
+// PB9 NC
+
+// PB10 PB11 Alternative Usart3 Tx Rx
+
+// PB12 NC
+
+// PB13 Input
+#define PROT_CH2    ((GPIOB->IDR & 0x2000) != 0)
+
+// PB14 if output, check tamper_funcs module
+#define PB14    ((GPIOB->ODR & 0x4000) != 0)
+#define PB14_ON    (GPIOB->BSRR = 0x00004000)
+#define PB14_OFF    (GPIOB->BSRR = 0x40000000)
+
+// PB15 Input
+#define PROT_CH1    ((GPIOB->IDR & 0x8000) != 0)
+
+// PC defines ----
 // PC0 
 #define LED1    ((GPIOC->ODR & 0x0001) != 0)
 #define LED1_ON    (GPIOC->BSRR = 0x00000001)
@@ -106,60 +160,17 @@ enum bool
 // PC2 NC
 
 // PC3 Analog Channel 13 (Sense_12V)
-
-// PA0 PA1 Alternative TIM5_CH1 TIM5_CH2
-
-// PA2 PA3 Alternative Usart2 Tx Rx
-
-// PA4 Input
-#define PROT_CH4    ((GPIOA->IDR & 0x0010) != 0)
-
-// PA5 Analog Channel 5 (IS_CH4)
-// PA6 Analog Channel 6 (IS_CH3)
-
-// PA7 NC
-
 // PC4 Analog Channel 14 (Sense_200V)
 // PC5 Analog Channel 15 (Sense_15V)
 
-// PB0 Analog Channel 8 (IS_CH2)
-// PB1 Analog Channel 9 (IS_CH1)
-
-// PB2 Input
-#define PROT_CH3    ((GPIOB->IDR & 0x0004) != 0)
-
-// PB10 PB11 Alternative Usart3 Tx Rx
-
-// PB12 NC
-
-// PB13 Input
-#define PROT_CH2    ((GPIOB->IDR & 0x2000) != 0)
-
-// PB14 NC
-
-// PB15 Input
-#define PROT_CH1    ((GPIOB->IDR & 0x8000) != 0)
-
 // PC6 PC7 PC8 PC9 Alternative TIM8_CH1 TIM8_CH2 TIM8_CH3 TIM8_CH4
-
-// PA8 
-#define BUZZER    ((GPIOA->ODR & 0x0100) != 0)
-#define BUZZER_ON    (GPIOA->BSRR = 0x00000100)
-#define BUZZER_OFF    (GPIOA->BSRR = 0x01000000)
-
-// PA9 PA10 Alternative Usart1 Tx Rx
-
-// PA11 PA12 PA13 PA14 PA15 NC
 
 // PC10 PC11 Alternative Uart4 Tx Rx
 
 // PC12 PD2 Alternative Uart5 Tx Rx
 
-// PB3 PB4 PB5 PB6 NC
-
-// PB7 PB8 Alternative TIM4_CH2 TIM4_CH3
-
-// PB9 NC
+// PC13 Input
+#define TAMPER_PIN    ((GPIOC->IDR & 0x2000) != 0)
 
 #endif //HARDWARE_VERSION_3_0
 
@@ -239,5 +250,11 @@ void HARD_L1_OFF (void);
 unsigned char Led1_Is_On (void);
 void Led1_On (void);
 void Led1_Off (void);
+
+void Pb14_To_Output (void);
+void Pb14_Off (void);
+void Pb14_On (void);
+void Pb14_To_Input (void);
+unsigned char Tamper_Pin (void);
 
 #endif

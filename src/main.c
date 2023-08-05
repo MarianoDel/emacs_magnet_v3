@@ -28,6 +28,9 @@
 
 #include "antennas.h"
 #include "comms_channels.h"
+#include "parameters.h"
+#include "tamper_funcs.h"
+#include "flash_program.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -61,6 +64,9 @@ volatile unsigned short adc_ch [ADC_CHANNEL_QUANTITY];
 // Globals ---------------------------------------------------------------------
 volatile unsigned short timer_sync_xxx_ms = 0;
 volatile unsigned short timer_out4 = 0;
+
+parameters_typedef * pmem = (parameters_typedef *) (unsigned int *) FLASH_PAGE_FOR_BKP;	//en flash
+parameters_typedef mem_conf;
 
 
 // Module Private Functions ----------------------------------------------------
@@ -131,6 +137,20 @@ int main (void)
 #error	"No Soft Version defined in hard.h file"
 #endif
     //-- end of Welcome Messages ------------
+
+    //-- Saved Config --------------------------
+    // get saved config or create one for default
+    if (pmem->tamper_config != 0xff)
+    {
+        //memory with valid data
+        memcpy(&mem_conf, pmem, sizeof(parameters_typedef));
+    }
+    else
+    {
+        // Default mem config
+        mem_conf.tamper_config = TAMPER_DISABLE;
+    }
+    //-- end of Saved Config --------------------------
 
     ChangeLed(LED_TREATMENT_STANDBY);
 

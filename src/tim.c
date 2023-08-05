@@ -56,6 +56,7 @@ extern volatile unsigned short wait_ms_var;
 
 // Globals ---------------------------------------------------------------------
 volatile unsigned char timer1_seq_ready = 0;
+volatile unsigned short timer1_seq_cnt = 0;
 
 
 // Module Functions ------------------------------------------------------------
@@ -65,6 +66,7 @@ void Wait_ms (unsigned short a)
     while (wait_ms_var);
 }
 
+
 inline void UpdateTIMSync (unsigned short a)
 {
     //primero cargo TIM1
@@ -73,15 +75,18 @@ inline void UpdateTIMSync (unsigned short a)
                                         //lo cargo en el timer init
 }
 
+
 inline void UpdateTIM_MosfetA (unsigned short a)
 {
     TIM3->ARR = DUTY_50_PERCENT + a;    
 }
 
+
 inline void UpdateTIM_MosfetB (unsigned short a)
 {
     TIM1->CCR1 = a;
 }
+
 
 inline void EnablePreload_MosfetA (void)
 {
@@ -89,46 +94,55 @@ inline void EnablePreload_MosfetA (void)
     TIM3->CR1 |= TIM_CR1_ARPE;
 }
 
+
 inline void DisablePreload_MosfetA (void)
 {
     // TIM3->CCMR1 &= ~TIM_CCMR1_OC1PE;
     TIM3->CR1 &= ~TIM_CR1_ARPE;    
 }
 
+
 inline void EnablePreload_MosfetB (void)
 {
     TIM1->CCMR1 |= TIM_CCMR1_OC1PE;
 }
+
 
 inline void DisablePreload_MosfetB (void)
 {
     TIM1->CCMR1 &= ~TIM_CCMR1_OC1PE;
 }
 
+
 void Update_TIM1_CH1 (unsigned short a)
 {
     TIM1->CCR1 = a;
 }
+
 
 void Update_TIM1_CH2 (unsigned short a)
 {
     TIM1->CCR2 = a;
 }
 
+
 void Update_TIM3_CH1 (unsigned short a)
 {
     TIM3->CCR1 = a;
 }
+
 
 void Update_TIM3_CH2 (unsigned short a)
 {
     TIM3->CCR2 = a;
 }
 
+
 void Update_TIM3_CH3 (unsigned short a)
 {
     TIM3->CCR3 = a;
 }
+
 
 void Update_TIM3_CH4 (unsigned short a)
 {
@@ -141,6 +155,7 @@ void Update_TIM4_CH1 (unsigned short a)
     TIM4->CCR1 = a;
 }
 
+
 void TIM_1_OPM_us (unsigned short a)
 {
     TIM1->CCR1 = a;
@@ -152,22 +167,22 @@ void TIM_1_OPM_us (unsigned short a)
 // @param  None
 // @retval None
 //------------------------------------------//
-void TIM1_Init (void)    //for pwm
+void TIM1_Init (void)
 {
     if (!RCC_TIM1_CLK)
         RCC_TIM1_CLKEN;
 
-    //Configuracion del timer.
+    // Base timer config
     TIM1->CR1 = 0x00;        //clk int / 1;
     TIM1->CR2 = 0x00;
     TIM1->SMCR = 0x0000;
 
     // TIM1->CCMR1 = 0x0060;    //CH1 output PWM mode 2 (channel active TIM1->CNT < TIM1->CCR1)
     TIM1->CCMR1 = 0x0000; 
-    TIM1->CCMR2 = 0x0000;
-    TIM1->CCER = 0x0000;
+    TIM1->CCMR2 = 0x2100;    // CH4 input on TI4 filter fclk / 4
+    // TIM1->CCER = 0x0000;
     TIM1->BDTR = 0x0000;
-    // TIM1->CCER |= TIM_CCER_CC1E;        
+    TIM1->CCER |= TIM_CCER_CC4P | TIM_CCER_CC4E;    // CH4 input inverted
     // TIM1->BDTR |= TIM_BDTR_MOE;
 
     TIM1->ARR = DUTY_100_PERCENT - 1;    // 1000 pts -> 7.2KHz
@@ -175,26 +190,46 @@ void TIM1_Init (void)    //for pwm
     
     TIM1->CNT = 0;
 
-    // Enable timer ver UDIS    
-    TIM1->DIER |= TIM_DIER_UIE;
+    // Set ints and Enable timer
+    TIM1->DIER |= TIM_DIER_UIE | TIM_DIER_CC4IE;
     TIM1->CR1 |= TIM_CR1_CEN;
 
-    //Habilito NVIC
-    //Interrupcion timer1.
+    // NVIC 
+    // Timer1 Update event Int
     NVIC_EnableIRQ(TIM1_UP_IRQn);
     NVIC_SetPriority(TIM1_UP_IRQn, 4);
 
+    // Timer1 CH4 input capture
+    NVIC_EnableIRQ(TIM1_CC_IRQn);
+    NVIC_SetPriority(TIM1_CC_IRQn, 8);
+    
 }
 
 
 void TIM1_UP_IRQHandler (void)
 {
-    // low int flag
+    // reset int flag
     if (TIM1->SR & TIM_SR_UIF)
-        TIM1->SR = 0x00;
+        TIM1->SR &= ~TIM_SR_UIF;
 
     //Code Handler
     timer1_seq_ready = 1;
+    timer1_seq_cnt++;
+    
+}
+
+
+void TIM1_CC_IRQHandler (void)
+{
+    // reset int flag
+    if (TIM1->SR & TIM_SR_CC4IF)
+        TIM1->SR &= ~TIM_SR_CC4IF;
+
+    //Code Handler
+    if (LED1)
+        LED1_OFF;
+    else
+        LED1_ON;
     
 }
 
