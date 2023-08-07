@@ -42,10 +42,10 @@ tamper_state_e Tamper_GetStatus (parameters_typedef * conf)
         return TAMPER_DISABLE;
 
     // check vbat second
-    // -- vbat is good by default
-    if ((AdcGetVBat() < 2048) &&
-        (Tamper_Pin()))
-        return TAMPER_ENABLE_LOW_BAT;
+    // -- vbat is good by default -- no vbat sensor on 103RC
+    // if ((AdcGetVBat() < 2048) &&
+    //     (Tamper_Pin()))
+    //     return TAMPER_ENABLE_LOW_BAT;
     
     // check tamper_pin
     if (Tamper_Pin())
@@ -58,6 +58,8 @@ tamper_state_e Tamper_GetStatus (parameters_typedef * conf)
 
 tamper_state_e Tamper_SetStatus (parameters_typedef * conf, tamper_state_e new_state)
 {
+    tamper_state_e t = TAMPER_ERROR;
+    
     // check validity
     if ((new_state != TAMPER_ENABLE) &&
         (new_state != TAMPER_DISABLE))
@@ -70,13 +72,13 @@ tamper_state_e Tamper_SetStatus (parameters_typedef * conf, tamper_state_e new_s
         conf->tamper_config = new_state;
         // Flash_WriteConfigurations ();
 
-        if (Flash_WriteConfigurations () != PASSED)
+        if (Flash_WriteConfigurations () != 0)
             return TAMPER_ERROR;
         
     }
     
     if (new_state == TAMPER_DISABLE)
-        return TAMPER_DISABLE;
+        t = TAMPER_DISABLE;
 
     if (new_state == TAMPER_ENABLE)
     {
@@ -87,10 +89,12 @@ tamper_state_e Tamper_SetStatus (parameters_typedef * conf, tamper_state_e new_s
         Pb14_To_Input();
 
         if (!Tamper_Pin())
-            return TAMPER_ENABLE_NO_TAMPER;
+            t = TAMPER_ENABLE_NO_TAMPER;
         else
-            return TAMPER_ENABLE_TAMPERED;
+            t = TAMPER_ENABLE_TAMPERED;
     }
+
+    return t;
 }
 
 

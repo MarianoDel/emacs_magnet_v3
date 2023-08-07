@@ -21,6 +21,9 @@
 #include "utils.h"
 #include "antennas.h"
 
+#include "parameters.h"
+#include "tamper_funcs.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +35,7 @@
 // Externals -------------------------------------------------------------------
 extern unsigned short comms_messages_rpi;
 extern volatile unsigned short adc_ch [];
-
+extern parameters_typedef mem_conf;
 
 
 // Globals ---------------------------------------------------------------------
@@ -312,6 +315,31 @@ static void Raspberry_Messages (char * msg)
         
         RpiSend(to_send);
 #endif
+    }
+
+    // -- Tamper settings ----
+    else if (!strncmp((const char *)msg, "tamper get status", (sizeof("tamper get status") - 1)))
+    {
+        tamper_state_e t;
+        t = Tamper_GetStatus(&mem_conf);
+        RpiSend(Tamper_CodeToString(t));
+        RpiSend("\r\n");
+    }
+
+    else if (!strncmp((const char *)msg, "tamper disable", (sizeof("tamper disable") - 1)))
+    {
+        tamper_state_e t;
+        t = Tamper_SetStatus(&mem_conf, TAMPER_DISABLE);
+        RpiSend(Tamper_CodeToString(t));
+        RpiSend("\r\n");        
+    }
+
+    else if (!strncmp((const char *)msg, "tamper enable", (sizeof("tamper enable") - 1)))
+    {
+        tamper_state_e t;
+        t = Tamper_SetStatus(&mem_conf, TAMPER_ENABLE);
+        RpiSend(Tamper_CodeToString(t));
+        RpiSend("\r\n");        
     }
     
     //-- end of new messages

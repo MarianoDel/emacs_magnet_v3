@@ -17,9 +17,9 @@ typedef struct parameters {
     //-- Tamper config backup ----
     unsigned char tamper_config;    // 1
 
-    unsigned char vdummy [7];
+    unsigned char vdummy [31];
 
-    //-- End of Struct check alignment ---- //8
+    //-- End of Struct check alignment ---- //32
 
 } parameters_typedef;
 

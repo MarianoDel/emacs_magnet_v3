@@ -133,9 +133,17 @@ resp_e ParseCommsWithChannels (char * str, unsigned char channel)
     //ant0,012.27,087.90,001.80,065.00\r\n.
     else if (!strncmp(str, (const char *)"ant", (sizeof("ant") - 1)))
     {
+        // check if antenna is new and process string, or tell the interface the error
+        if (*(str + sizeof("ant0,012.27,087.90,001.80,065.") - 1) != '5')
+        {
+            sprintf(dummy_str, "old antenna ch%d\r\n", channel + 1);
+            RpiSend(dummy_str);
+            return resp_error;
+        }
+        
         sprintf(dummy_str, "new antenna ch%d\r\n", channel + 1);
         RpiSend(dummy_str);
-        
+
         if ((*(str + 4) == ',') &&
             (*(str + 11) == ',') &&
             (*(str + 18) == ',') &&

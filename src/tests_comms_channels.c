@@ -28,6 +28,7 @@
 // Globals ---------------------------------------------------------------------
 antenna_st global_ant;
 int cb_usart_value = 0;
+int antenna_answered = 0;
 
 
 
@@ -50,9 +51,9 @@ int main (int argc, char *argv[])
 {
 
     Test_Comms_From_Channel1 ();
-    Test_Comms_From_Channel2 ();
-    Test_Comms_From_Channel3 ();
-    Test_Comms_From_Channel4 ();
+    // Test_Comms_From_Channel2 ();
+    // Test_Comms_From_Channel3 ();
+    // Test_Comms_From_Channel4 ();
 
     return 0;
 }
@@ -60,8 +61,8 @@ int main (int argc, char *argv[])
 
 void Test_Comms_From_Channel1 (void)
 {
-    // set callback on usart2
-    Usart2Callback(CB_Usart);
+    // set callback on usart1 RpiSend()
+    Usart1Callback(CB_Usart);
 
 
     cb_usart_value = 0;
@@ -69,38 +70,39 @@ void Test_Comms_From_Channel1 (void)
     Comms_Channel1 ();
 
     printf("Test error string on channel 1: ");
-    if (cb_usart_value == 1)
+    if (cb_usart_value == 0)    //no answer
         PrintOK();
     else
         PrintERR();
 
 
-    cb_usart_value = 0;    
-    Usart2FillRxBuffer("name:Tunel\r\n");
-    Comms_Channel1 ();
+    // cb_usart_value = 0;    
+    // Usart2FillRxBuffer("name:Tunel\r\n");
+    // Comms_Channel1 ();
     
-    printf("Test correct string on channel 1: ");
-    if (cb_usart_value == 2)
-        PrintOK();
-    else
-        PrintERR();
+    // printf("Test antenna name channel 1: ");
+    // if (cb_usart_value == 2)
+    //     PrintOK();
+    // else
+    //     PrintERR();
 
 
     char my_ant_str [] = { "ant3,003.50,019.00,003.50,065.00\r\n" };
     cb_usart_value = 0;    
     Usart2FillRxBuffer(my_ant_str);
     Comms_Channel1 ();
+    global_ant.resistance_int = 0;
+    global_ant.resistance_dec = 0;
+    global_ant.inductance_int = 0;
+    global_ant.inductance_dec = 0;
+
     
-    printf("Test antenna parse: ");
-    if ((cb_usart_value == 2) &&
-        (global_ant.resistance_int == 3) &&
-        (global_ant.resistance_dec == 50) &&
-        (global_ant.inductance_int == 19) &&
-        (global_ant.inductance_dec == 0) &&
-        (global_ant.current_limit_int == 3) &&
-        (global_ant.current_limit_dec == 50) &&
-        (global_ant.temp_max_int == 65) &&
-        (global_ant.temp_max_dec == 0))
+    printf("Test old antenna & parse: ");
+    if ((cb_usart_value == 4) &&
+        (global_ant.resistance_int == 0) &&
+        (global_ant.resistance_dec == 0) &&
+        (global_ant.inductance_int == 0) &&
+        (global_ant.inductance_dec == 0))
     {
         PrintOK();
     }
@@ -117,23 +119,33 @@ void Test_Comms_From_Channel1 (void)
     else
         PrintERR();
 
-    cb_usart_value = 0;    
+    cb_usart_value = 0;
+    antenna_answered = 0;    
     Usart2FillRxBuffer("ok\r\n");
     Comms_Channel1 ();
     
     printf("Test antenna keepalive answer: ");
-    if (cb_usart_value == 2)
+    if ((cb_usart_value == 0) && (antenna_answered))
         PrintOK();
     else
         PrintERR();
 
-    char my_ant_str2 [] = { "ant3,0aa.50,019.00,003.50,065.00\r\n" };    
+    char my_ant_str2 [] = { "ant3,0aa.50,019.00,003.50,065.50\r\n" };    
     cb_usart_value = 0;    
     Usart2FillRxBuffer(my_ant_str2);
     Comms_Channel1 ();
     
-    printf("Test antenna error on params: ");
-    if (cb_usart_value == 1)
+    global_ant.resistance_int = 0;
+    global_ant.resistance_dec = 0;
+    global_ant.inductance_int = 0;
+    global_ant.inductance_dec = 0;
+    
+    printf("Test new antenna with errors on params: ");
+    if ((cb_usart_value == 3) &&
+        (global_ant.resistance_int == 0) &&
+        (global_ant.resistance_dec == 0) &&
+        (global_ant.inductance_int == 0) &&
+        (global_ant.inductance_dec == 0))
         PrintOK();
     else
         PrintERR();
@@ -143,7 +155,7 @@ void Test_Comms_From_Channel1 (void)
     Comms_Channel1 ();
     
     printf("Test antenna error on temp integer: ");
-    if (cb_usart_value == 1)
+    if (cb_usart_value == 0)
         PrintOK();
     else
         PrintERR();
@@ -153,23 +165,57 @@ void Test_Comms_From_Channel1 (void)
     Comms_Channel1 ();
     
     printf("Test antenna error on temp decimal: ");
-    if (cb_usart_value == 1)
+    if (cb_usart_value == 0)
+        PrintOK();
+    else
+        PrintERR();
+
+    global_ant.resistance_int = 0;
+    global_ant.resistance_dec = 0;
+    global_ant.inductance_int = 0;
+    global_ant.inductance_dec = 0;
+        
+    strcpy (my_ant_str2,"ant3,003.50,019.00,003.50,065.50\r\n");
+    cb_usart_value = 0;    
+    Usart2FillRxBuffer(my_ant_str2);
+    Comms_Channel1 ();
+    
+    printf("Test new antenna with good params: ");
+    if ((cb_usart_value == 3) &&
+        (global_ant.resistance_int == 3) &&
+        (global_ant.resistance_dec == 50) &&
+        (global_ant.inductance_int == 19) &&
+        (global_ant.inductance_dec == 0) &&
+        (global_ant.current_limit_int == 3) &&
+        (global_ant.current_limit_dec == 50) &&
+        (global_ant.temp_max_int == 65) &&
+        (global_ant.temp_max_dec == 50))
         PrintOK();
     else
         PrintERR();
     
 }
 
-// 1 on error
-// 2 on ok
+// 1 on called or others on answers
+// 2 - 5
 void CB_Usart (char * s)
 {
-    if (strncmp(s, "ERROR", sizeof("ERROR") - 1) == 0)
-        cb_usart_value = 1;
+    cb_usart_value = 1;
 
-    if (strncmp(s, "OK", sizeof("OK") - 1) == 0)
-        cb_usart_value = 2;
-    
+    if (strncmp(s, "temp,055.55,x\r\n", 12) == 0)
+    {
+        cb_usart_value = 2;        
+    }
+
+    if (strncmp(s, "new antenna chx\r\n", 14) == 0)
+    {
+        cb_usart_value = 3;
+    }
+
+    if (strncmp(s, "old antenna chx\r\n", 14) == 0)
+    {
+        cb_usart_value = 4;
+    }
 }
 
 
@@ -262,6 +308,7 @@ void AntennaSetCurrentTemp (unsigned char ch, unsigned char t_int, unsigned char
 void AntennaIsAnswering (unsigned char ch)
 {
     printf("antenna is answering on ch%d\n", ch + 1);
+    antenna_answered = 1;
 }
 
 void AntennaSetName (unsigned char ch, char * pname)

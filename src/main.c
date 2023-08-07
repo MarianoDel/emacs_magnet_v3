@@ -152,6 +152,15 @@ int main (void)
     }
     //-- end of Saved Config --------------------------
 
+    //-- Check Tamper Status --------------------------
+    Usart1Send("Tamper Status: ");
+    tamper_state_e t;
+    t = Tamper_GetStatus(&mem_conf);
+    Usart1Send(Tamper_CodeToString(t));
+    Usart1Send("\r\n");
+    Wait_ms(100);
+    //-- end of Check Tamper Status -------------------
+
     ChangeLed(LED_TREATMENT_STANDBY);
 
     //-- Main Loop --------------------------

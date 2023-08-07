@@ -83,6 +83,9 @@ SRC += ./src/antennas.c
 SRC += ./src/signals.c
 SRC += ./src/errors.c
 
+SRC += ./src/tamper_funcs.c
+SRC += ./src/flash_program.c
+
 
 ## Core Support
 SRC += ./startup_src/syscalls.c
