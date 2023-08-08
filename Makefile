@@ -71,7 +71,6 @@ SRC += ./src/tim.c
 SRC += ./src/dma.c
 SRC += ./src/hard.c
 SRC += ./src/dsp.c
-# SRC += ./src/flash_program.c
 
 SRC += ./src/comms_from_rasp.c
 SRC += ./src/treatment.c
@@ -204,7 +203,8 @@ clean:
 
 tests:
 	# simple functions tests, copy functions to test into main
-	gcc src/tests.c
+	gcc -c src/tests_ok.c
+	gcc src/tests.c tests_ok.o
 	./a.out
 
 

@@ -52,19 +52,23 @@ void Wait_ms (unsigned short);
 // void TIM2_Init(void);
 void TIM1_Init (void);
 
+unsigned char TIM1_SyncGet (void);
+void TIM1_SyncReset (void);
+unsigned char TIM1_SyncVerify (unsigned char * freq_int, unsigned char * freq_dec);
+
+
 void TIM3_Init (void);
 
-void UpdateTIMSync (unsigned short);
-void UpdateTIM_MosfetA (unsigned short);
-void UpdateTIM_MosfetB (unsigned short);
-void EnablePreload_MosfetA (void);
-void DisablePreload_MosfetA (void);
-void EnablePreload_MosfetB (void);
-void DisablePreload_MosfetB (void);
-void TIM_1_OPM_us (unsigned short);
+// void UpdateTIMSync (unsigned short);
+// void UpdateTIM_MosfetA (unsigned short);
+// void UpdateTIM_MosfetB (unsigned short);
+// void EnablePreload_MosfetA (void);
+// void DisablePreload_MosfetA (void);
+// void EnablePreload_MosfetB (void);
+// void DisablePreload_MosfetB (void);
 
-void Update_TIM1_CH1 (unsigned short);
-void Update_TIM1_CH2 (unsigned short);
+// void Update_TIM1_CH1 (unsigned short);
+// void Update_TIM1_CH2 (unsigned short);
 
 void Update_TIM3_CH2 (unsigned short);
 void Update_TIM3_CH3 (unsigned short);
@@ -73,6 +77,7 @@ void Update_TIM3_CH4 (unsigned short);
 void TIM4_Init (void);
 void TIM4_Update_CH2 (unsigned short a);
 void TIM4_Update_CH3 (unsigned short a);
+
 
 #ifdef STM32F10X_HD
 // Timer 5 Functions

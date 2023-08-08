@@ -58,6 +58,12 @@ extern volatile unsigned short wait_ms_var;
 volatile unsigned char timer1_seq_ready = 0;
 volatile unsigned short timer1_seq_cnt = 0;
 
+volatile unsigned short sync_last_capt = 0;
+volatile unsigned short sync_capt = 0;
+volatile unsigned short sync_cnt = 0;
+volatile unsigned char sync_int = 0;
+volatile unsigned char sync_verify = 0;
+
 
 // Module Functions ------------------------------------------------------------
 void Wait_ms (unsigned short a)
@@ -156,12 +162,6 @@ void Update_TIM4_CH1 (unsigned short a)
 }
 
 
-void TIM_1_OPM_us (unsigned short a)
-{
-    TIM1->CCR1 = a;
-    EnableTimer1;
-}
-    
 //-------------------------------------------//
 // @brief  TIM configure.
 // @param  None
@@ -214,7 +214,8 @@ void TIM1_UP_IRQHandler (void)
 
     //Code Handler
     timer1_seq_ready = 1;
-    timer1_seq_cnt++;
+    if (timer1_seq_cnt < 65000)
+        timer1_seq_cnt++;
     
 }
 
@@ -226,6 +227,13 @@ void TIM1_CC_IRQHandler (void)
         TIM1->SR &= ~TIM_SR_CC4IF;
 
     //Code Handler
+    sync_last_capt = sync_capt;
+    sync_capt = TIM1->CCR4;
+    sync_cnt = timer1_seq_cnt;
+    timer1_seq_cnt = 0;
+    sync_int = 1;
+    sync_verify = 1;
+
     if (LED1)
         LED1_OFF;
     else
@@ -233,6 +241,47 @@ void TIM1_CC_IRQHandler (void)
     
 }
 
+
+unsigned char TIM1_SyncGet (void)
+{
+    return sync_int;
+}
+
+
+void TIM1_SyncReset (void)
+{
+    sync_int = 0;
+}
+
+
+unsigned char TIM1_SyncVerify (unsigned char * freq_int, unsigned char * freq_dec)
+{
+    if ((!sync_verify) ||
+        (timer1_seq_cnt == 65000))
+        return 0;
+
+    unsigned int calc_int = 0;
+    unsigned int calc_dec = 0;
+    unsigned int calc_div = 0;
+
+    calc_div = 1000 * sync_cnt + sync_capt - sync_last_capt;
+
+    if (calc_div == 0)
+        return 0;
+
+    calc_dec = 7200 * 1000 * 100;
+    calc_dec = calc_dec / calc_div;
+    
+    calc_int = 7200 * 1000;
+    calc_int = calc_int / calc_div;
+
+    calc_dec = calc_dec - calc_int * 100;
+
+    *freq_int = (unsigned char) calc_int;
+    *freq_dec = (unsigned char) calc_dec;
+
+    return 1;
+}
 
 // void TIM_1_Init (void)    //for one pulse mode
 // {

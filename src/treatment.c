@@ -164,6 +164,21 @@ void Treatment_Manager (void)
             // show channels in treatment
             strcat (buff, "\r\n");
             RPI_Send(buff);
+
+            // check for sync
+            unsigned char f_int = 0;
+            unsigned char f_dec = 0;
+            if (TIM1_SyncVerify(&f_int, &f_dec) != 0)
+            {
+                sprintf(buff,"sync on freq: %d.%02dHz\r\n", f_int, f_dec);
+                RpiSend(buff);
+                Signals_Sync_Enable();
+            }
+            else
+            {
+                RpiSend("no sync needed\r\n");
+                Signals_Sync_Disable();
+            }
         }
         else
         {

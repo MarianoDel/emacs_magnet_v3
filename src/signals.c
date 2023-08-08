@@ -12,11 +12,10 @@
 #include "signals_defs.h"
 
 #include "hard.h"
-// #include "stm32f0xx.h"
 #include "tim.h"
 #include "dsp.h"
 #include "adc.h"
-#include "pwm.h"
+// #include "pwm.h"
 #include "channels_defs.h"
 #include "antennas_defs.h"
 #include "errors.h"
@@ -39,22 +38,22 @@
 // to report errors
 #define RPI_Send(X)    Usart1Send(X)
 
+#define HIGH_LEFT_PWM_CH1(X)    TIM8_Update_CH3(X)
+#define LOW_RIGHT_PWM_CH1(X)    TIM8_Update_CH4(X)
+
+#define HIGH_LEFT_PWM_CH2(X)    TIM8_Update_CH2(X)
+#define LOW_RIGHT_PWM_CH2(X)    TIM8_Update_CH1(X)
+
+#define HIGH_LEFT_PWM_CH3(X)    TIM4_Update_CH2(X)
+#define LOW_RIGHT_PWM_CH3(X)    TIM4_Update_CH3(X)
+
+#define HIGH_LEFT_PWM_CH4(X)    TIM5_Update_CH1(X)
+#define LOW_RIGHT_PWM_CH4(X)    TIM5_Update_CH2(X)
+
 // Externals -------------------------------------------------------------------
 //del ADC
 // extern volatile unsigned char seq_ready;
 extern volatile unsigned short adc_ch[];
-
-//del Main
-// extern volatile unsigned short timer_signals;
-
-
-//de usart para sync
-// extern volatile unsigned char sync_on_signal;
-
-//del pid dsp.c
-// extern unsigned short pid_param_p;
-// extern unsigned short pid_param_i;
-// extern unsigned short pid_param_d;
 
 // externals from tim
 extern volatile unsigned char timer1_seq_ready;
@@ -64,6 +63,10 @@ extern volatile unsigned char timer1_seq_ready;
 // Globals ---------------------------------------------------------------------
 unsigned short phase_accum = 0;
 unsigned short signal_index = 0;
+
+// globals for sync
+unsigned char sync_signal = 0;
+unsigned char sync_wait_next_cycle = 0;
 
 
 //-- para determinacion de soft overcurrent ------------
@@ -535,6 +538,20 @@ void Signals_Setup_Phase_Accumulator (unsigned char freq_int,
 }
 
 
+void Signals_Sync_Enable (void)
+{
+    sync_signal = 1;
+    sync_wait_next_cycle = 0;
+}
+
+
+void Signals_Sync_Disable (void)
+{
+    sync_signal = 0;
+    sync_wait_next_cycle = 0;
+}
+
+
 #define CHANNEL_CONNECTED_GOOD    1
 #define CHANNEL_DISCONNECT    2
 void Signals_Generate_All_Channels (void)
@@ -545,7 +562,19 @@ void Signals_Generate_All_Channels (void)
     timer1_seq_ready = 0;
     Led1_On();
     unsigned char signal_ended = 0;
-                
+
+    if ((sync_signal) &&
+        (sync_wait_next_cycle))
+    {
+        if (TIM1_SyncGet())
+        {
+            TIM1_SyncReset();
+            sync_wait_next_cycle = 0;
+        }
+        else
+            return;
+    }
+        
     // get the current SP
     unsigned char s_index = signal_index >> 8;
     unsigned short sp_inphase = *(p_table_inphase + s_index);
@@ -561,6 +590,8 @@ void Signals_Generate_All_Channels (void)
     {
         signal_index += phase_accum;    //modulo 16 roundup
         signal_ended = 1;
+        if (sync_signal)
+            sync_wait_next_cycle = 1;
     }
     
     if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
@@ -1214,7 +1245,19 @@ void Signals_Generate_All_Channels_Open_Loop (void)
     timer1_seq_ready = 0;
     // Led1_On();    
     unsigned char signal_ended = 0;
-                
+
+    if ((sync_signal) &&
+        (sync_wait_next_cycle))
+    {
+        if (TIM1_SyncGet())
+        {
+            TIM1_SyncReset();
+            sync_wait_next_cycle = 0;
+        }
+        else
+            return;
+    }
+    
     // get the current SP
     unsigned char s_index = signal_index >> 8;
     short sp_ch1 = *(p_table_ch1 + s_index);
@@ -1249,6 +1292,10 @@ void Signals_Generate_All_Channels_Open_Loop (void)
     {
         signal_index += phase_accum;    //modulo 16 roundup
         signal_ended = 1;
+
+        if (sync_signal)
+            sync_wait_next_cycle = 1;
+        
         if (Led1_Is_On())
             Led1_Off();
         else

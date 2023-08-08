@@ -36,6 +36,10 @@ void Signals_Generate_All_Channels_Open_Loop (void);
 
 void Signals_Overcurrent_Handler (unsigned char which_channel);
 
+void Signals_Sync_Enable (void);
+void Signals_Sync_Disable (void);
+
+
 #endif    /* _SIGNALS_H_ */
 
 //--- end of file ---//
