@@ -250,6 +250,7 @@ void Led1_Off (void)
 }
 
 
+#ifdef MAGNET_INFINITY
 unsigned char Tamper_Pin (void)
 {
     return TAMPER_PIN;
@@ -290,6 +291,6 @@ void Pb14_On (void)
 {
     PB14_ON;
 }
-
+#endif    // MAGNET_INFINITY
 
 //--- end of file ---//

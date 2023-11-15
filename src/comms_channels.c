@@ -109,6 +109,8 @@ resp_e ParseCommsWithChannels (char * str, unsigned char channel)
     // snd temp,055.00,1\r\n    1 to 4
     if (!strncmp(str, (const char *)"temp", (sizeof("temp") - 1)))
     {
+        AntennaIsAnswering (channel);
+        
         if ((*(str + 4) == ',') &&
             (*(str + 8) == '.'))
         // if ((*(str + 4) == ',') &&

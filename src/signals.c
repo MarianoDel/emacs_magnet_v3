@@ -27,13 +27,20 @@
 
 
 // Module Private Types Constants and Macros -----------------------------------
+// -- Module Configs ----------
+// -- Led1 config --
+// #define LED1_ON_SIGNAL_ENDED    // edges each signal ended
+
+// -- Control scheme config --
 // #define PI_CONTROL
 // #define PID_CONTROL
 #define OPENLOOP_CONTROL
 
-
+// -- Types of Protection config --
 #define USE_SOFT_NO_CURRENT
 #define USE_SOFT_OVERCURRENT
+
+// -- End of Module Configs ----
 
 // to report errors
 #define RPI_Send(X)    Usart1Send(X)
@@ -1295,11 +1302,13 @@ void Signals_Generate_All_Channels_Open_Loop (void)
 
         if (sync_signal)
             sync_wait_next_cycle = 1;
-        
+
+#ifdef LED1_ON_SIGNAL_ENDED
         if (Led1_Is_On())
             Led1_Off();
         else
             Led1_On();
+#endif
 
 #ifdef TESTING_SHOW_INFO_OPENLOOP_INDEX
         printf("signal ended: %d signal_index: %d phase_accum: %d total: %d\n",

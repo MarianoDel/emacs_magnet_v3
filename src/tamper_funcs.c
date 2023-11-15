@@ -102,5 +102,4 @@ char * Tamper_CodeToString (tamper_state_e code)
 {
     return tamper_string[code];
 }
-
 //---- end of file ----//

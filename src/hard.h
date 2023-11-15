@@ -24,7 +24,8 @@
 
 
 //-------- Type of Program (depending on software version) ----------------
-
+// #define MAGNET_INFINITY    // with sync and tamper
+#define MAGNET_GAUSSTEK    // basic board
 
 //--- Serial Number / Device Id Bytes length ----------
 #define USE_DEVICE_ID_4BYTES
@@ -139,9 +140,11 @@ enum bool
 #define PROT_CH2    ((GPIOB->IDR & 0x2000) != 0)
 
 // PB14 if output, check tamper_funcs module
+#ifdef MAGNET_INFINITY
 #define PB14    ((GPIOB->ODR & 0x4000) != 0)
 #define PB14_ON    (GPIOB->BSRR = 0x00004000)
 #define PB14_OFF    (GPIOB->BSRR = 0x40000000)
+#endif
 
 // PB15 Input
 #define PROT_CH1    ((GPIOB->IDR & 0x8000) != 0)
@@ -170,7 +173,9 @@ enum bool
 // PC12 PD2 Alternative Uart5 Tx Rx
 
 // PC13 Input
+#ifdef MAGNET_INFINITY
 #define TAMPER_PIN    ((GPIOC->IDR & 0x2000) != 0)
+#endif
 
 #endif //HARDWARE_VERSION_3_0
 

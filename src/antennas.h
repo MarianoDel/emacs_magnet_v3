@@ -14,7 +14,7 @@
 //---- Configurations Defines --------------------
 #define ANTENNA_KEEP_ALIVE_TIMER        1250    //1.25 segundos
 #define ANTENNA_TEMP_TIMER        1000    //1 segundo
-#define KEEP_ALIVE_COUNTER    3
+#define KEEP_ALIVE_COUNTER    10    //more robust on treat
 #define KEEP_ALIVE_ANTENNA_NAME_COUNTER    3
 #define ANTENNA_INFO_TIMER_FIRST_START        10000
 #define ANTENNA_INFO_TIMER_UPDATE        (KEEP_ALIVE_COUNTER * ANTENNA_KEEP_ALIVE_TIMER)

@@ -318,6 +318,7 @@ static void Raspberry_Messages (char * msg)
     }
 
     // -- Tamper settings ----
+#ifdef MAGNET_INFINITY
     else if (!strncmp((const char *)msg, "tamper get status", (sizeof("tamper get status") - 1)))
     {
         tamper_state_e t;
@@ -341,7 +342,7 @@ static void Raspberry_Messages (char * msg)
         RpiSend(Tamper_CodeToString(t));
         RpiSend("\r\n");        
     }
-    
+#endif    
     //-- end of new messages
     
     //-- old type messages

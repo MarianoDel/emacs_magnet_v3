@@ -118,9 +118,16 @@ int main (void)
 
     
     //-- Welcome Messages --------------------
-    Usart1Send("\r\nInfinity Clinics Magnet Power Board -- powered by: Kirno International Llc\r\n");
+#ifdef MAGNET_INFINITY
+    Usart1Send("\r\nInfinity Clinics Magnet Power Board -- powered by: Kirno International Llc\r\n");    
     Wait_ms(100);
+#endif
 
+#ifdef MAGNET_GAUSSTEK
+    Usart1Send("\r\nGausstek Magnet Power Board -- powered by: Kirno International Llc\r\n");    
+    Wait_ms(100);
+#endif
+    
 #ifdef HARD
     Usart1Send(HARD);
     Usart1Send("\r\n");
@@ -139,6 +146,7 @@ int main (void)
     //-- end of Welcome Messages ------------
 
     //-- Saved Config --------------------------
+#ifdef MAGNET_INFINITY
     // get saved config or create one for default
     if (pmem->tamper_config != 0xff)
     {
@@ -160,7 +168,15 @@ int main (void)
     Usart1Send("\r\n");
     Wait_ms(100);
     //-- end of Check Tamper Status -------------------
+#endif
 
+    //-- Saved Config --------------------------
+#ifdef MAGNET_GAUSSTEK
+    // Default mem config
+    mem_conf.tamper_config = TAMPER_DISABLE;
+    //-- end of Saved Config --------------------------
+#endif
+    
     ChangeLed(LED_TREATMENT_STANDBY);
 
     //-- Main Loop --------------------------

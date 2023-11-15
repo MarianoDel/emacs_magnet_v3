@@ -682,7 +682,7 @@ void AntennaUpdateStates (void)
                     if (AntennaCheckConnectionCh1)    //tengo parametros y contesta
                     {
                         UART_CH1_Send("get_temp\r\n");
-                        keepalive_ch1 = KEEP_ALIVE_COUNTER;                    
+                        keepalive_ch1 = KEEP_ALIVE_COUNTER;
                         AntennaResetConnectionCh1;
                     }
                     else 
