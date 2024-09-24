@@ -40,30 +40,27 @@ extern void Signals_Setup_Phase_Accumulator (unsigned char freq_int,
 
 
 // Globals ---------------------------------------------------------------------
-short v_duty_ch1 [SIZEOF_SIGNALS] = { 0 };
-short v_error_ch1 [SIZEOF_SIGNALS] = { 0 };
-short v_sp_ch1 [SIZEOF_SIGNALS] = { 0 };
+// short v_duty_ch1 [SIZEOF_SIGNALS] = { 0 };
+// short v_error_ch1 [SIZEOF_SIGNALS] = { 0 };
+// short v_sp_ch1 [SIZEOF_SIGNALS] = { 0 };
 
-short v_duty_ch2 [SIZEOF_SIGNALS] = { 0 };
-short v_error_ch2 [SIZEOF_SIGNALS] = { 0 };
-short v_sp_ch2 [SIZEOF_SIGNALS] = { 0 };
+// short v_duty_ch2 [SIZEOF_SIGNALS] = { 0 };
+// short v_error_ch2 [SIZEOF_SIGNALS] = { 0 };
+// short v_sp_ch2 [SIZEOF_SIGNALS] = { 0 };
 
-short v_duty_ch3 [SIZEOF_SIGNALS] = { 0 };
-short v_error_ch3 [SIZEOF_SIGNALS] = { 0 };
-short v_sp_ch3 [SIZEOF_SIGNALS] = { 0 };
+// short v_duty_ch3 [SIZEOF_SIGNALS] = { 0 };
+// short v_error_ch3 [SIZEOF_SIGNALS] = { 0 };
+// short v_sp_ch3 [SIZEOF_SIGNALS] = { 0 };
 
-short v_duty_ch4 [SIZEOF_SIGNALS] = { 0 };
-short v_error_ch4 [SIZEOF_SIGNALS] = { 0 };
-short v_sp_ch4 [SIZEOF_SIGNALS] = { 0 };
+// short v_duty_ch4 [SIZEOF_SIGNALS] = { 0 };
+// short v_error_ch4 [SIZEOF_SIGNALS] = { 0 };
+// short v_sp_ch4 [SIZEOF_SIGNALS] = { 0 };
 
 
 // Module Functions to Test ----------------------------------------------------
-void Test_PI_Functions (void);
-void Test_PI_Simul (void);
-void Test_Generate_Setup (void);
-void Test_Generate_All_Channels (void);
-void Test_Set_Channel_PI_Parameters (void);
 void Test_Setup_Phase_And_Increment (void);
+void Test_Signals_Table (void);
+
 
 
 // Module Auxiliary Functions --------------------------------------------------
@@ -75,125 +72,93 @@ void Test_Setup_Phase_And_Increment (void);
 // Module Functions ------------------------------------------------------------
 int main (int argc, char *argv[])
 {
-    // Test_PI_Functions ();
-    // Test_PI_Simul ();
-    // Test_Generate_Setup ();
-    // Test_Generate_All_Channels ();
-    // Test_Set_Channel_PI_Parameters ();
-    Test_Setup_Phase_And_Increment ();    
+    // Test_Setup_Phase_And_Increment ();
+
+    Test_Signals_Table ();
 
     return 0;
 }
 
-
 extern const unsigned short * p_table_inphase;
 extern const unsigned short * p_table_outphase;
-extern pi_data_obj_t pi_ch1;
-extern pi_data_obj_t pi_ch2;
-extern pi_data_obj_t pi_ch3;
-extern pi_data_obj_t pi_ch4;
-extern unsigned short signal_index;
-void Test_Generate_Setup (void)
-{
-    int pointers_are_null = 0;
-    int some_error = 0;
-    
-    if ((p_table_inphase == NULL) &&
-        (p_table_outphase == NULL))
-        pointers_are_null = 1;
-
-    signal_index = 1;
-    Signals_Setup_All_Channels ();
-
-    printf("pointer signal assigment: ");
-    if ((p_table_inphase != NULL) &&
-        (p_table_outphase != NULL) &&
-        (pointers_are_null))
-        PrintOK();
-    else
-        PrintERR();
-
-    printf("pointer index: ");
-    if (!signal_index)
-        PrintOK();
-    else
-        PrintERR();    
-    
-}
-
-
 extern signals_struct_t global_signals;
-void Test_Set_Channel_PI_Parameters (void)
-{
-    antenna_st my_ant;
-    // unsigned char antenna_index = 0;
-    // unsigned char antenna_index = 6;
-    unsigned char antenna_index = 8;
-    
-    TSP_Get_Know_Single_Antenna (&my_ant, antenna_index);
-    
-    Signals_Set_Channel_PI_Parameters (0, &my_ant);
-
-    printf("global_signals params:\n");
-    printf(" ki: %d\n", global_signals.ki_ch1);
-    printf(" kp: %d\n", global_signals.kp_ch1);
-    printf(" max_c: %d\n", global_signals.max_c_ch1);           
-}
-
 
 void Test_Setup_Phase_And_Increment (void)
 {
     unsigned char freq_int = 0;
     unsigned char freq_dec = 50;
     unsigned short phase_a = 0;
-    
+    float fs = 6400.0;
+
+    // test for each freq and tables
+    printf("with fs: %f table len: 256\n", fs);
     for (int i = 0; i < 200; i += 10)
     {
         freq_int = i;
         Signals_Setup_Phase_Accumulator(freq_int, freq_dec, &phase_a);
 
-        float eff_freq = phase_a * 7000.0 / (256 * 256);
-        printf("estimated for sampling 7000Hz freq: %f\n", eff_freq);
+        int remainder = 65536 % phase_a;
+        float eff_freq = phase_a * fs / (256 * 256);
+        printf("estimated for fsampling: %f effective freq: %f\n", fs, eff_freq);
         printf("with %02d.%02dHz phase acc: %d\n\n",
                freq_int,
                freq_dec,
                phase_a);
     }
 
+    // freq_int = 23;
+    // freq_dec = 80;
+    // printf("\n\nfor exact table and phase, selected freq: %d.%dHz\n", freq_int, freq_dec);
+    // float eff_freq = 255 * fs / (256 * 256);
+    // printf("estimated for fsampling: %f effective freq: %f\n", fs, eff_freq);
+
 }
 
 
-void Test_Generate_All_Channels (void)
+extern short table_ch1 [];
+extern short table_ch2 [];
+extern const unsigned short sinusoidal_table_inphase [];
+extern const unsigned short sinusoidal_table_outphase [];
+extern const unsigned short triangular_table_inphase [];
+extern const unsigned short triangular_table_outphase [];
+extern const unsigned short square_table_inphase [];
+extern const unsigned short square_table_outphase [];
+void Test_Signals_Table (void)
 {
+    unsigned char freq_int = 25;
+    unsigned char freq_dec = 00;
+    unsigned short phase_a = 0;
+    float fs = 6400.0;
+
+    unsigned short * p_signal_ref;
     
-    Signals_Setup_All_Channels();
+    // set up treatment data
+    signals_struct_t new_treat_data;
+    new_treat_data.freq_int = freq_int;
+    new_treat_data.freq_dec = freq_dec;
+    new_treat_data.signal = TRIANGULAR_SIGNAL;
+    // new_treat_data.signal = SINUSOIDAL_SIGNAL;
+    // new_treat_data.signal = SQUARE_SIGNAL;
+    new_treat_data.power = 100;
+    Signals_Setup_Treatment_Data(&new_treat_data);
 
-    for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
-    {
-        timer1_seq_ready = 1;
-        Signals_Generate_All_Channels ();
+    if (new_treat_data.signal == TRIANGULAR_SIGNAL)
+        p_signal_ref = triangular_table_inphase;
+    else if (new_treat_data.signal == SINUSOIDAL_SIGNAL)
+        p_signal_ref = sinusoidal_table_inphase;
+    else if (new_treat_data.signal == SQUARE_SIGNAL)
+        p_signal_ref = square_table_inphase;
+    else
+        printf("error on selected signal for test");
+    
+    // get antenna params
+    antenna_st ch_ant;
+                
+    Signals_Set_Reset_Channel_For_Treatment(0, 1);    // ch1 antenna present
+    TSP_Get_Know_Single_Antenna (&ch_ant, 9);
+    Signals_Set_Channel_Table_Open_Loop (0, &ch_ant);
 
-        // save ch1 data
-        v_duty_ch1[i] = pi_ch1.last_d;
-        v_sp_ch1[i] = pi_ch1.setpoint;
-        v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
-
-        // save ch2 data
-        v_duty_ch2[i] = pi_ch2.last_d;
-        v_sp_ch2[i] = pi_ch2.setpoint;
-        v_error_ch2[i] = pi_ch2.setpoint - pi_ch2.sample;
-
-        // save ch3 data
-        v_duty_ch3[i] = pi_ch3.last_d;
-        v_sp_ch3[i] = pi_ch3.setpoint;
-        v_error_ch3[i] = pi_ch3.setpoint - pi_ch3.sample;
-
-        // save ch4 data
-        v_duty_ch4[i] = pi_ch4.last_d;
-        v_sp_ch4[i] = pi_ch4.setpoint;
-        v_error_ch4[i] = pi_ch4.setpoint - pi_ch4.sample;
-        
-    }
+    // Signals_Setup_Phase_Accumulator(freq_int, freq_dec, &phase_a);    
 
     ///////////////////////////
     // Backup Data to a file //
@@ -206,102 +171,65 @@ void Test_Generate_All_Channels (void)
         return;
     }
 
-    Vector_Short_To_File (file, "duty", v_duty_ch1, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "error", v_error_ch1, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "setpoint", v_sp_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "table", table_ch1, 256);
+    Vector_Short_To_File (file, "ref", p_signal_ref, 256);
+    // Vector_Short_To_File (file, "setpoint", v_sp_ch1, SIZEOF_SIGNALS);
     printf("\nRun by hand python3 simul_outputs.py\n");
     
 }
 
 
-void Test_PI_Functions (void)
-{
-    printf("Testing PI roof settings: ");
+// void Test_Generate_All_Channels (void)
+// {
+    
+//     Signals_Setup_All_Channels();
 
-    pi_data_obj_t pi;
-    pi.kp = 5;
-    pi.ki = 5;
-    pi.last_d = 100;
-    pi.error_z1 = 100;
+//     for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+//     {
+//         timer1_seq_ready = 1;
+//         Signals_Generate_All_Channels ();
 
-    PI_roof_Flush(&pi);
+//         // save ch1 data
+//         v_duty_ch1[i] = pi_ch1.last_d;
+//         v_sp_ch1[i] = pi_ch1.setpoint;
+//         v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
+
+//         // save ch2 data
+//         v_duty_ch2[i] = pi_ch2.last_d;
+//         v_sp_ch2[i] = pi_ch2.setpoint;
+//         v_error_ch2[i] = pi_ch2.setpoint - pi_ch2.sample;
+
+//         // save ch3 data
+//         v_duty_ch3[i] = pi_ch3.last_d;
+//         v_sp_ch3[i] = pi_ch3.setpoint;
+//         v_error_ch3[i] = pi_ch3.setpoint - pi_ch3.sample;
+
+//         // save ch4 data
+//         v_duty_ch4[i] = pi_ch4.last_d;
+//         v_sp_ch4[i] = pi_ch4.setpoint;
+//         v_error_ch4[i] = pi_ch4.setpoint - pi_ch4.sample;
         
-    if ((pi.last_d != 0) ||
-        (pi.error_z1 != 0))
-    {
-        PrintERR();
-    }
-    else
-        PrintOK();
+//     }
 
-    pi.kp = 5;
-    pi.ki = 5;
-    PI_roof_Flush(&pi);
-        
-    pi.setpoint = 1000;        
-    for (int i = 0; i < 1000; i++)
-    {
-        pi.sample = pi.last_d;
-        PI_roof(&pi);
-    }
-    printf("pi roof last_d: %d error_z1: %d\n", pi.last_d, pi.error_z1);
+//     ///////////////////////////
+//     // Backup Data to a file //
+//     ///////////////////////////
+//     FILE * file = fopen("data.txt", "w");
+
+//     if (file == NULL)
+//     {
+//         printf("data file not created!\n");
+//         return;
+//     }
+
+//     Vector_Short_To_File (file, "duty", v_duty_ch1, SIZEOF_SIGNALS);
+//     Vector_Short_To_File (file, "error", v_error_ch1, SIZEOF_SIGNALS);
+//     Vector_Short_To_File (file, "setpoint", v_sp_ch1, SIZEOF_SIGNALS);
+//     printf("\nRun by hand python3 simul_outputs.py\n");
     
-    printf("Testing PI roof performance: ");    
-    if ((pi.last_d != 0) ||
-        (pi.error_z1 != 1))
-    {
-        PrintERR();
-    }
-    else
-        PrintOK();
-    
-}
+// }
 
 
-void Test_PI_Simul (void)
-{
-    printf("\nTest PI and simulate\n");
-
-    short vduty [1000] = { 0 };
-    short verror [1000] = { 0 };
-    short vsp [1000] = { 0 };
-
-    pi_data_obj_t pi;    
-    pi.kp = 10;
-    pi.ki = 10;
-    PI_roof_Flush(&pi);
-        
-    pi.setpoint = 1000;        
-    for (int i = 0; i < 1000; i++)
-    {
-        pi.sample = pi.last_d;
-        PI_roof(&pi);
-
-        vduty[i] = pi.last_d;
-        verror[i] = pi.error_z1;
-        vsp[i] = pi.setpoint;
-    }
-    
-    printf("pi roof last_d: %d error_z1: %d\n", pi.last_d, pi.error_z1);
-    
-    
-    ///////////////////////////
-    // Backup Data to a file //
-    ///////////////////////////
-    FILE * file = fopen("data.txt", "w");
-
-    if (file == NULL)
-    {
-        printf("data file not created!\n");
-        return;
-    }
-
-    Vector_Short_To_File (file, "duty", vduty, 1000);
-    Vector_Short_To_File (file, "error", verror, 1000);
-    Vector_Short_To_File (file, "setpoint", vsp, 1000);
-    printf("\nRun by hand python3 simul_outputs.py\n");
-
-}
 
 
 // Mocked Module Functions -----------------------------------------------------
@@ -373,6 +301,24 @@ void Led1_On (void)
 void Led1_Off (void)
 {
     // printf("Led1 -> OFF\n");    
+}
+
+unsigned char TIM1_SyncGet (void)
+{
+    return 0;
+}
+
+void TIM1_SyncReset (void)
+{
+}
+
+unsigned char TIM1_SyncVerify (unsigned char * freq_int, unsigned char * freq_dec)
+{
+    return 1;
+}
+
+void TIM_Void_CH (unsigned short a)
+{
 }
 
 //--- end of file ---//

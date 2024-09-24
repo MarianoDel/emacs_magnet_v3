@@ -96,8 +96,8 @@ void TIM1_Init (void)
     TIM1->CCER |= TIM_CCER_CC4P | TIM_CCER_CC4E;    // CH4 input inverted
     // TIM1->BDTR |= TIM_BDTR_MOE;
 
-    TIM1->ARR = DUTY_100_PERCENT - 1;    // 1000 pts -> 7.2KHz
-    TIM1->PSC = 9;    // 13.88us tick
+    TIM1->ARR = DUTY_100_PERCENT - 1;    // 1000 pts -> 7.2KHz; 1000 pts -> 6400Hz on HARD_1_0
+    TIM1->PSC = 9;    // 13.88us tick; 15.62us tick on HARD_1_0
     
     TIM1->CNT = 0;
 
@@ -297,7 +297,7 @@ void TIM4_Init(void)
     
     TIM4->CCER |= TIM_CCER_CC3E | TIM_CCER_CC2E;
     
-    TIM4->ARR = DUTY_100_PERCENT - 1;    //1000 pwm points freq-> 72MHz / 10 = 7.2KHz
+    TIM4->ARR = DUTY_100_PERCENT - 1;    //1000 pwm points freq-> 72MHz / 10 = 7.2KHz; 6.4KHz for HARD_1_0
     TIM4->PSC = 9;
 
     // Enable timer ver UDIS
@@ -338,7 +338,7 @@ void TIM5_Init (void)
     TIM5->CCER |= TIM_CCER_CC2E | TIM_CCER_CC1E;    // ch1 ch2 enabled
 
     // try to be near 7KHz
-    TIM5->ARR = DUTY_100_PERCENT - 1;    //1000 pwm points freq-> 72MHz / 10 = 7.2KHz
+    TIM5->ARR = DUTY_100_PERCENT - 1;    //1000 pwm points freq-> 72MHz / 10 = 7.2KHz; 6.4KHz for HARD_1_0
     TIM5->PSC = 9;
     
     // Enable the timer
@@ -502,4 +502,8 @@ void TIM8_Update_CH4 (unsigned short a)
 }
 #endif    //STM32F10X_HD
 
+// void channels for backwards compatibility
+void TIM_Void_CH (unsigned short a)
+{
+}
 //--- end of file ---//

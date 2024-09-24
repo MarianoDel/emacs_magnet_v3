@@ -14,18 +14,20 @@
 
 //----------- Defines For Configuration -------------
 
+//-------- Type of Board and Program  ---------------
+// #define MAGNET_INFINITY    // with sync and tamper
+// #define MAGNET_GAUSSTEK    // basic board
+#define MAGNET_GAUSSTEK_MT250    // small 2ch less power board
+
 //----- Board Configuration -------------------//
 //--- Hardware ------------------//
-#define HARDWARE_VERSION_3_0    // this board gets the better of stretcher and magnet 
+// #define HARDWARE_VERSION_3_0    // this board gets the better of stretcher and magnet
+#define HARDWARE_VERSION_1_0    // small 2ch less power board
 
 
 //--- Software ------------------//
 #define SOFTWARE_VERSION_1_0    // init version
 
-
-//-------- Type of Program (depending on software version) ----------------
-// #define MAGNET_INFINITY    // with sync and tamper
-#define MAGNET_GAUSSTEK    // basic board
 
 //--- Serial Number / Device Id Bytes length ----------
 #define USE_DEVICE_ID_4BYTES
@@ -48,6 +50,22 @@
 
 
 //-------- Oscillator and Crystal selection (Freq in startup_clocks.h) ---
+#ifdef MAGNET_GAUSSTEK_MT250
+#define HSI_INTERNAL_RC
+// #define HSE_CRYSTAL_OSC
+
+#ifdef HSE_CRYSTAL_OSC
+// #define CRYSTAL_8MHZ
+#define CRYSTAL_12MHZ
+#endif
+
+// #define SYSCLK_FREQ_72MHz
+#define SYSCLK_FREQ_64MHz
+// #define SYSCLK_FREQ_8MHz
+#endif
+
+#if (defined MAGNET_GAUSSTEK) ||\
+    (defined MAGNET_INFINITY)
 // #define HSI_INTERNAL_RC
 #define HSE_CRYSTAL_OSC
 
@@ -57,23 +75,50 @@
 #endif
 
 #define SYSCLK_FREQ_72MHz
+// #define SYSCLK_FREQ_64MHz
 // #define SYSCLK_FREQ_8MHz
+#endif
+
+
 
 //-------- End Of Defines For Configuration ------
-
-
 
 
 //--- Hardware & Software Messages ------------------//
 #ifdef HARDWARE_VERSION_3_0
 #define HARD "Hardware Version: 3.0"
 #endif
+#ifdef HARDWARE_VERSION_1_0
+#define HARD "Hardware Version: 1.0"
+#endif
 #ifdef SOFTWARE_VERSION_1_0
 #define SOFT "Software Version: 1.0"
 #endif
 //--- End of Hardware & Software Messages ------------------//
 
+//-------- Sanity Checks -------------------------
+#if ((!defined MAGNET_INFINITY) && \
+     (!defined MAGNET_GAUSSTEK) && \
+     (!defined MAGNET_GAUSSTEK_MT250))
+#error "Must define type of board in hard.h"
+#endif
 
+#if ((defined MAGNET_INFINITY) || \
+     (defined MAGNET_GAUSSTEK))
+#ifndef HARDWARE_VERSION_3_0
+#error "For this config min hardware is 3.0"
+#endif
+#endif
+
+#if (defined MAGNET_GAUSSTEK_MT250)
+#ifndef HARDWARE_VERSION_1_0
+#error "For this config hardware must be 1.0"
+#endif
+#endif
+
+
+
+//-------- End of Sanity Checks ------------------
 
 // Exported Types --------------------------------------------------------------
 enum resultados
@@ -92,7 +137,7 @@ enum bool
 };
 
 
-//--- Configuracion de leds ---//
+//--- Gpios Config -------------------------------
 #ifdef HARDWARE_VERSION_3_0
 
 // PA defines ----
@@ -179,6 +224,79 @@ enum bool
 
 #endif //HARDWARE_VERSION_3_0
 
+#ifdef HARDWARE_VERSION_1_0    // must be MT250
+// PA defines ----
+// PA0 PA1 Alternative TIM5_CH1 TIM5_CH2
+
+// PA2 PA3 Alternative Usart2 Tx Rx
+
+// PA4 Input
+#define PROT_CH2    ((GPIOA->IDR & 0x0010) != 0)
+
+// PA5 Analog Channel 5 (IS_CH2)
+// PA6 Analog Channel 6 (IS_CH1)
+
+// PA7 NC
+
+// PA8 
+#define BUZZER    ((GPIOA->ODR & 0x0100) != 0)
+#define BUZZER_ON    (GPIOA->BSRR = 0x00000100)
+#define BUZZER_OFF    (GPIOA->BSRR = 0x01000000)
+
+// PA9 PA10 Alternative Usart1 Tx Rx
+
+// PA11 Alternative TIM1_CH4 for SYNC_IN
+
+// PA12 PA13 PA14 PA15 NC
+
+// PB defines ----
+// PB0 
+// PB1 NC
+
+// PB2 Input
+#define PROT_CH1    ((GPIOB->IDR & 0x0004) != 0)
+
+// PB3 PB4 PB5 PB6 NC
+
+// PB7 PB8 Alternative TIM4_CH2 TIM4_CH3
+
+// PB9 NC
+
+// PB10 PB11 Alternative Usart3 Tx Rx
+
+// PB12 PB14 PB15 NC
+
+// PC defines ----
+// PC0 
+#define LED1    ((GPIOC->ODR & 0x0001) != 0)
+#define LED1_ON    (GPIOC->BSRR = 0x00000001)
+#define LED1_OFF    (GPIOC->BSRR = 0x00010000)
+
+// PC1
+#define LED2    ((GPIOC->ODR & 0x0002) != 0)
+#define LED2_ON    (GPIOC->BSRR = 0x00000002)
+#define LED2_OFF    (GPIOC->BSRR = 0x00020000)
+
+// PC2 NC
+
+// PC3 Analog Channel 13 (Sense_12V)
+// PC4 Analog Channel 14 (Sense_100V)
+// PC5 Analog Channel 15 (Sense_15V)
+
+// PC6 PC7 PC8 PC9 NC
+
+// PC10 PC11 NC
+
+// PC12 PD2 NC
+
+// PC13 PC14 PC15 NC
+
+// channels protection for backward compatibility
+#define PROT_CH3    (1 == 0)
+#define PROT_CH4    (1 == 0)
+#endif //HARDWARE_VERSION_1_0 (must be MT250)
+
+//--- End of Gpios Config ------------------------
 
 //ESTADOS DEL BUZZER
 typedef enum

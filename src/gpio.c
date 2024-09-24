@@ -39,6 +39,11 @@
 #define RCC_AFIO_CLKDIS    (RCC->APB2ENR &= ~0x00000001)
 
 
+#if ((!defined HARDWARE_VERSION_3_0) && \
+     (!defined HARDWARE_VERSION_1_0))
+#error "Hard error on gpio.c not 3.0 nor 1.0"
+#endif
+    
 // Externals -------------------------------------------------------------------
 
 
@@ -226,11 +231,13 @@ void GpioInit (void)
     GPIOD->CRL = temp;
 
 #ifdef USE_EXTI_LINES
-    //Interrupts on:
+#ifdef HARDWARE_VERSION_3_0
+    //Interrupts on for hard 3.0:
     // PA4 PROT_CH4
     // PB2 PROT_CH3
     // PB13 PROT_CH2
     // PB15 PROT_CH1
+
     if (!RCC_AFIO_CLK)
         RCC_AFIO_CLKEN;
 
@@ -267,6 +274,41 @@ void GpioInit (void)
     
     NVIC_EnableIRQ(EXTI15_10_IRQn);
     NVIC_SetPriority(EXTI15_10_IRQn, 2);
+#endif    // hard 3.0
+
+#ifdef HARDWARE_VERSION_1_0
+    //Interrupts on for hard 1.0:
+    // PA4 PROT_CH2
+    // PB2 PROT_CH1
+
+    if (!RCC_AFIO_CLK)
+        RCC_AFIO_CLKEN;
+
+    // EXTI2 Select Port B & Pin2 for external interrupt
+    temp = AFIO->EXTICR[0];
+    temp &= ~AFIO_EXTICR1_EXTI2;
+    temp |= AFIO_EXTICR1_EXTI2_PB;
+    AFIO->EXTICR[0] = (unsigned short) temp;
+
+    // EXTI4 Select Port A & Pin4 for external interrupt
+    temp = AFIO->EXTICR[1];
+    temp &= ~AFIO_EXTICR2_EXTI4;
+    temp |= AFIO_EXTICR2_EXTI4_PA;
+    AFIO->EXTICR[1] = (unsigned short) temp;
+
+    // EXTI->IMR |= 0x00000001;    //Corresponding mask bit for interrupts EXTI2 EXTI4
+    // EXTI->EMR |= 0x00000000;    //Corresponding mask bit for events
+    //Interrupt line on rising edge
+    EXTI->RTSR |= EXTI_RTSR_TR2 | EXTI_RTSR_TR4;
+    EXTI->FTSR |= 0x00000000;    //Interrupt line on falling edge
+
+    // Enable NVIC for EXTIs
+    NVIC_EnableIRQ(EXTI2_IRQn);
+    NVIC_SetPriority(EXTI2_IRQn, 2);
+
+    NVIC_EnableIRQ(EXTI4_IRQn);
+    NVIC_SetPriority(EXTI4_IRQn, 2);    
+#endif    // hard 1.0
     
 #endif    // USE_EXTI_LINES
 }
@@ -275,12 +317,22 @@ void GpioInit (void)
 #ifdef USE_EXTI_LINES
 void EXTIOff (void)
 {
+#ifdef HARDWARE_VERSION_3_0
     EXTI->IMR &= ~(EXTI_IMR_MR2 | EXTI_IMR_MR4 | EXTI_IMR_MR13 | EXTI_IMR_MR15);
+#endif
+#ifdef HARDWARE_VERSION_1_0    
+    EXTI->IMR &= ~(EXTI_IMR_MR2 | EXTI_IMR_MR4);
+#endif
 }
 
 void EXTIOn (void)
 {
+#ifdef HARDWARE_VERSION_3_0
     EXTI->IMR |= (EXTI_IMR_MR2 | EXTI_IMR_MR4 | EXTI_IMR_MR13 | EXTI_IMR_MR15);
+#endif
+#ifdef HARDWARE_VERSION_1_0        
+    EXTI->IMR |= (EXTI_IMR_MR2 | EXTI_IMR_MR4);
+#endif
 }
 #endif
 

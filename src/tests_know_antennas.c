@@ -25,6 +25,19 @@ int know_antenna = 0;
 int TSP_Get_Know_Antennas (antenna_st * p)
 {
     int more_antennas = 1;
+    char * s_antena;
+
+    char s_ant0 [] = { "ant0,012.27,087.90,001.80,065.00\r\n" };
+    char s_ant1 [] = { "ant1,023.85,141.60,001.30,065.00\r\n" };
+    char s_ant2 [] = { "ant1,017.00,120.00,001.30,065.00\r\n" };
+    char s_ant3 [] = { "ant2,005.70,011.10,002.80,065.00\r\n" };
+    char s_ant4 [] = { "ant3,003.50,019.00,003.50,065.00\r\n" };
+    char s_ant5 [] = { "ant4,004.00,022.60,003.50,065.00\r\n" };
+    char s_ant6 [] = { "ant4,002.50,021.00,003.50,065.00\r\n" };
+    char s_ant7 [] = { "ant4,006.60,056.50,003.50,065.00\r\n" };    
+    char s_ant8 [] = { "ant4,010.10,128.10,003.50,065.00\r\n" };
+    char s_ant9 [] = { "anta,061.00,063.00,000.64,055.00\r\n" };
+
     
     // set know antennas (from emacs_antenna_magnet/src/main.c)
     switch (know_antenna)
@@ -167,7 +180,7 @@ int TSP_Get_Know_Antennas (antenna_st * p)
     case 9:
         // const char s_antena [] = { "anta,061.00,063.00,000.64,055.00\r\n" };
         // const char s_name [] = { "name:GT Googles\r\n" };
-        printf("\nname:GT Googles in index: %d\n", know_antenna);
+        printf("\nname:GT Googles in index: %d\n  %s\n", know_antenna, s_ant9);
         p->resistance_int = 61;
         p->resistance_dec = 0;
         p->inductance_int = 63;

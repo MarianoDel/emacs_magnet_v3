@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 
-
+#ifdef HARDWARE_VERSION_3_0
 #define HIGH_LEFT_PWM_CH1(X)    TIM8_Update_CH3(X)
 #define LOW_RIGHT_PWM_CH1(X)    TIM8_Update_CH4(X)
 
@@ -42,6 +42,21 @@
 
 #define HIGH_LEFT_PWM_CH4(X)    TIM5_Update_CH1(X)
 #define LOW_RIGHT_PWM_CH4(X)    TIM5_Update_CH2(X)
+#endif
+
+#ifdef HARDWARE_VERSION_1_0
+#define HIGH_LEFT_PWM_CH1(X)    TIM4_Update_CH2(X)
+#define LOW_RIGHT_PWM_CH1(X)    TIM4_Update_CH3(X)
+
+#define HIGH_LEFT_PWM_CH2(X)    TIM5_Update_CH1(X)
+#define LOW_RIGHT_PWM_CH2(X)    TIM5_Update_CH2(X)
+
+#define HIGH_LEFT_PWM_CH3(X)    TIM_Void_CH(X)
+#define LOW_RIGHT_PWM_CH3(X)    TIM_Void_CH(X)
+
+#define HIGH_LEFT_PWM_CH4(X)    TIM_Void_CH(X)
+#define LOW_RIGHT_PWM_CH4(X)    TIM_Void_CH(X)
+#endif
 
 // Externals -------------------------------------------------------------------
 extern volatile unsigned short adc_ch [];
@@ -70,6 +85,7 @@ void TF_PROT_Inputs_Ch1_Ch2_Ch3_Ch4_With_Ints_On_Off (void);
 
 void TF_Usart1_Tx (void);
 void TF_Usart1_Tx_String (void);
+void TF_Usart1_Loop (void);
 
 void TF_Adc_Usart1_Tx (void);
 void TF_Adc_Usart1_Voltages (void);
@@ -117,6 +133,7 @@ void TF_Hardware_Tests (void)
 
     // TF_Usart1_Tx ();
     // TF_Usart1_Tx_String ();
+    TF_Usart1_Loop ();
     
     // TF_Adc_Usart1_Tx ();
     // TF_Adc_Usart1_Voltages ();
@@ -138,7 +155,7 @@ void TF_Hardware_Tests (void)
     // TF_Signal_PWM_Channel4 ();
 
     // TF_Antennas_Connection ();
-    TF_Treatment_And_Antennas_Connection ();
+    // TF_Treatment_And_Antennas_Connection ();
 }
 
 
@@ -146,11 +163,16 @@ void TF_Led_1 (void)
 {
     while (1)
     {
-        if (LED1)
-            LED1_OFF;
-        else
-            LED1_ON;
+        // if (LED1)
+        //     LED1_OFF;
+        // else
+        //     LED1_ON;
 
+        if (Led1_Is_On())
+            Led1_Off();
+        else
+            Led1_On();
+        
         Wait_ms(100);
     }
 }
@@ -165,6 +187,11 @@ void TF_Led_2 (void)
         else
             LED2_ON;
 
+        // if (Led2_Is_On())
+        //     Led2_Off();
+        // else
+        //     Led2_On();
+        
         Wait_ms(100);
     }
 }
@@ -416,6 +443,43 @@ void TF_Usart1_Tx_String (void)
     {
         Usart1Send("Mariano\n");
         Wait_ms(2000);
+    }
+}
+
+
+void TF_Usart1_Loop (void)
+{
+    char buff [128] = { 0 };
+    int buff_ready = 0;
+    
+    Usart1Config ();
+    
+    Wait_ms(1000);
+    Usart1Send("Loopback test en usart1\n");
+    Wait_ms(1000);
+    
+    while (1)
+    {
+        if (!timer_standby)
+        {
+            if (buff_ready)
+            {
+                LED1_ON;
+                buff_ready = 0;
+                Usart1Send("getted: ");
+                Wait_ms(100);
+                Usart1Send(buff);
+                LED1_OFF;
+            }
+        }
+
+        if (Usart1HaveData())
+        {
+            Usart1ReadBuffer(buff, 128);
+            Usart1HaveDataReset();
+            buff_ready = 1;
+            timer_standby = 2000;            
+        }
     }
 }
 

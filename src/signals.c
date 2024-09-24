@@ -45,6 +45,7 @@
 // to report errors
 #define RPI_Send(X)    Usart1Send(X)
 
+#ifdef HARDWARE_VERSION_3_0
 #define HIGH_LEFT_PWM_CH1(X)    TIM8_Update_CH3(X)
 #define LOW_RIGHT_PWM_CH1(X)    TIM8_Update_CH4(X)
 
@@ -56,7 +57,27 @@
 
 #define HIGH_LEFT_PWM_CH4(X)    TIM5_Update_CH1(X)
 #define LOW_RIGHT_PWM_CH4(X)    TIM5_Update_CH2(X)
+#endif
 
+#ifdef HARDWARE_VERSION_1_0
+#define HIGH_LEFT_PWM_CH1(X)    TIM4_Update_CH2(X)
+#define LOW_RIGHT_PWM_CH1(X)    TIM4_Update_CH3(X)
+
+#define HIGH_LEFT_PWM_CH2(X)    TIM5_Update_CH1(X)
+#define LOW_RIGHT_PWM_CH2(X)    TIM5_Update_CH2(X)
+
+#define HIGH_LEFT_PWM_CH3(X)    TIM_Void_CH(X)
+#define LOW_RIGHT_PWM_CH3(X)    TIM_Void_CH(X)
+
+#define HIGH_LEFT_PWM_CH4(X)    TIM_Void_CH(X)
+#define LOW_RIGHT_PWM_CH4(X)    TIM_Void_CH(X)
+#endif
+
+#if ((!defined HARDWARE_VERSION_3_0) && \
+     (!defined HARDWARE_VERSION_1_0))
+#error "Hard error on signals.c not 3.0 nor 1.0"
+#endif
+    
 // Externals -------------------------------------------------------------------
 //del ADC
 // extern volatile unsigned char seq_ready;
@@ -517,31 +538,17 @@ void Signals_Setup_Phase_Accumulator (unsigned char freq_int,
                                       unsigned char freq_dec,
                                       unsigned short * phase_accum)
 {
-    // try first with increment of 1
+#ifdef HARDWARE_VERSION_3_0
     float fsampling = 7000.0;
+#endif
+#ifdef HARDWARE_VERSION_1_0
+    float fsampling = 6400.0;
+#endif
     float freq = freq_int + freq_dec / 100.0;
     float calc = freq * 256 * 256 / fsampling;
     
     *phase_accum = (unsigned short) calc;
 
-    // float fsampling = 7000.0;
-    // float freq = freq_int + freq_dec / 100.0;
-    // float calc = freq * 256 * 65536 / fsampling;
-    
-    // unsigned int p = (unsigned int) calc;
-    // if ((p >> 16) == 0)
-    // {
-    //     *phase_accum = (unsigned short) p;
-    //     *signal_index_inc = 1;
-    // }
-    // else
-    // {
-    //     *signal_index_inc = 1 + (p >> 16);
-    //     calc = freq * 256 * 65536 / (fsampling * (*signal_index_inc));
-    //     p = (unsigned short) calc;
-    //     *phase_accum = (unsigned short) p;
-    // }
-    
 }
 
 
@@ -1320,7 +1327,8 @@ void Signals_Generate_All_Channels_Open_Loop (void)
         
         
     }
-    
+
+#ifdef HARDWARE_VERSION_3_0
     if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
     {
 #ifdef TESTING_SHOW_INFO_OPENLOOP_INDEX
@@ -1341,6 +1349,38 @@ void Signals_Generate_All_Channels_Open_Loop (void)
 
     if (global_signals.treat_in_ch4 == CHANNEL_CONNECTED_GOOD)
         Signals_Generate_Channel_OpenLoop (CH4, sp_ch4, with_signal_ch3_ch4);
+#endif
+#ifdef HARDWARE_VERSION_1_0
+    if (global_signals.treat_in_ch1 == CHANNEL_CONNECTED_GOOD)
+    {
+#ifdef TESTING_SHOW_INFO_OPENLOOP_INDEX
+        // if (signal_ended)
+        //     printf("signal_index: %d s_index: %d sp_ch1: %d\n",
+        //            signal_index,
+        //            s_index,
+        //            sp_ch1);
+#endif
+        printf("s_index: %d sp_ch1: %d with_signal: %d\n",
+               s_index,
+               sp_ch1,
+               with_signal_ch1_ch2);
+        Signals_Generate_Channel_OpenLoop (CH1, sp_ch1, with_signal_ch1_ch2);
+    }
+
+    if (global_signals.treat_in_ch2 == CHANNEL_CONNECTED_GOOD)
+    {
+#ifdef TESTING_SHOW_INFO_OPENLOOP_INDEX
+        if (signal_ended)
+            printf("signal_index: %d s_index: %d sp_ch2: %d\n",
+                   signal_index,
+                   s_index,
+                   sp_ch2);
+#endif
+        
+        Signals_Generate_Channel_OpenLoop (CH2, sp_ch2, with_signal_ch3_ch4);
+    }
+
+#endif
 
     // now check channels for errors
 #ifdef USE_SOFT_NO_CURRENT
@@ -1502,13 +1542,21 @@ void Signals_Generate_All_Channels_Open_Loop (void)
 }    
 
 
-// typical values
+// typical values for HARD_3_0
 // float Vin = 192.0;
 // float Rsense = 0.055;
 // float Ao = 13.0;
 // float La = 0.142;
 // float Ra = 11.0;
 // float fsampling = 7000.0;
+
+// typical values for HARD_1_0
+// float Vin = 94.0;
+// float Rsense = 1.1;
+// float Ao = 4.3;
+// float La = 0.142;
+// float Ra = 11.0;
+// float fsampling = 6400.0;
 void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_st * ant)
 {
     if (global_signals.signal == SQUARE_SIGNAL)
@@ -1516,27 +1564,49 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
         Signals_Set_Channel_Table_Open_Loop_Square(which_channel, ant);
         return;
     }
-    
-    float Vin = 192.0;
-    float fsampling = 7000.0;
-    float Rsense = 0.055;
 
+#ifdef HARDWARE_VERSION_3_0    
+    float Vin = 192.0;
+    float fsampling = 7200.0;
+    float Rsense = 0.055;
+    float Ao = 13.0;    // gain of opamp
+    float adc_for_1amp = 887.;
+#endif
+
+#ifdef HARDWARE_VERSION_1_0    
+    float Vin = 96.0;
+    float fsampling = 6400.0;
+    float Rsense = 1.1;
+    float Ao = 4.3;    // gain of opamp
+    float adc_for_1amp = 5870.;
+#endif
+    
     float La = ant->inductance_int + ant->inductance_dec / 100.0;
     La = La / 1000.0;    // convert mHy to Hy
 
     float Ra = ant->resistance_int + ant->resistance_dec / 100.0;
 
-    // float b0 = Rsense * Ao;
-    float b0 = 0.715;    
+    float b0 = Rsense * Ao;
     b0 = b0 / (La * fsampling);
 
     float a1 = -1.0 + (Ra + Rsense)/(La * fsampling);
     float a1_pos = -a1;
     float gain = b0 /(1. - a1_pos);
 
-    // max current allowed in this antenna
+    // max current allowed in this antenna    
+#ifdef HARDWARE_VERSION_3_0    
     float max_antenna_current = ant->current_limit_int + ant->current_limit_dec / 100.0;
-    float multi = max_antenna_current * 887.;    //887 adc points for 1amp
+    float multi = max_antenna_current * adc_for_1amp;    //887 adc points for 1amp
+#endif
+
+#ifdef HARDWARE_VERSION_1_0
+    float max_antenna_current = ant->current_limit_int + ant->current_limit_dec / 100.0;
+
+    if (max_antenna_current > 0.8)
+        max_antenna_current = 0.8;
+    
+    float multi = max_antenna_current * adc_for_1amp;    // 5870 for 1amp on hard 1.0
+#endif
 
     // setting max current adc points
     if (which_channel == CH1)
@@ -1557,6 +1627,7 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
     short * dst_table;
     const unsigned short * ori_table;    
 
+#ifdef HARDWARE_VERSION_3_0
     if (global_signals.signal == TRIANGULAR_SIGNAL)
     {
         if (which_channel == CH1)
@@ -1604,9 +1675,40 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
         }
         
     }
+#endif
 
+#ifdef HARDWARE_VERSION_1_0
+    if (global_signals.signal == TRIANGULAR_SIGNAL)
+    {
+        if (which_channel == CH1)
+        {
+            ori_table = triangular_table_inphase;
+            dst_table = table_ch1;
+        }
+        else    // CH2 outphase
+        {
+            ori_table = triangular_table_outphase;
+            dst_table = table_ch2;
+        }
+    }
+    else    //global_signals.signal == SINUSOIDAL_SIGNAL
+    {
+        if (which_channel == CH1)
+        {
+            ori_table = sinusoidal_table_inphase;
+            dst_table = table_ch1;
+        }
+        else    // CH2 outphase
+        {
+            ori_table = sinusoidal_table_outphase;
+            dst_table = table_ch2;
+        }
+        
+    }
+#endif
+    
     // adjust duty for max current
-    float max_c = 0.715 / (Vin * gain);
+    float max_c = Rsense * Ao / (Vin * gain);
     max_c = max_c * max_antenna_current;    //adjust for antenna current
     max_c = max_c * global_signals.power / 100.;    //adjust for power
     
@@ -1702,6 +1804,7 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
     }
 
     // zero out the rest
+#ifdef HARDWARE_VERSION_3_0
     if ((which_channel == CH1) || (which_channel == CH2))
     {
         for (int i = 128; i < 255; i++)
@@ -1712,6 +1815,20 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
         for (int i = 0; i < 127; i++)
             *(dst_table + i) = 0;        
     }
+#endif
+#ifdef HARDWARE_VERSION_1_0
+    if (which_channel == CH1)
+    {
+        for (int i = 128; i < 255; i++)
+            *(dst_table + i) = 0;
+    }
+    else
+    {
+        for (int i = 0; i < 127; i++)
+            *(dst_table + i) = 0;        
+    }
+#endif
+    
 
     // end of pre filter original duty
 }
@@ -1719,26 +1836,48 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
 
 void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, antenna_st * ant)
 {
+#ifdef HARDWARE_VERSION_3_0    
     float Vin = 192.0;
-    float fsampling = 7000.0;
+    float fsampling = 7200.0;
     float Rsense = 0.055;
+    float Ao = 13.0;    // gain of opamp
+    float adc_for_1amp = 887.;
+#endif
+
+#ifdef HARDWARE_VERSION_1_0    
+    float Vin = 96.0;
+    float fsampling = 6400.0;
+    float Rsense = 1.1;
+    float Ao = 4.3;    // gain of opamp
+    float adc_for_1amp = 5870.;
+#endif
 
     float La = ant->inductance_int + ant->inductance_dec / 100.0;
     La = La / 1000.0;    // convert mHy to Hy
 
     float Ra = ant->resistance_int + ant->resistance_dec / 100.0;
 
-    // float b0 = Rsense * Ao;
-    float b0 = 0.715;    
+    float b0 = Rsense * Ao;
     b0 = b0 / (La * fsampling);
 
     float a1 = -1.0 + (Ra + Rsense)/(La * fsampling);
     float a1_pos = -a1;
     float gain = b0 /(1. - a1_pos);
 
-    // max current allowed in this antenna
+    // max current allowed in this antenna    
+#ifdef HARDWARE_VERSION_3_0    
     float max_antenna_current = ant->current_limit_int + ant->current_limit_dec / 100.0;
-    float multi = max_antenna_current * 887.;    //887 adc points for 1amp
+    float multi = max_antenna_current * adc_for_1amp;    //887 adc points for 1amp
+#endif
+
+#ifdef HARDWARE_VERSION_1_0
+    float max_antenna_current = ant->current_limit_int + ant->current_limit_dec / 100.0;
+
+    if (max_antenna_current > 0.8)
+        max_antenna_current = 0.8;
+    
+    float multi = max_antenna_current * adc_for_1amp;    // 5870 for 1amp on hard 1.0
+#endif
 
     // setting max current adc points
     if (which_channel == CH1)
@@ -1824,7 +1963,7 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
 #ifdef TESTING_SHOW_INFO_OPENLOOP
             if (i != 100)
             {
-                printf(" current to hi!!! max_antenna_current: %f reduced: %f perc: %d\%\n",
+                printf(" current too hi!!! max_antenna_current: %f reduced: %f perc: %d\%\n",
                        max_antenna_current,
                        max_curr_reduced,
                        i);
@@ -1842,7 +1981,7 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
     }
 
     // plateau calcs, adjust duty for max current (or reduced current)
-    float max_c = 0.715 / (0.95 * Vin * gain);   //adjust for duty max 950 
+    float max_c = Rsense * Ao / (0.95 * Vin * gain);   //adjust for duty max 950 
     max_c = max_c * max_antenna_current;    //adjust for antenna current
     max_c = max_c * global_signals.power / 100.;    //adjust for power
     max_c = max_c * r / 100.;    //adjust for power reduction
@@ -1856,7 +1995,7 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
            max_duty);
 #endif    
     
-
+#ifdef HARDWARE_VERSION_3_0
     if ((which_channel == CH1) || (which_channel == CH2))
     {
         for (int i = 0; i < (short) pts; i++)
@@ -1881,7 +2020,34 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
             *(dst_table + i) = 0;
         
     }
+#endif
+#ifdef HARDWARE_VERSION_1_0
+    if (which_channel == CH1)
+    {
+        for (int i = 0; i < (short) pts; i++)
+            *(dst_table + i) = 950;
+
+        for (int i = (short) pts; i < 127; i++)
+            *(dst_table + i) = max_duty;
+
+        for (int i = 128; i < 255; i++)
+            *(dst_table + i) = 0;
         
+    }
+    else
+    {
+        for (int i = 128; i < (128 + (short) pts); i++)
+            *(dst_table + i) = 950;
+
+        for (int i = 128 + (short) pts; i < 255; i++)
+            *(dst_table + i) = max_duty;
+
+        for (int i = 0; i < 127; i++)
+            *(dst_table + i) = 0;
+        
+    }
+#endif
+    
 #ifdef TESTING_SHOW_INFO_OPENLOOP
     printf(" t: %f tms: %f fs: %f pts: %f\n", t, t * 1000, fsampling, pts);
 #endif    
@@ -1894,6 +2060,7 @@ void Signals_Generate_Channel_OpenLoop (unsigned char which_channel, short new_r
 {
     switch (which_channel)
     {
+#ifdef HARDWARE_VERSION_3_0
     case CH1:
         pf_high_left = TIM8_Update_CH3;
         pf_low_right = TIM8_Update_CH4;
@@ -1913,6 +2080,28 @@ void Signals_Generate_Channel_OpenLoop (unsigned char which_channel, short new_r
         pf_high_left = TIM5_Update_CH1;
         pf_low_right = TIM5_Update_CH2;
         break;
+#endif
+#ifdef HARDWARE_VERSION_1_0
+    case CH1:
+        pf_high_left = TIM4_Update_CH2;
+        pf_low_right = TIM4_Update_CH3;
+        break;
+
+    case CH2:
+        pf_high_left = TIM5_Update_CH1;
+        pf_low_right = TIM5_Update_CH2;
+        break;
+
+    case CH3:
+        pf_high_left = TIM_Void_CH;
+        pf_low_right = TIM_Void_CH;
+        break;
+
+    case CH4:
+        pf_high_left = TIM_Void_CH;
+        pf_low_right = TIM_Void_CH;
+        break;
+#endif
     }
 
 

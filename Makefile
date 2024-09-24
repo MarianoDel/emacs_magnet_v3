@@ -264,13 +264,14 @@ tests_comms_channels:
 tests_signals:
 	# compile first modules in this test
 	# first module objects to test
-	gcc -c --coverage src/signals.c -I. $(INCDIR) $(DDEFS)
+	gcc -c --coverage src/signals.c -I. $(INCDIR) $(DDEFS) -DTESTING_SHOW_INFO -DTESTING_SHOW_INFO_OPENLOOP
 	gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
 	# second auxiliary helper modules
 	gcc -c src/tests_ok.c -I $(INCDIR)
 	gcc -c src/tests_vector_utils.c -I $(INCDIR)
 	gcc -c src/tests_know_antennas.c -I $(INCDIR)
-	gcc --coverage src/tests_signals.c signals.o dsp.o tests_ok.o tests_vector_utils.o tests_know_antennas.o -I $(INCDIR) $(DDEFS)
+	gcc -c src/tests_mock_usart.c -I $(INCDIR)
+	gcc --coverage src/tests_signals.c signals.o dsp.o tests_ok.o tests_vector_utils.o tests_know_antennas.o tests_mock_usart.o -I $(INCDIR) $(DDEFS)
 	./a.out
 	# process coverage
 	gcov signals.c -m
@@ -279,7 +280,7 @@ tests_signals:
 tests_signals_simul:
 	# compile first modules in this test
 	# first module objects to test
-	gcc -c src/signals.c -I. $(INCDIR) $(DDEFS)
+	gcc -c src/signals.c -I. $(INCDIR) $(DDEFS) -DTESTING_SHOW_INFO -DTESTING_SHOW_INFO_OPENLOOP
 	gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
 	# second auxiliary helper modules
 	gcc -c src/tests_know_antennas.c -I $(INCDIR)

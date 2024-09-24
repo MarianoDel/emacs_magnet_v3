@@ -70,4 +70,5 @@ void TIM8_Update_CH3 (unsigned short a);
 void TIM8_Update_CH4 (unsigned short a);
 #endif
 
+void TIM_Void_CH (unsigned short a);
 #endif /* _TIMER_H_ */

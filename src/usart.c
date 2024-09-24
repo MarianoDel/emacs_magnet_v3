@@ -19,20 +19,32 @@
 
 // Private Types Constants and Macros ------------------------------------------
 //---- Configurations Defines --------------------
+#define SIZEOF_TX1DATA        512
+#define SIZEOF_RX1DATA        256
+
 #define SIZEOF_TXDATA        128
 #define SIZEOF_RXDATA        128
 
 //---- Common Defines --------------------
 // 0xMMMF    Mantissa MMM Fraction F/16
 //
-#ifdef HSE_CRYSTAL_OSC
+#if (defined HSE_CRYSTAL_OSC)
 #define USART_PCKL2_9600        0x1D4C    // with xtal HSE 12MHz
 #define USART_PCKL1_9600        0x0EA6    // with xtal HSE 12MHz
 #pragma message "HSE used as clk input on usart.c"
-#elif HSI_INTERNAL_RC
-#define USART_PCKL1_9600        0x0DD3    // with RC internal, fix the displacement
-#define USART_PCKL2_9600        0x1B40    // with RC internal
+
+#elif (defined HSI_INTERNAL_RC)
+#if defined SYSCLK_FREQ_64MHz
+#define USART_PCKL2_9600    0x1A0A    // with RC internal
+#define USART_PCKL1_9600    0x0D05    // with RC internal
+#elif defined SYSCLK_FREQ_8MHz
+#define USART_PCKL2_9600    0x0341    // with RC internal
+#define USART_PCKL1_9600    0x01A0    // with RC internal
+#else
+#error "wrong sysclk for baudrate on usart.c"
+#endif
 #pragma message "HSI used as clk input on usart.c"
+
 #else
 #error "No clock defined! needed by usart.c"
 #endif
@@ -74,8 +86,8 @@
 volatile unsigned char * ptx1;
 volatile unsigned char * ptx1_pckt_index;
 volatile unsigned char * prx1;
-volatile unsigned char tx1buff[SIZEOF_TXDATA];
-volatile unsigned char rx1buff[SIZEOF_RXDATA];
+volatile unsigned char tx1buff[SIZEOF_TX1DATA];
+volatile unsigned char rx1buff[SIZEOF_RX1DATA];
 volatile unsigned char usart1_have_data = 0;
 
 //--- USART2 ---//
@@ -155,7 +167,7 @@ void Usart1Send (char * send)
 
 void Usart1SendUnsigned (unsigned char * send, unsigned char size)
 {
-    if ((ptx1_pckt_index + size) < &tx1buff[SIZEOF_TXDATA])
+    if ((ptx1_pckt_index + size) < &tx1buff[SIZEOF_TX1DATA])
     {
         memcpy((unsigned char *)ptx1_pckt_index, send, size);
         ptx1_pckt_index += size;
@@ -212,7 +224,7 @@ void USART1_IRQHandler (void)
     {
         dummy = USART1->DR & 0x0FF;
 
-        if (prx1 < &rx1buff[SIZEOF_RXDATA - 1])
+        if (prx1 < &rx1buff[SIZEOF_RX1DATA - 1])
         {
             //al /r no le doy bola
             if (dummy == '\r')
@@ -243,7 +255,7 @@ void USART1_IRQHandler (void)
     {
         if (USART1->SR & USART_SR_TXE)
         {
-            if ((ptx1 < &tx1buff[SIZEOF_TXDATA]) && (ptx1 < ptx1_pckt_index))
+            if ((ptx1 < &tx1buff[SIZEOF_TX1DATA]) && (ptx1 < ptx1_pckt_index))
             {
                 USART1->DR = *ptx1;
                 ptx1++;
@@ -568,6 +580,7 @@ void USART3_IRQHandler (void)
 
 
 #ifdef STM32F10X_HD
+#ifndef HARDWARE_VERSION_1_0
 //---- UART4 Functions ----
 void Uart4Config(void)
 {
@@ -861,6 +874,49 @@ void UART5_IRQHandler (void)
         dummy = UART5->DR;
     }
 }
+#else    //HARDWARE_VERSION_1_0
+void Uart4Send (char * send)
+{
+}
 
+
+unsigned char Uart4ReadBuffer (char * bout, unsigned short max_len)
+{
+    return 0;
+}
+
+
+unsigned char Uart4HaveData (void)
+{
+    return 0;
+}
+
+
+void Uart4HaveDataReset (void)
+{
+}
+
+void Uart5Send (char * send)
+{
+}
+
+
+unsigned char Uart5ReadBuffer (char * bout, unsigned short max_len)
+{
+    return 0;
+}
+
+
+unsigned char Uart5HaveData (void)
+{
+    return 0;
+}
+
+
+void Uart5HaveDataReset (void)
+{
+}
+
+#endif    //HARDWARE_VERSION_1_0
 #endif
 //---- End of File ----//

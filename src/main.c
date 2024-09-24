@@ -37,6 +37,10 @@
 
 
 // Private Types Constants and Macros ------------------------------------------
+#if ((!defined HARDWARE_VERSION_3_0) && \
+     (!defined HARDWARE_VERSION_1_0))
+#error "Hard error on gpio.c not 3.0 nor 1.0"
+#endif
 
 
 // Externals -------------------------------------------------------------------
@@ -84,8 +88,15 @@ int main (void)
     BUZZER_OFF;
     
     // Systick Timer Activation
+#ifdef SYSCLK_FREQ_72MHz
     if (SysTick_Config(72000))
         SysTickError();
+#elif defined SYSCLK_FREQ_64MHz
+    if (SysTick_Config(64000))
+        SysTickError();
+#else
+#error "Check sysclk freq on main.c"
+#endif
 
     // Hardware Tests
     // TF_Hardware_Tests ();
@@ -102,6 +113,7 @@ int main (void)
     //-- Comms with rasp
     Usart1Config ();
 
+#ifdef HARDWARE_VERSION_3_0
     //-- Comms with channels
     Usart2Config ();
     Usart3Config ();
@@ -112,7 +124,18 @@ int main (void)
     TIM8_Init();    // init timer 8 for ch1 & ch2 pwm output
     TIM4_Init();    // init timer 4 for channel 3 pwm output
     TIM5_Init();    // init timer 5 for channel 4 pwm output
+#endif
 
+#ifdef HARDWARE_VERSION_1_0
+    //-- Comms with channels
+    Usart2Config ();
+    Usart3Config ();
+
+    //-- PWM Timers    
+    TIM4_Init();    // init timer 4 for channel 1 pwm output
+    TIM5_Init();    // init timer 5 for channel 2 pwm output
+#endif
+    
     //-- TIM1 for signals module sequence ready
     TIM1_Init();
 
@@ -124,7 +147,12 @@ int main (void)
 #endif
 
 #ifdef MAGNET_GAUSSTEK
-    Usart1Send("\r\nGausstek Magnet Power Board -- powered by: Kirno International Llc\r\n");    
+    Usart1Send("\r\nGausstek MT-1000 Magnet Power Board -- powered by: Kirno International Llc\r\n");    
+    Wait_ms(100);
+#endif
+
+#ifdef MAGNET_GAUSSTEK_MT250
+    Usart1Send("\r\nGausstek MT-250 Magnet Power Board -- powered by: Kirno International Llc\r\n");    
     Wait_ms(100);
 #endif
     
@@ -171,7 +199,8 @@ int main (void)
 #endif
 
     //-- Saved Config --------------------------
-#ifdef MAGNET_GAUSSTEK
+#if ((defined MAGNET_GAUSSTEK) || \
+     (defined MAGNET_GAUSSTEK_MT250))
     // Default mem config
     mem_conf.tamper_config = TAMPER_DISABLE;
     //-- end of Saved Config --------------------------
@@ -186,10 +215,17 @@ int main (void)
         AntennaUpdateStates ();
 
         // update the channels comms
+#ifdef HARDWARE_VERSION_3_0
         Comms_Channel1 ();
         Comms_Channel2 ();
         Comms_Channel3 ();
         Comms_Channel4 ();
+#endif
+
+#ifdef HARDWARE_VERSION_1_0
+        Comms_Channel1 ();
+        Comms_Channel2 ();
+#endif        
 
         // update treatment state
         Treatment_Manager();

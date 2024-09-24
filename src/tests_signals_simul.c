@@ -75,6 +75,7 @@ recursive_filter_t plant_ch4;
 float max_antenna_current = 0.0;
 float fsampling = 7000.0;
 
+int error_ch1 = 0;
 
 // Module Functions to Test ----------------------------------------------------
 // -- set recursive
@@ -92,6 +93,7 @@ void Test_Plant_Step_Response (void);
 void Test_All_Signals_All_Antennas (void);
 void Test_Single_Signal_Single_Antenna (void);
 void Test_Single_Signal_Single_Antenna_Single_Freq (void);
+void Test_Single_Signal_Single_Antenna_Single_Freq_OpenLoop (void);
 
 
 
@@ -146,23 +148,23 @@ int main (int argc, char *argv[])
     // Test_Single_Signal_Single_Antenna_Single_Freq ();
     // printf("end generation test\n");    
 
-    printf("testing all signals all antennas all frequencies on ch1...\n");
-    printf("recursive reset on plant...\n");
-    Plant_Out_Recursive_Reset (CH1, &plant_ch1);
-    Plant_Out_Recursive_Reset (CH2, &plant_ch2);
-    Plant_Out_Recursive_Reset (CH3, &plant_ch3);
-    Plant_Out_Recursive_Reset (CH4, &plant_ch4);
-    Test_All_Signals_All_Antennas_All_Freq ();
-    printf("end generation test\n");    
-
-    // printf("testing specific antenna with specific signal specific freq on ch1...\n");
+    // printf("testing all signals all antennas all frequencies on ch1...\n");
     // printf("recursive reset on plant...\n");
     // Plant_Out_Recursive_Reset (CH1, &plant_ch1);
     // Plant_Out_Recursive_Reset (CH2, &plant_ch2);
     // Plant_Out_Recursive_Reset (CH3, &plant_ch3);
     // Plant_Out_Recursive_Reset (CH4, &plant_ch4);
-    // Test_Single_Signal_Single_Antenna_Single_Freq_OpenLoop ();
+    // Test_All_Signals_All_Antennas_All_Freq ();
     // printf("end generation test\n");    
+
+    printf("testing specific antenna with specific signal specific freq on ch1...\n");
+    printf("recursive reset on plant...\n");
+    Plant_Out_Recursive_Reset (CH1, &plant_ch1);
+    Plant_Out_Recursive_Reset (CH2, &plant_ch2);
+    Plant_Out_Recursive_Reset (CH3, &plant_ch3);
+    Plant_Out_Recursive_Reset (CH4, &plant_ch4);
+    Test_Single_Signal_Single_Antenna_Single_Freq_OpenLoop ();
+    printf("end generation test\n");    
     
     printf("all simulations done!\n");
     
@@ -260,76 +262,76 @@ extern pi_data_obj_t pi_ch3;
 extern pi_data_obj_t pi_ch4;
 extern unsigned short signal_index;
 extern unsigned short phase_accum;
-void Test_Generate_All_Channels (void)
-{
+// void Test_Generate_All_Channels (void)
+// {
     
-    Signals_Setup_All_Channels();
+//     Signals_Setup_All_Channels();
 
-    for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
-    {
-        timer1_seq_ready = 1;
-        Signals_Generate_All_Channels ();
+//     for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+//     {
+//         timer1_seq_ready = 1;
+//         Signals_Generate_All_Channels ();
 
-        // save ch1 data
-        v_duty_ch1[i] = pi_ch1.last_d;
-        v_sp_ch1[i] = pi_ch1.setpoint;
-        v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
-        v_adc_ch1[i] = pi_ch1.sample;
+//         // save ch1 data
+//         v_duty_ch1[i] = pi_ch1.last_d;
+//         v_sp_ch1[i] = pi_ch1.setpoint;
+//         v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
+//         v_adc_ch1[i] = pi_ch1.sample;
 
-        // save ch2 data
-        v_duty_ch2[i] = pi_ch2.last_d;
-        v_sp_ch2[i] = pi_ch2.setpoint;
-        v_error_ch2[i] = pi_ch2.setpoint - pi_ch2.sample;
-        v_adc_ch2[i] = pi_ch2.sample;
+//         // save ch2 data
+//         v_duty_ch2[i] = pi_ch2.last_d;
+//         v_sp_ch2[i] = pi_ch2.setpoint;
+//         v_error_ch2[i] = pi_ch2.setpoint - pi_ch2.sample;
+//         v_adc_ch2[i] = pi_ch2.sample;
 
-        // save ch3 data
-        v_duty_ch3[i] = pi_ch3.last_d;
-        v_sp_ch3[i] = pi_ch3.setpoint;
-        v_error_ch3[i] = pi_ch3.setpoint - pi_ch3.sample;
-        v_adc_ch3[i] = pi_ch3.sample;
+//         // save ch3 data
+//         v_duty_ch3[i] = pi_ch3.last_d;
+//         v_sp_ch3[i] = pi_ch3.setpoint;
+//         v_error_ch3[i] = pi_ch3.setpoint - pi_ch3.sample;
+//         v_adc_ch3[i] = pi_ch3.sample;
 
-        // save ch4 data
-        v_duty_ch4[i] = pi_ch4.last_d;
-        v_sp_ch4[i] = pi_ch4.setpoint;
-        v_error_ch4[i] = pi_ch4.setpoint - pi_ch4.sample;
-        v_adc_ch4[i] = pi_ch4.sample;
+//         // save ch4 data
+//         v_duty_ch4[i] = pi_ch4.last_d;
+//         v_sp_ch4[i] = pi_ch4.setpoint;
+//         v_error_ch4[i] = pi_ch4.setpoint - pi_ch4.sample;
+//         v_adc_ch4[i] = pi_ch4.sample;
         
-    }
+//     }
 
-    ///////////////////////////
-    // Backup Data to a file //
-    ///////////////////////////
-    FILE * file = fopen("data.txt", "w");
+//     ///////////////////////////
+//     // Backup Data to a file //
+//     ///////////////////////////
+//     FILE * file = fopen("data.txt", "w");
 
-    if (file == NULL)
-    {
-        printf("data file not created!\n");
-        return;
-    }
+//     if (file == NULL)
+//     {
+//         printf("data file not created!\n");
+//         return;
+//     }
 
-    // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
-    // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
-    Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+//     Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
+//     Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
 
-    // Vector_Short_To_File (file, "duty2", v_duty_ch2, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "adc2", v_adc_ch2, SIZEOF_SIGNALS);
-    // Vector_Short_To_File (file, "error2", v_error_ch2, SIZEOF_SIGNALS);    
-    // Vector_Short_To_File (file, "setpoint2", v_sp_ch2, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "duty2", v_duty_ch2, SIZEOF_SIGNALS);
+//     Vector_Short_To_File (file, "adc2", v_adc_ch2, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "error2", v_error_ch2, SIZEOF_SIGNALS);    
+//     // Vector_Short_To_File (file, "setpoint2", v_sp_ch2, SIZEOF_SIGNALS);
     
-    // Vector_Short_To_File (file, "duty3", v_duty_ch3, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "adc3", v_adc_ch3, SIZEOF_SIGNALS);
-    // Vector_Short_To_File (file, "error3", v_error_ch3, SIZEOF_SIGNALS);    
-    // Vector_Short_To_File (file, "setpoint3", v_sp_ch3, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "duty3", v_duty_ch3, SIZEOF_SIGNALS);
+//     Vector_Short_To_File (file, "adc3", v_adc_ch3, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "error3", v_error_ch3, SIZEOF_SIGNALS);    
+//     // Vector_Short_To_File (file, "setpoint3", v_sp_ch3, SIZEOF_SIGNALS);
 
-    // Vector_Short_To_File (file, "duty4", v_duty_ch4, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "adc4", v_adc_ch4, SIZEOF_SIGNALS);
-    // Vector_Short_To_File (file, "error4", v_error_ch4, SIZEOF_SIGNALS);    
-    // Vector_Short_To_File (file, "setpoint4", v_sp_ch4, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "duty4", v_duty_ch4, SIZEOF_SIGNALS);
+//     Vector_Short_To_File (file, "adc4", v_adc_ch4, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "error4", v_error_ch4, SIZEOF_SIGNALS);    
+//     // Vector_Short_To_File (file, "setpoint4", v_sp_ch4, SIZEOF_SIGNALS);
     
-    printf("\nRun by hand python3 simul_outputs.py\n");
+//     printf("\nRun by hand python3 simul_outputs.py\n");
     
-}
+// }
 
 
 extern unsigned char treat_in_ch1;
@@ -360,114 +362,114 @@ extern signals_struct_t global_signals;
 // };
 
 
-void Test_All_Signals_All_Antennas (void)
-{
-    int more_antennas = 0;
-    int current_ok = 1;
+// void Test_All_Signals_All_Antennas (void)
+// {
+//     int more_antennas = 0;
+//     int current_ok = 1;
 
-    for (int j = 0; j < 3; j++)
-    {
-        switch (j)
-        {
-        case 0:
-            printf("\nemitting with SINUSOIDAL_SIGNAL\n");
-            global_signals.signal = SINUSOIDAL_SIGNAL;
-            global_signals.kp_ch1 = 2;
-            global_signals.ki_ch1 = 30;
-            break;
-        case 1:
-            printf("\nemitting with TRIANGULAR_SIGNAL\n");
-            global_signals.signal = TRIANGULAR_SIGNAL;
-            global_signals.kp_ch1 = 10;
-            global_signals.ki_ch1 = 10;
-            break;
-        case 2:
-            printf("\nemitting with SQUARE_SIGNAL\n");
-            global_signals.signal = SQUARE_SIGNAL;
-            global_signals.kp_ch1 = 50;
-            global_signals.ki_ch1 = 3;
-            break;
-        }
+//     for (int j = 0; j < 3; j++)
+//     {
+//         switch (j)
+//         {
+//         case 0:
+//             printf("\nemitting with SINUSOIDAL_SIGNAL\n");
+//             global_signals.signal = SINUSOIDAL_SIGNAL;
+//             global_signals.kp_ch1 = 2;
+//             global_signals.ki_ch1 = 30;
+//             break;
+//         case 1:
+//             printf("\nemitting with TRIANGULAR_SIGNAL\n");
+//             global_signals.signal = TRIANGULAR_SIGNAL;
+//             global_signals.kp_ch1 = 10;
+//             global_signals.ki_ch1 = 10;
+//             break;
+//         case 2:
+//             printf("\nemitting with SQUARE_SIGNAL\n");
+//             global_signals.signal = SQUARE_SIGNAL;
+//             global_signals.kp_ch1 = 50;
+//             global_signals.ki_ch1 = 3;
+//             break;
+//         }
 
-        TSP_Get_Know_Antennas_Reset ();
+//         TSP_Get_Know_Antennas_Reset ();
         
-        do {        
-            more_antennas = Plant_Out_Recursive_From_Know_Antennas_Reset (&plant_ch1);
-            if (more_antennas)
-            {
-                // empty signals buffers
-                for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
-                {
-                    v_duty_ch1[i] = 0;
-                    v_sp_ch1[i] = 0;
-                    v_error_ch1[i] = 0;
-                    v_adc_ch1[i] = 0;
-                }
+//         do {        
+//             more_antennas = Plant_Out_Recursive_From_Know_Antennas_Reset (&plant_ch1);
+//             if (more_antennas)
+//             {
+//                 // empty signals buffers
+//                 for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+//                 {
+//                     v_duty_ch1[i] = 0;
+//                     v_sp_ch1[i] = 0;
+//                     v_error_ch1[i] = 0;
+//                     v_adc_ch1[i] = 0;
+//                 }
             
-                // current sensed 1A -> 887 pts
-                global_signals.max_c_ch1 = (unsigned short) (max_antenna_current * 887);
-                printf("max_c_ch1: %d current: %f\n", global_signals.max_c_ch1, max_antenna_current);
-                Signals_Setup_All_Channels();
+//                 // current sensed 1A -> 887 pts
+//                 global_signals.max_c_ch1 = (unsigned short) (max_antenna_current * 887);
+//                 printf("max_c_ch1: %d current: %f\n", global_signals.max_c_ch1, max_antenna_current);
+//                 Signals_Setup_All_Channels();
     
-                for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
-                {
-                    timer1_seq_ready = 1;
-                    Signals_Generate_All_Channels ();
+//                 for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+//                 {
+//                     timer1_seq_ready = 1;
+//                     Signals_Generate_All_Channels ();
 
-                    // save ch1 data
-                    v_duty_ch1[i] = pi_ch1.last_d;
-                    v_sp_ch1[i] = pi_ch1.setpoint;
-                    v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
-                    v_adc_ch1[i] = pi_ch1.sample;
+//                     // save ch1 data
+//                     v_duty_ch1[i] = pi_ch1.last_d;
+//                     v_sp_ch1[i] = pi_ch1.setpoint;
+//                     v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
+//                     v_adc_ch1[i] = pi_ch1.sample;
 
-                    if (treat_in_ch1 == 2)    //some error on channel!!!
-                    {
-                        printf("treat stopped on channel 1 in sequence: %d\n", i);
-                        current_ok = 0;
-                        break;
-                    }
-                }
-            }
+//                     if (treat_in_ch1 == 2)    //some error on channel!!!
+//                     {
+//                         printf("treat stopped on channel 1 in sequence: %d\n", i);
+//                         current_ok = 0;
+//                         break;
+//                     }
+//                 }
+//             }
         
-        } while ((more_antennas) && (current_ok));
+//         } while ((more_antennas) && (current_ok));
 
-        printf(" antennas shuffle ended: ");
-        if (current_ok)
-            PrintOK();
-        else
-        {
-            PrintERR();
-            break;
-        }
-    }
+//         printf(" antennas shuffle ended: ");
+//         if (current_ok)
+//             PrintOK();
+//         else
+//         {
+//             PrintERR();
+//             break;
+//         }
+//     }
 
-    printf(" signals shuffle ended: ");
-    if (current_ok)
-        PrintOK();
-    else
-        PrintERR();
+//     printf(" signals shuffle ended: ");
+//     if (current_ok)
+//         PrintOK();
+//     else
+//         PrintERR();
 
         
 
-    ///////////////////////////
-    // Backup Data to a file //
-    ///////////////////////////
-    FILE * file = fopen("data.txt", "w");
+//     ///////////////////////////
+//     // Backup Data to a file //
+//     ///////////////////////////
+//     FILE * file = fopen("data.txt", "w");
 
-    if (file == NULL)
-    {
-        printf("data file not created!\n");
-        return;
-    }
+//     if (file == NULL)
+//     {
+//         printf("data file not created!\n");
+//         return;
+//     }
 
-    // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
-    // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
-    Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+//     Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
+//     Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
 
-    printf("\nRun by hand python3 simul_outputs.py\n");
+//     printf("\nRun by hand python3 simul_outputs.py\n");
     
-}
+// }
 
 
 float Vin = 192.0;
@@ -516,10 +518,10 @@ int Plant_Out_Recursive_From_Know_Antennas_Reset (recursive_filter_t * f)
     printf("a params: %f %f\n", f->a_params[0], f->a_params[1]);
 
     // reset pi controller
-    Plant_Out_PI_Flush (CH1);
-    Plant_Out_PI_Flush (CH2);
-    Plant_Out_PI_Flush (CH3);
-    Plant_Out_PI_Flush (CH4);    
+    // Plant_Out_PI_Flush (CH1);
+    // Plant_Out_PI_Flush (CH2);
+    // Plant_Out_PI_Flush (CH3);
+    // Plant_Out_PI_Flush (CH4);    
 
     // reset pwm and adc
     // reset pwm and adc
@@ -590,10 +592,10 @@ void Plant_Out_Recursive_From_Single_Antenna_Reset (recursive_filter_t * f, unsi
     printf("a params: %f %f\n", f->a_params[0], f->a_params[1]);
 
     // reset pi controller
-    Plant_Out_PI_Flush (CH1);
-    Plant_Out_PI_Flush (CH2);
-    Plant_Out_PI_Flush (CH3);
-    Plant_Out_PI_Flush (CH4);    
+    // Plant_Out_PI_Flush (CH1);
+    // Plant_Out_PI_Flush (CH2);
+    // Plant_Out_PI_Flush (CH3);
+    // Plant_Out_PI_Flush (CH4);    
 
     // reset pwm and adc
     TIM8_Update_CH3(0);
@@ -616,242 +618,246 @@ void Plant_Out_Recursive_From_Single_Antenna_Reset (recursive_filter_t * f, unsi
 }
 
 
-void Test_Single_Signal_Single_Antenna (void)
-{
-    unsigned char antenna_index = 0;    //check tests_know_antennas.c
+// void Test_Single_Signal_Single_Antenna (void)
+// {
+//     unsigned char antenna_index = 0;    //check tests_know_antennas.c
 
-    unsigned char antenna_signal = SINUSOIDAL_SIGNAL;
-    // unsigned char antenna_signal = TRIANGULAR_SIGNAL;
-    // unsigned char antenna_signal = SQUARE_SIGNAL;
+//     unsigned char antenna_signal = SINUSOIDAL_SIGNAL;
+//     // unsigned char antenna_signal = TRIANGULAR_SIGNAL;
+//     // unsigned char antenna_signal = SQUARE_SIGNAL;
 
-    int current_ok = 1;
+//     int current_ok = 1;
 
-    switch (antenna_signal)
-    {
-    case SINUSOIDAL_SIGNAL:
-        printf("\nemitting with SINUSOIDAL_SIGNAL\n");
-        global_signals.signal = SINUSOIDAL_SIGNAL;
-        global_signals.kp_ch1 = 40;
-        global_signals.ki_ch1 = 12;
-        break;
-    case TRIANGULAR_SIGNAL:
-        printf("\nemitting with TRIANGULAR_SIGNAL\n");
-        global_signals.signal = TRIANGULAR_SIGNAL;
-        global_signals.kp_ch1 = 10;
-        global_signals.ki_ch1 = 10;
-        break;
-    case SQUARE_SIGNAL:
-        printf("\nemitting with SQUARE_SIGNAL\n");
-        global_signals.signal = SQUARE_SIGNAL;
-        global_signals.kp_ch1 = 30;
-        global_signals.ki_ch1 = 8;
-        break;
-    }
+//     switch (antenna_signal)
+//     {
+//     case SINUSOIDAL_SIGNAL:
+//         printf("\nemitting with SINUSOIDAL_SIGNAL\n");
+//         global_signals.signal = SINUSOIDAL_SIGNAL;
+//         global_signals.kp_ch1 = 40;
+//         global_signals.ki_ch1 = 12;
+//         break;
+//     case TRIANGULAR_SIGNAL:
+//         printf("\nemitting with TRIANGULAR_SIGNAL\n");
+//         global_signals.signal = TRIANGULAR_SIGNAL;
+//         global_signals.kp_ch1 = 10;
+//         global_signals.ki_ch1 = 10;
+//         break;
+//     case SQUARE_SIGNAL:
+//         printf("\nemitting with SQUARE_SIGNAL\n");
+//         global_signals.signal = SQUARE_SIGNAL;
+//         global_signals.kp_ch1 = 30;
+//         global_signals.ki_ch1 = 8;
+//         break;
+//     }
 
-    Plant_Out_Recursive_From_Single_Antenna_Reset (&plant_ch1, antenna_index);
-    phase_accum = 256;
+//     Plant_Out_Recursive_From_Single_Antenna_Reset (&plant_ch1, antenna_index);
+//     phase_accum = 256;
 
-    // empty signals buffers
-    for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
-    {
-        v_duty_ch1[i] = 0;
-        v_sp_ch1[i] = 0;
-        v_error_ch1[i] = 0;
-        v_adc_ch1[i] = 0;
-    }
+//     // empty signals buffers
+//     for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+//     {
+//         v_duty_ch1[i] = 0;
+//         v_sp_ch1[i] = 0;
+//         v_error_ch1[i] = 0;
+//         v_adc_ch1[i] = 0;
+//     }
             
-    // current sensed 1A -> 887 pts
-    global_signals.max_c_ch1 = (unsigned short) (max_antenna_current * 887);
-    printf("max_c_ch1: %d current: %f\n", global_signals.max_c_ch1, max_antenna_current);
-    Signals_Setup_All_Channels();
+//     // current sensed 1A -> 887 pts
+//     global_signals.max_c_ch1 = (unsigned short) (max_antenna_current * 887);
+//     printf("max_c_ch1: %d current: %f\n", global_signals.max_c_ch1, max_antenna_current);
+//     Signals_Setup_All_Channels();
     
-    for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
-    {
-        timer1_seq_ready = 1;
-        Signals_Generate_All_Channels ();
+//     for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+//     {
+//         timer1_seq_ready = 1;
+//         Signals_Generate_All_Channels ();
 
-        // save ch1 data
-        v_duty_ch1[i] = pi_ch1.last_d;
-        v_sp_ch1[i] = pi_ch1.setpoint;
-        v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
-        v_adc_ch1[i] = pi_ch1.sample;
+//         // save ch1 data
+//         v_duty_ch1[i] = pi_ch1.last_d;
+//         v_sp_ch1[i] = pi_ch1.setpoint;
+//         v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
+//         v_adc_ch1[i] = pi_ch1.sample;
 
-        if (treat_in_ch1 == 2)    //some error on channel!!!
-        {
-            printf("treat stopped on channel 1 in sequence: %d\n", i);
-            current_ok = 0;
-            break;
-        }
-    }
+//         if (treat_in_ch1 == 2)    //some error on channel!!!
+//         {
+//             printf("treat stopped on channel 1 in sequence: %d\n", i);
+//             current_ok = 0;
+//             break;
+//         }
+//     }
 
-    printf(" antenna emission ended: ");
-    if (current_ok)
-        PrintOK();
-    else
-        PrintERR();
+//     printf(" antenna emission ended: ");
+//     if (current_ok)
+//         PrintOK();
+//     else
+//         PrintERR();
         
 
-    ///////////////////////////
-    // Backup Data to a file //
-    ///////////////////////////
-    FILE * file = fopen("data.txt", "w");
+//     ///////////////////////////
+//     // Backup Data to a file //
+//     ///////////////////////////
+//     FILE * file = fopen("data.txt", "w");
 
-    if (file == NULL)
-    {
-        printf("data file not created!\n");
-        return;
-    }
+//     if (file == NULL)
+//     {
+//         printf("data file not created!\n");
+//         return;
+//     }
 
-    // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
-    // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
-    Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+//     Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
+//     Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
 
-    printf("\nRun by hand python3 simul_outputs.py\n");
+//     printf("\nRun by hand python3 simul_outputs.py\n");
     
-}
+// }
 
 
-void Test_Single_Signal_Single_Antenna_Single_Freq (void)
-{
-    unsigned char antenna_index = 0;    //check tests_know_antennas.c
+// void Test_Single_Signal_Single_Antenna_Single_Freq (void)
+// {
+//     unsigned char antenna_index = 0;    //check tests_know_antennas.c
 
-    unsigned char antenna_signal = TRIANGULAR_SIGNAL;
-    // unsigned char antenna_signal = SQUARE_SIGNAL;
-    // unsigned char antenna_signal = SINUSOIDAL_SIGNAL;
+//     unsigned char antenna_signal = TRIANGULAR_SIGNAL;
+//     // unsigned char antenna_signal = SQUARE_SIGNAL;
+//     // unsigned char antenna_signal = SINUSOIDAL_SIGNAL;
 
-    // float my_freq = 0.9;
-    // float my_freq = 5.0;    
-    // float my_freq = 11.5;
-    // float my_freq = 23.5;
-    // float my_freq = 44.0;
-    // float my_freq = 67.0;
-    // float my_freq = 60.9;
-    // float my_freq = 80.9;
-    float my_freq = 100.0;
+//     // float my_freq = 0.9;
+//     // float my_freq = 5.0;    
+//     // float my_freq = 11.5;
+//     // float my_freq = 23.5;
+//     // float my_freq = 44.0;
+//     // float my_freq = 67.0;
+//     // float my_freq = 60.9;
+//     // float my_freq = 80.9;
+//     float my_freq = 100.0;
 
-    int current_ok = 1;
+//     int current_ok = 1;
 
-    switch (antenna_signal)
-    {
-    case SINUSOIDAL_SIGNAL:
-        printf("\nemitting with SINUSOIDAL_SIGNAL\n");
-        global_signals.signal = SINUSOIDAL_SIGNAL;
-        global_signals.kp_ch1 = 80;
-        global_signals.ki_ch1 = 20;
-        // global_signals.kp_ch1 = 40;
-        // global_signals.ki_ch1 = 12;
-        break;
-    case TRIANGULAR_SIGNAL:
-        printf("\nemitting with TRIANGULAR_SIGNAL\n");
-        global_signals.signal = TRIANGULAR_SIGNAL;
-        global_signals.kp_ch1 = 10;
-        global_signals.ki_ch1 = 10;
-        break;
-    case SQUARE_SIGNAL:
-        printf("\nemitting with SQUARE_SIGNAL\n");
-        global_signals.signal = SQUARE_SIGNAL;
-        global_signals.kp_ch1 = 60;
-        global_signals.ki_ch1 = 3;
-        break;
-    }
+//     switch (antenna_signal)
+//     {
+//     case SINUSOIDAL_SIGNAL:
+//         printf("\nemitting with SINUSOIDAL_SIGNAL\n");
+//         global_signals.signal = SINUSOIDAL_SIGNAL;
+//         global_signals.kp_ch1 = 80;
+//         global_signals.ki_ch1 = 20;
+//         // global_signals.kp_ch1 = 40;
+//         // global_signals.ki_ch1 = 12;
+//         break;
+//     case TRIANGULAR_SIGNAL:
+//         printf("\nemitting with TRIANGULAR_SIGNAL\n");
+//         global_signals.signal = TRIANGULAR_SIGNAL;
+//         global_signals.kp_ch1 = 10;
+//         global_signals.ki_ch1 = 10;
+//         break;
+//     case SQUARE_SIGNAL:
+//         printf("\nemitting with SQUARE_SIGNAL\n");
+//         global_signals.signal = SQUARE_SIGNAL;
+//         global_signals.kp_ch1 = 60;
+//         global_signals.ki_ch1 = 3;
+//         break;
+//     }
 
-    // resolve this with fsampling and 256 signal points
-    float phase = my_freq * 256 * 256 / 7000.0;
-    phase_accum = (unsigned short) phase;
-    printf("freq ask: %f phase calc: %f phase_accum: %d\n",
-           my_freq,
-           phase,
-           phase_accum);        
+//     // resolve this with fsampling and 256 signal points
+//     float phase = my_freq * 256 * 256 / 7000.0;
+//     phase_accum = (unsigned short) phase;
+//     printf("freq ask: %f phase calc: %f phase_accum: %d\n",
+//            my_freq,
+//            phase,
+//            phase_accum);        
     
-    Plant_Out_Recursive_From_Single_Antenna_Reset (&plant_ch1, antenna_index);
+//     Plant_Out_Recursive_From_Single_Antenna_Reset (&plant_ch1, antenna_index);
 
-    // check the Tau for parameters correction
-    float Tau = La * Ra;
-    float DCgain = 192.0 / Ra;
-    printf("antenna La: %f Ra: %f Tau: %f DC gain: %f\n",
-           La,
-           Ra,
-           Tau,
-           DCgain);
+//     // check the Tau for parameters correction
+//     float Tau = La * Ra;
+//     float DCgain = 192.0 / Ra;
+//     printf("antenna La: %f Ra: %f Tau: %f DC gain: %f\n",
+//            La,
+//            Ra,
+//            Tau,
+//            DCgain);
 
-    // override pi parameters
-    if ((Tau > 3.0) && (DCgain < 9.0) && (antenna_signal == SINUSOIDAL_SIGNAL))
-    {
-        printf("override pi params!\n");
-        global_signals.kp_ch1 = 1;
-        global_signals.ki_ch1 = 100;
-    }
+//     // override pi parameters
+//     if ((Tau > 3.0) && (DCgain < 9.0) && (antenna_signal == SINUSOIDAL_SIGNAL))
+//     {
+//         printf("override pi params!\n");
+//         global_signals.kp_ch1 = 1;
+//         global_signals.ki_ch1 = 100;
+//     }
     
-    // empty signals buffers
-    for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
-    {
-        v_duty_ch1[i] = 0;
-        v_sp_ch1[i] = 0;
-        v_error_ch1[i] = 0;
-        v_adc_ch1[i] = 0;
-    }
+//     // empty signals buffers
+//     for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+//     {
+//         v_duty_ch1[i] = 0;
+//         v_sp_ch1[i] = 0;
+//         v_error_ch1[i] = 0;
+//         v_adc_ch1[i] = 0;
+//     }
             
-    // current sensed 1A -> 887 pts
-    global_signals.max_c_ch1 = (unsigned short) (max_antenna_current * 887);
-    printf("max_c_ch1: %d current: %f\n", global_signals.max_c_ch1, max_antenna_current);
-    Signals_Setup_All_Channels();
+//     // current sensed 1A -> 887 pts
+//     global_signals.max_c_ch1 = (unsigned short) (max_antenna_current * 887);
+//     printf("max_c_ch1: %d current: %f\n", global_signals.max_c_ch1, max_antenna_current);
+//     Signals_Setup_All_Channels();
     
-    for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
-    {
-        timer1_seq_ready = 1;
-        Signals_Generate_All_Channels ();
+//     for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+//     {
+//         timer1_seq_ready = 1;
+//         Signals_Generate_All_Channels ();
 
-        // save ch1 data
-        v_duty_ch1[i] = pi_ch1.last_d;
-        v_sp_ch1[i] = pi_ch1.setpoint;
-        v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
-        v_adc_ch1[i] = pi_ch1.sample;
+//         // save ch1 data
+//         v_duty_ch1[i] = pi_ch1.last_d;
+//         v_sp_ch1[i] = pi_ch1.setpoint;
+//         v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
+//         v_adc_ch1[i] = pi_ch1.sample;
 
-        if (treat_in_ch1 == 2)    //some error on channel!!!
-        {
-            printf("treat stopped on channel 1 in sequence: %d\n", i);
-            current_ok = 0;
-            break;
-        }
-    }
+//         if (treat_in_ch1 == 2)    //some error on channel!!!
+//         {
+//             printf("treat stopped on channel 1 in sequence: %d\n", i);
+//             current_ok = 0;
+//             break;
+//         }
+//     }
 
-    printf(" antenna emission ended: ");
-    if (current_ok)
-        PrintOK();
-    else
-        PrintERR();
+//     printf(" antenna emission ended: ");
+//     if (current_ok)
+//         PrintOK();
+//     else
+//         PrintERR();
         
 
-    ///////////////////////////
-    // Backup Data to a file //
-    ///////////////////////////
-    FILE * file = fopen("data.txt", "w");
+//     ///////////////////////////
+//     // Backup Data to a file //
+//     ///////////////////////////
+//     FILE * file = fopen("data.txt", "w");
 
-    if (file == NULL)
-    {
-        printf("data file not created!\n");
-        return;
-    }
+//     if (file == NULL)
+//     {
+//         printf("data file not created!\n");
+//         return;
+//     }
 
-    // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
-    // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
-    Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+//     Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
+//     Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
 
-    printf("\nRun by hand python3 simul_outputs.py\n");
+//     printf("\nRun by hand python3 simul_outputs.py\n");
     
-}
+// }
 
 
-extern short p_inphase_ch1 [];
-extern const unsigned short * p_table_inphase;
+// extern short * p_table_ch1;
+extern short table_ch1 [];
+const unsigned short * p_ref_table;
+extern const unsigned short sinusoidal_table_inphase[];
+extern const unsigned short square_table_inphase[];
+extern const unsigned short triangular_table_inphase[];
 void Test_Single_Signal_Single_Antenna_Single_Freq_OpenLoop (void)
 {
     unsigned char antenna_index = 0;    //check tests_know_antennas.c
 
-    unsigned char antenna_signal = TRIANGULAR_SIGNAL;
-    // unsigned char antenna_signal = SQUARE_SIGNAL;
+    // unsigned char antenna_signal = TRIANGULAR_SIGNAL;
+    unsigned char antenna_signal = SQUARE_SIGNAL;
     // unsigned char antenna_signal = SINUSOIDAL_SIGNAL;
 
     // float my_freq = 0.9;
@@ -871,16 +877,28 @@ void Test_Single_Signal_Single_Antenna_Single_Freq_OpenLoop (void)
     case SINUSOIDAL_SIGNAL:
         printf("\nemitting with SINUSOIDAL_SIGNAL\n");
         global_signals.signal = SINUSOIDAL_SIGNAL;
+        p_ref_table = sinusoidal_table_inphase;
         break;
     case TRIANGULAR_SIGNAL:
         printf("\nemitting with TRIANGULAR_SIGNAL\n");
         global_signals.signal = TRIANGULAR_SIGNAL;
+        p_ref_table = triangular_table_inphase;        
         break;
     case SQUARE_SIGNAL:
         printf("\nemitting with SQUARE_SIGNAL\n");
         global_signals.signal = SQUARE_SIGNAL;
+        p_ref_table = square_table_inphase;        
         break;
     }
+
+    // // from global to phase
+    // void Signals_Setup_All_Channels_Open_Loop (void);
+
+    // // gen on all channels
+    // void Signals_Generate_All_Channels_Open_Loop (void);
+
+    // // set the open loop table
+    // void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_st * ant);
 
     // resolve this with fsampling and 256 signal points
     float phase = my_freq * 256 * 256 / 7000.0;
@@ -900,7 +918,42 @@ void Test_Single_Signal_Single_Antenna_Single_Freq_OpenLoop (void)
            Ra,
            Tau,
            DCgain);
+
+    // Signals_Setup_Treatment_Data(&new_treat_data);
+    // global_signals.signal = new_treat_data->signal; already done
+    global_signals.freq_int = 28;
+    global_signals.freq_dec = 7;
+    global_signals.power = 100;
+
+    // CH1 on_state
+    Signals_Set_Reset_Channel_For_Treatment(0, 1);
+    // Set channel table with antenna params
+    // float Vin = 192.0;
+    // float Rsense = 0.055;
+    // float Ao = 13.0;
+    // float La = 0.142;
+    // float Ra = 11.0;    
+    antenna_st my_ant;
+    my_ant.resistance_int = 12;
+    my_ant.resistance_dec = 27;
+    my_ant.inductance_int = 87;
+    my_ant.inductance_dec = 9;
+    my_ant.current_limit_int = 1;
+    my_ant.current_limit_dec = 80;
+    my_ant.temp_max_int = 65;
+    my_ant.temp_max_dec = 5;
+
+    Signals_Set_Channel_Table_Open_Loop (0, &my_ant);
+
+    for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+    {
+        printf("i: %d ref:%d tab: %d\n",
+               i,
+               *(p_ref_table + i),
+               table_ch1[i]);
+    }
     
+
     // empty signals buffers
     for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
     {
@@ -912,42 +965,25 @@ void Test_Single_Signal_Single_Antenna_Single_Freq_OpenLoop (void)
     // current sensed 1A -> 887 pts
     global_signals.max_c_ch1 = (unsigned short) (max_antenna_current * 887);
     printf("max_c_ch1: %d current: %f\n", global_signals.max_c_ch1, max_antenna_current);
-    Signals_Setup_All_Channels();
-
-    // printf("b params: %f\n", f->b_params[0]);
-    // printf("a params: %f %f\n", f->a_params[0], f->a_params[1]);
-    // setup de reference signal
-    // k = 0
-    float a1_pos = -a_vector_ch1[1];
-    // float calc = 16. * a1_pos / b_vector_ch1[0];
-    float calc = 0.4 * a1_pos / b_vector_ch1[0];    
-    
-    *p_inphase_ch1 = (short) calc;
-
-    // k = 1..n
-    for (int i = 1; i < 127; i++)
-    {
-        // calc = 8. / b_vector_ch1[0];
-        calc = 0.2 / b_vector_ch1[0];        
-        calc = calc * (i + a1_pos * (3*i + 1));
-        *(p_inphase_ch1 + i) = (short) calc;
-    }
+    Signals_Setup_All_Channels_Open_Loop();
     
     for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
     {
         timer1_seq_ready = 1;
-        Signals_Generate_Single_Channel_OpenLoop ();
 
-        // current setpoint
-        unsigned int csp = *(p_table_inphase + i) * global_signals.max_c_ch1;
-        csp >>= 10;    //compensate for max current 1024
+        Signals_Generate_All_Channels_Open_Loop ();
         
-        // save ch1 data
-        v_ref_ch1[i] = (short) csp;
-        v_signal_ch1[i] = *(p_inphase_ch1 + i);
-        v_adc_ch1[i] = IS_CH1;
+        // current setpoint
+        v_signal_ch1[i] = table_ch1[i];
+        v_ref_ch1[i] = *(p_ref_table + i);
+        
+        // Signals_Generate_Channel_OpenLoop (0, v_signal_ch1[i], 1);
 
-        if (treat_in_ch1 == 2)    //some error on channel!!!
+        // save ch1 data
+        // v_signal_ch1[i] = *(p_table_ch1 + i);
+        v_adc_ch1[i] = IS_CH1;
+        
+        if (error_ch1 == 2)    //some error on channel!!!
         {
             printf("treat stopped on channel 1 in sequence: %d\n", i);
             current_ok = 0;
@@ -973,7 +1009,7 @@ void Test_Single_Signal_Single_Antenna_Single_Freq_OpenLoop (void)
         return;
     }
 
-    // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+    Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
     Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
     Vector_Short_To_File (file, "signal_x", v_signal_ch1, SIZEOF_SIGNALS);    
     Vector_Short_To_File (file, "setpoint1", v_ref_ch1, SIZEOF_SIGNALS);
@@ -983,133 +1019,133 @@ void Test_Single_Signal_Single_Antenna_Single_Freq_OpenLoop (void)
 }
 
 
-void Test_All_Signals_All_Antennas_All_Freq (void)
-{
-    // unsigned char antenna_index = 10;    //check tests_know_antennas.c
-    // float my_freq = -4.1;
-    int antenna_signal = SQUARE_SIGNAL;
+// void Test_All_Signals_All_Antennas_All_Freq (void)
+// {
+//     // unsigned char antenna_index = 10;    //check tests_know_antennas.c
+//     // float my_freq = -4.1;
+//     int antenna_signal = SQUARE_SIGNAL;
 
-    unsigned char antenna_index = 8;    //check tests_know_antennas.c
-    float my_freq = 0.9;
+//     unsigned char antenna_index = 8;    //check tests_know_antennas.c
+//     float my_freq = 0.9;
     
-    int shuffle_not_ended = 1;
-    int current_ok = 1;
+//     int shuffle_not_ended = 1;
+//     int current_ok = 1;
 
-    do {
-        // change antennas
-        if (antenna_index < 9)
-            antenna_index++;
-        else
-        {
-            antenna_index = 0;
+//     do {
+//         // change antennas
+//         if (antenna_index < 9)
+//             antenna_index++;
+//         else
+//         {
+//             antenna_index = 0;
 
-            // change frequency
-            if ((int) my_freq < 100)
-                my_freq += 20.0;
-            else
-            {
-                my_freq = 0.9;
+//             // change frequency
+//             if ((int) my_freq < 100)
+//                 my_freq += 20.0;
+//             else
+//             {
+//                 my_freq = 0.9;
 
-                // change signal
-                if (antenna_signal < SINUSOIDAL_SIGNAL)
-                    antenna_signal++;
-                else
-                {
-                    shuffle_not_ended = 0;
-                }
-            }
-        }
+//                 // change signal
+//                 if (antenna_signal < SINUSOIDAL_SIGNAL)
+//                     antenna_signal++;
+//                 else
+//                 {
+//                     shuffle_not_ended = 0;
+//                 }
+//             }
+//         }
 
-        switch (antenna_signal)
-        {
-        case SINUSOIDAL_SIGNAL:
-            printf("\nemitting with SINUSOIDAL_SIGNAL\n");
-            global_signals.signal = SINUSOIDAL_SIGNAL;
-            break;
-        case TRIANGULAR_SIGNAL:
-            printf("\nemitting with TRIANGULAR_SIGNAL\n");
-            global_signals.signal = TRIANGULAR_SIGNAL;
-            break;
-        case SQUARE_SIGNAL:
-            printf("\nemitting with SQUARE_SIGNAL\n");
-            global_signals.signal = SQUARE_SIGNAL;
-            break;
-        }
+//         switch (antenna_signal)
+//         {
+//         case SINUSOIDAL_SIGNAL:
+//             printf("\nemitting with SINUSOIDAL_SIGNAL\n");
+//             global_signals.signal = SINUSOIDAL_SIGNAL;
+//             break;
+//         case TRIANGULAR_SIGNAL:
+//             printf("\nemitting with TRIANGULAR_SIGNAL\n");
+//             global_signals.signal = TRIANGULAR_SIGNAL;
+//             break;
+//         case SQUARE_SIGNAL:
+//             printf("\nemitting with SQUARE_SIGNAL\n");
+//             global_signals.signal = SQUARE_SIGNAL;
+//             break;
+//         }
 
-        // resolve this with fsampling and 256 signal points
-        float phase = my_freq * 256 * 256 / 7000.0;
-        phase_accum = (unsigned short) phase;
-        printf("freq ask: %f phase calc: %f phase_accum: %d\n",
-               my_freq,
-               phase,
-               phase_accum);        
+//         // resolve this with fsampling and 256 signal points
+//         float phase = my_freq * 256 * 256 / 7000.0;
+//         phase_accum = (unsigned short) phase;
+//         printf("freq ask: %f phase calc: %f phase_accum: %d\n",
+//                my_freq,
+//                phase,
+//                phase_accum);        
     
-        // Plant_Out_Recursive_From_Single_Antenna_Reset (&plant_ch1, antenna_index);
-        Set_Recursive_From_Single_Antenna (&plant_ch1, antenna_index);
+//         // Plant_Out_Recursive_From_Single_Antenna_Reset (&plant_ch1, antenna_index);
+//         Set_Recursive_From_Single_Antenna (&plant_ch1, antenna_index);
 
-        // empty signals buffers
-        for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
-        {
-            v_duty_ch1[i] = 0;
-            v_sp_ch1[i] = 0;
-            v_error_ch1[i] = 0;
-            v_adc_ch1[i] = 0;
-        }
+//         // empty signals buffers
+//         for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+//         {
+//             v_duty_ch1[i] = 0;
+//             v_sp_ch1[i] = 0;
+//             v_error_ch1[i] = 0;
+//             v_adc_ch1[i] = 0;
+//         }
             
-        // current sensed 1A -> 887 pts
-        global_signals.max_c_ch1 = (unsigned short) (max_antenna_current * 887);
-        printf("max_c_ch1: %d current: %f\n", global_signals.max_c_ch1, max_antenna_current);
-        Signals_Setup_All_Channels();
+//         // current sensed 1A -> 887 pts
+//         global_signals.max_c_ch1 = (unsigned short) (max_antenna_current * 887);
+//         printf("max_c_ch1: %d current: %f\n", global_signals.max_c_ch1, max_antenna_current);
+//         Signals_Setup_All_Channels();
     
-        for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
-        {
-            timer1_seq_ready = 1;
-            Signals_Generate_All_Channels ();
+//         for (int i = 0; i < (SIZEOF_SIGNALS - 1); i++)
+//         {
+//             timer1_seq_ready = 1;
+//             Signals_Generate_All_Channels ();
 
-            // save ch1 data
-            v_duty_ch1[i] = pi_ch1.last_d;
-            v_sp_ch1[i] = pi_ch1.setpoint;
-            v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
-            v_adc_ch1[i] = pi_ch1.sample;
+//             // save ch1 data
+//             v_duty_ch1[i] = pi_ch1.last_d;
+//             v_sp_ch1[i] = pi_ch1.setpoint;
+//             v_error_ch1[i] = pi_ch1.setpoint - pi_ch1.sample;
+//             v_adc_ch1[i] = pi_ch1.sample;
 
-            if (treat_in_ch1 == 2)    //some error on channel!!!
-            {
-                printf("treat stopped on channel 1 in sequence: %d\n", i);
-                current_ok = 0;
-                break;
-            }
-        }
+//             if (treat_in_ch1 == 2)    //some error on channel!!!
+//             {
+//                 printf("treat stopped on channel 1 in sequence: %d\n", i);
+//                 current_ok = 0;
+//                 break;
+//             }
+//         }
 
-        printf(" antenna emission ended: ");
-        if (current_ok)
-            PrintOK();
-        else
-        {
-            PrintERR();
-            break;
-        }
+//         printf(" antenna emission ended: ");
+//         if (current_ok)
+//             PrintOK();
+//         else
+//         {
+//             PrintERR();
+//             break;
+//         }
 
-    } while (shuffle_not_ended);
+//     } while (shuffle_not_ended);
 
-    ///////////////////////////
-    // Backup Data to a file //
-    ///////////////////////////
-    FILE * file = fopen("data.txt", "w");
+//     ///////////////////////////
+//     // Backup Data to a file //
+//     ///////////////////////////
+//     FILE * file = fopen("data.txt", "w");
 
-    if (file == NULL)
-    {
-        printf("data file not created!\n");
-        return;
-    }
+//     if (file == NULL)
+//     {
+//         printf("data file not created!\n");
+//         return;
+//     }
 
-    // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
-    Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
-    // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
-    Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "duty1", v_duty_ch1, SIZEOF_SIGNALS);
+//     Vector_Short_To_File (file, "adc1", v_adc_ch1, SIZEOF_SIGNALS);
+//     // Vector_Short_To_File (file, "error1", v_error_ch1, SIZEOF_SIGNALS);    
+//     Vector_Short_To_File (file, "setpoint1", v_sp_ch1, SIZEOF_SIGNALS);
 
-    printf("\nRun by hand python3 simul_outputs.py\n");
+//     printf("\nRun by hand python3 simul_outputs.py\n");
     
-}
+// }
 
 
 float v_dummy [SIZEOF_SIGNALS] = { 0 };
@@ -1258,34 +1294,37 @@ unsigned short Adc10BitsConvertion (float sample)
 }
 
 
-void Plant_Out_PI_Flush (unsigned char which_channel)
-{
-    switch (which_channel)
-    {
-    case CH1:
-        pi_ch1.sample = 0;
-        pi_ch1.setpoint = 0;
-        break;
+// void Plant_Out_PI_Flush (unsigned char which_channel)
+// {
+//     switch (which_channel)
+//     {
+//     case CH1:
+//         pi_ch1.sample = 0;
+//         pi_ch1.setpoint = 0;
+//         break;
 
-    case CH2:
-        pi_ch2.sample = 0;
-        pi_ch2.setpoint = 0;        
-        break;
+//     case CH2:
+//         pi_ch2.sample = 0;
+//         pi_ch2.setpoint = 0;        
+//         break;
         
-    case CH3:
-        pi_ch3.sample = 0;
-        pi_ch3.setpoint = 0;        
-        break;
+//     case CH3:
+//         pi_ch3.sample = 0;
+//         pi_ch3.setpoint = 0;        
+//         break;
         
-    case CH4:
-        pi_ch4.sample = 0;
-        pi_ch4.setpoint = 0;
-        break;
-    }
-}
+//     case CH4:
+//         pi_ch4.sample = 0;
+//         pi_ch4.setpoint = 0;
+//         break;
+//     }
+// }
 
 
 // Mocked Module Functions -----------------------------------------------------
+int pwm_cnt = 0;
+#include "hard.h"
+#ifdef HARDWARE_VERSION_3_0
 void TIM8_Update_CH3 (unsigned short a)
 {
     // printf("HL CH1: %d\n", a);
@@ -1305,7 +1344,7 @@ void TIM8_Update_CH4 (unsigned short a)
     {
         IS_CH1 = 0;
         Plant_Out_Recursive_Reset (CH1, &plant_ch1);
-        Plant_Out_PI_Flush (CH1);
+        // Plant_Out_PI_Flush (CH1);
     }
     else if (a < 950)    // regulation on negative
     {
@@ -1337,7 +1376,7 @@ void TIM8_Update_CH1 (unsigned short a)
     {
         IS_CH2 = 0;
         Plant_Out_Recursive_Reset (CH2, &plant_ch2);
-        Plant_Out_PI_Flush (CH2);
+        // Plant_Out_PI_Flush (CH2);
     }
     else if (a < 950)    // regulation on negative
     {
@@ -1370,7 +1409,7 @@ void TIM4_Update_CH3 (unsigned short a)
     {
         IS_CH3 = 0;
         Plant_Out_Recursive_Reset (CH3, &plant_ch3);
-        Plant_Out_PI_Flush (CH3);        
+        // Plant_Out_PI_Flush (CH3);        
     }
     else if (a < 950)    // regulation on negative
     {
@@ -1403,7 +1442,7 @@ void TIM5_Update_CH2 (unsigned short a)
     {
         IS_CH4 = 0;
         Plant_Out_Recursive_Reset (CH4, &plant_ch4);
-        Plant_Out_PI_Flush (CH4);
+        // Plant_Out_PI_Flush (CH4);
     }
     else if (a < 950)    // regulation on negative
     {
@@ -1418,10 +1457,127 @@ void TIM5_Update_CH2 (unsigned short a)
     }    
     // printf("LR CH4: %d\n", a);
 }
+#endif
+
+#ifdef HARDWARE_VERSION_1_0
+int overcurrent_samples = 0;
+void TIM4_Update_CH2 (unsigned short a)
+{
+    if (a)
+    {
+        float output = 0.0;
+        output = Plant_Out_Recursive(&plant_ch1, a);
+        IS_CH1 = Adc12BitsConvertion (output);
+
+        if (overcurrent_samples)
+        {
+            v_adc_ch1[pwm_cnt] = overcurrent_samples;
+            IS_CH1 = overcurrent_samples;
+        }
+        else
+            v_adc_ch1[pwm_cnt] = IS_CH1;
+        
+        v_duty_ch1[pwm_cnt] = a;
+    }
+    // printf("HL CH3: %d\n", a);
+}
+
+void TIM4_Update_CH3 (unsigned short a)
+{
+    if (a == 0)    // no emition no adc data
+    {
+        IS_CH1 = 0;
+        Plant_Out_Recursive_Reset (CH1, &plant_ch1);
+        // Plant_Out_PI_Flush (CH1);
+        v_adc_ch1[pwm_cnt] = IS_CH1;
+        v_duty_ch1[pwm_cnt] = a;        
+    }
+    else if (a < 950)    // regulation on negative
+    {
+        float output = 0.0;
+        // output = Plant_Out_Recursive(-a);
+        output = Plant_Out_Recursive(&plant_ch1, -(950 - a));
+        IS_CH1 = Adc12BitsConvertion (output);
+        v_adc_ch1[pwm_cnt] = IS_CH1;
+        // v_duty_ch1[pwm_cnt] = -a;
+        v_duty_ch1[pwm_cnt] = -(950 - a);
+    }
+    else
+    {
+        // regulation by positive, do nothing in here
+    }
+    // printf("LR CH3: %d\n", a);
+    pwm_cnt++;
+}
+
+void TIM5_Update_CH1 (unsigned short a)
+{
+    if (a)
+    {
+        float output = 0.0;
+        output = Plant_Out_Recursive(&plant_ch2, a);
+        IS_CH2 = Adc12BitsConvertion (output);
+    }
+    // printf("HL CH4: %d\n", a);
+}
+
+void TIM5_Update_CH2 (unsigned short a)
+{
+    if (a == 0)    // no emition no adc data
+    {
+        IS_CH2 = 0;
+        Plant_Out_Recursive_Reset (CH2, &plant_ch2);
+        // Plant_Out_PI_Flush (CH4);
+    }
+    else if (a < 950)    // regulation on negative
+    {
+        float output = 0.0;
+        // output = Plant_Out_Recursive(-a);
+        output = Plant_Out_Recursive(&plant_ch2, -a << 5);    // simulate a fast discharge     
+        IS_CH2 = Adc12BitsConvertion (output);
+    }
+    else
+    {
+        // regulation by positive, do nothing in here
+    }    
+    // printf("LR CH4: %d\n", a);
+}
+
+void TIM_Void_CH (unsigned short a)
+{
+}
+
+void TIM8_Update_CH1 (unsigned short a)
+{
+}
+
+void TIM8_Update_CH2 (unsigned short a)
+{
+}
+
+void TIM8_Update_CH3 (unsigned short a)
+{
+}
+
+void TIM8_Update_CH4 (unsigned short a)
+{
+}
+
+
+#endif
 
 void UpdateLed (void)
 {
 }
+
+void Led1_On (void)
+{
+}
+
+void Led1_Off (void)
+{
+}
+
 
 void UpdateBuzzer (void)
 {
@@ -1431,12 +1587,31 @@ void UpdateRaspberryMessages (void)
 {
 }
 
-void ErrorSetStatus (unsigned char error, unsigned char channel)
+void Usart1Send (char * s)
+{
+    printf ("usart1 send to rasp: %s\n", s);
+}
+
+void Error_SetStatus (unsigned char error, unsigned char channel)
 {
     error <<= 4;
     error += channel + 1;
     printf("error: 0x%02x\n", error);
+
+    if (channel == 0)
+        error_ch1 = error;
 }
+
+
+unsigned char TIM1_SyncGet (void)
+{
+    return 0;
+}
+
+void TIM1_SyncReset (void)
+{
+}
+
 //--- end of file ---//
 
 

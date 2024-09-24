@@ -1,1 +1,1 @@
-../../Projects/Gausstek/Gausstek_Magneto/magnet_v3_proj.org
+../../Projects/Gausstek/Magneto/magnet_v3_proj.org
