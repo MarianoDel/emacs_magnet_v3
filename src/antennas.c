@@ -260,7 +260,7 @@ static void AntennaUpdateInStandByCh1_SM (void)
             UART_CH1_Send("get_name\r\n");
         }
         else
-            UART_CH1_Send("get_params\r\n");
+            UART_CH1_Send("get_params\r\n");    // get params on 1.25s each time
 
         break;
         
@@ -646,7 +646,8 @@ void AntennaUpdateStates (void)
                 AntennaResetStableParamsCh4;
             
             if (!antenna_info_timer)
-                antenna_info_timer = ANTENNA_INFO_TIMER_UPDATE;
+                // antenna_info_timer = ANTENNA_INFO_TIMER_UPDATE;
+                antenna_info_timer = 1250;
             
             antenna_info_sended = 0;
         }

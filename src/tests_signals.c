@@ -125,8 +125,8 @@ extern const unsigned short square_table_inphase [];
 extern const unsigned short square_table_outphase [];
 void Test_Signals_Table (void)
 {
-    unsigned char freq_int = 25;
-    unsigned char freq_dec = 00;
+    unsigned char freq_int = 0;
+    unsigned char freq_dec = 98;
     unsigned short phase_a = 0;
     float fs = 6400.0;
 
@@ -136,10 +136,11 @@ void Test_Signals_Table (void)
     signals_struct_t new_treat_data;
     new_treat_data.freq_int = freq_int;
     new_treat_data.freq_dec = freq_dec;
-    new_treat_data.signal = TRIANGULAR_SIGNAL;
+    // new_treat_data.signal = TRIANGULAR_SIGNAL;
     // new_treat_data.signal = SINUSOIDAL_SIGNAL;
-    // new_treat_data.signal = SQUARE_SIGNAL;
+    new_treat_data.signal = SQUARE_SIGNAL;
     new_treat_data.power = 100;
+    // new_treat_data.power = 50;    
     Signals_Setup_Treatment_Data(&new_treat_data);
 
     if (new_treat_data.signal == TRIANGULAR_SIGNAL)
@@ -155,7 +156,8 @@ void Test_Signals_Table (void)
     antenna_st ch_ant;
                 
     Signals_Set_Reset_Channel_For_Treatment(0, 1);    // ch1 antenna present
-    TSP_Get_Know_Single_Antenna (&ch_ant, 9);
+    // TSP_Get_Know_Single_Antenna (&ch_ant, 9);
+    TSP_Get_Know_Single_Antenna (&ch_ant, 1);    
     Signals_Set_Channel_Table_Open_Loop (0, &ch_ant);
 
     // Signals_Setup_Phase_Accumulator(freq_int, freq_dec, &phase_a);    

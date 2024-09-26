@@ -117,6 +117,7 @@ void AdcConfig (void)
     // ADC1->SQR3 |= ADC_SQR3_SQ4_2 | ADC_SQR3_SQ4_1 | ADC_SQR3_SQ4_0;    //Channel 7
     // ADC1->SQR3 |= ADC_SQR3_SQ5_3 | ADC_SQR3_SQ5_2 | ADC_SQR3_SQ5_1;    //Channel 14
     // ADC1->SQR3 |= ADC_SQR3_SQ6_3 | ADC_SQR3_SQ6_2 | ADC_SQR3_SQ6_1 | ADC_SQR3_SQ6_0;    //Channel 15
+#ifdef HARDWARE_VERSION_3_0
     AdcSetChannelSamplePosition(ADC_Channel_5, 1);
     AdcSetChannelSamplePosition(ADC_Channel_6, 2);
     AdcSetChannelSamplePosition(ADC_Channel_8, 3);
@@ -124,6 +125,16 @@ void AdcConfig (void)
     AdcSetChannelSamplePosition(ADC_Channel_13, 5);    
     AdcSetChannelSamplePosition(ADC_Channel_14, 6);
     AdcSetChannelSamplePosition(ADC_Channel_15, 7);
+#endif
+#ifdef HARDWARE_VERSION_1_0
+    AdcSetChannelSamplePosition(ADC_Channel_5, 1);
+    AdcSetChannelSamplePosition(ADC_Channel_5, 2);
+    AdcSetChannelSamplePosition(ADC_Channel_5, 3);
+    AdcSetChannelSamplePosition(ADC_Channel_6, 4);
+    AdcSetChannelSamplePosition(ADC_Channel_13, 5);    
+    AdcSetChannelSamplePosition(ADC_Channel_14, 6);
+    AdcSetChannelSamplePosition(ADC_Channel_15, 7);
+#endif
 
     //set the quantity of channels to convert
     // ADC1->SQR1 |=  ADC_SQR1_L_0;    //convert 2 channels

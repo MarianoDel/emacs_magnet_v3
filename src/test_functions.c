@@ -133,13 +133,13 @@ void TF_Hardware_Tests (void)
 
     // TF_Usart1_Tx ();
     // TF_Usart1_Tx_String ();
-    TF_Usart1_Loop ();
+    // TF_Usart1_Loop ();
     
     // TF_Adc_Usart1_Tx ();
     // TF_Adc_Usart1_Voltages ();
     // TF_Adc_Usart1_IS ();
 
-    // TF_Usart2_keepalive ();
+    TF_Usart2_keepalive ();
     // TF_Usart3_keepalive ();    
     // TF_Uart4_keepalive ();
     // TF_Uart5_keepalive ();

@@ -1553,7 +1553,7 @@ void Signals_Generate_All_Channels_Open_Loop (void)
 // typical values for HARD_1_0
 // float Vin = 94.0;
 // float Rsense = 1.1;
-// float Ao = 4.3;
+// float Ao = 2.8;
 // float La = 0.142;
 // float Ra = 11.0;
 // float fsampling = 6400.0;
@@ -1577,8 +1577,8 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
     float Vin = 96.0;
     float fsampling = 6400.0;
     float Rsense = 1.1;
-    float Ao = 4.3;    // gain of opamp
-    float adc_for_1amp = 5870.;
+    float Ao = 2.8;    // gain of opamp
+    float adc_for_1amp = 3822.;
 #endif
     
     float La = ant->inductance_int + ant->inductance_dec / 100.0;
@@ -1605,7 +1605,7 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
     if (max_antenna_current > 0.8)
         max_antenna_current = 0.8;
     
-    float multi = max_antenna_current * adc_for_1amp;    // 5870 for 1amp on hard 1.0
+    float multi = max_antenna_current * adc_for_1amp;    // 3822 for 1amp on hard 1.0
 #endif
 
     // setting max current adc points
@@ -1848,8 +1848,8 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
     float Vin = 96.0;
     float fsampling = 6400.0;
     float Rsense = 1.1;
-    float Ao = 4.3;    // gain of opamp
-    float adc_for_1amp = 5870.;
+    float Ao = 2.8;    // gain of opamp
+    float adc_for_1amp = 3822.;
 #endif
 
     float La = ant->inductance_int + ant->inductance_dec / 100.0;
@@ -1876,7 +1876,7 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
     if (max_antenna_current > 0.8)
         max_antenna_current = 0.8;
     
-    float multi = max_antenna_current * adc_for_1amp;    // 5870 for 1amp on hard 1.0
+    float multi = max_antenna_current * adc_for_1amp;    // 3822 for 1amp on hard 1.0
 #endif
 
     // setting max current adc points
@@ -1914,8 +1914,8 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
     }
 
     // correct the current for first edge
-    max_antenna_current = max_antenna_current * global_signals.power / 100.;
-    float max_curr_reduced = max_antenna_current;
+    float max_antenna_current_fe = max_antenna_current * global_signals.power / 100.;
+    float max_curr_reduced = max_antenna_current_fe;
     int r = 0;
     float t = 0.0;
     float pts = 0.0;
@@ -1926,7 +1926,7 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
     for (int i = 100; i > 10; i -= 10)
     {
         // power reduction
-        max_curr_reduced = max_antenna_current * i / 100.0;
+        max_curr_reduced = max_antenna_current_fe * i / 100.0;
 
         t = max_curr_reduced * La / (0.95 * Vin - max_curr_reduced * Ra);
         fsampling = global_signals.freq_int + global_signals.freq_dec / 100.0;
@@ -1964,7 +1964,7 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
             if (i != 100)
             {
                 printf(" current too hi!!! max_antenna_current: %f reduced: %f perc: %d\%\n",
-                       max_antenna_current,
+                       max_antenna_current_fe,
                        max_curr_reduced,
                        i);
 
@@ -1981,12 +1981,25 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
     }
 
     // plateau calcs, adjust duty for max current (or reduced current)
+#ifndef TESTING_SHOW_INFO_OPENLOOP
     float max_c = Rsense * Ao / (0.95 * Vin * gain);   //adjust for duty max 950 
     max_c = max_c * max_antenna_current;    //adjust for antenna current
-    max_c = max_c * global_signals.power / 100.;    //adjust for power
+    max_c = max_c * global_signals.power / 100.;
     max_c = max_c * r / 100.;    //adjust for power reduction
     unsigned short max_duty = (unsigned short) (max_c * 1000);
-
+#else
+    float max_c = Rsense * Ao / (0.95 * Vin * gain);   //adjust for duty max 950
+    printf("\n max_c: %f\n", max_c);    
+    max_c = max_c * max_antenna_current;    //adjust for antenna current
+    printf("\n max_c adj curr: %f\n", max_c);    
+    max_c = max_c * global_signals.power / 100.;    //adjust for power
+    printf("\n max_c adj power: %f\n", max_c);        
+    max_c = max_c * r / 100.;    //adjust for power reduction
+    printf("\n max_c adj reduc: %f\n", max_c);
+    unsigned short max_duty = (unsigned short) (max_c * 1000);
+    printf("\n max_duty: %d\n", max_duty);
+#endif    
+    
 #ifdef TESTING_SHOW_INFO_OPENLOOP
     printf(" adj_c gain: %f current: %f reduced: %f max_duty: %d\n",
            max_c,
