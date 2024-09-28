@@ -15,18 +15,19 @@
 //----------- Defines For Configuration -------------
 
 //-------- Type of Board and Program  ---------------
-#define MAGNET_INFINITY    // with sync and tamper
+// #define MAGNET_INFINITY    // with sync and tamper
 // #define MAGNET_GAUSSTEK    // basic board
-// #define MAGNET_GAUSSTEK_MT250    // small 2ch less power board
+#define MAGNET_GAUSSTEK_MT250    // small 2ch less power board
 
 //----- Board Configuration -------------------//
 //--- Hardware ------------------//
-#define HARDWARE_VERSION_3_0    // this board gets the better of stretcher and magnet
-// #define HARDWARE_VERSION_1_0    // small 2ch less power board
+// #define HARDWARE_VERSION_3_0    // this board gets the better of stretcher and magnet
+#define HARDWARE_VERSION_1_0    // small 2ch less power board
 
 
 //--- Software ------------------//
-#define SOFTWARE_VERSION_1_0    // init version
+#define SOFTWARE_VERSION_1_1    // fixt 50% on square signal, fast up on antennas
+// #define SOFTWARE_VERSION_1_0    // init version
 
 
 //--- Serial Number / Device Id Bytes length ----------
@@ -98,6 +99,9 @@
 #endif
 #ifdef HARDWARE_VERSION_1_0
 #define HARD "Hardware Version: 1.0"
+#endif
+#ifdef SOFTWARE_VERSION_1_1
+#define SOFT "Software Version: 1.1"
 #endif
 #ifdef SOFTWARE_VERSION_1_0
 #define SOFT "Software Version: 1.0"

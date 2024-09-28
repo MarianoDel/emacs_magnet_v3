@@ -13,6 +13,7 @@
 #include "usart.h"
 #include "antennas.h"
 #include "utils.h"
+#include "hard.h"    // for antenna checks, new or old
 
 
 #include <string.h>
@@ -135,6 +136,7 @@ resp_e ParseCommsWithChannels (char * str, unsigned char channel)
     //ant0,012.27,087.90,001.80,065.00\r\n.
     else if (!strncmp(str, (const char *)"ant", (sizeof("ant") - 1)))
     {
+#if (defined HARDWARE_VERSION_3_0)
         // check if antenna is new and process string, or tell the interface the error
         if (*(str + sizeof("ant0,012.27,087.90,001.80,065.") - 1) != '5')
         {
@@ -142,6 +144,11 @@ resp_e ParseCommsWithChannels (char * str, unsigned char channel)
             RpiSend(dummy_str);
             return resp_error;
         }
+#elif (defined HARDWARE_VERSION_1_0)
+#pragma message "hard 1.0 all antennas permited!"
+#else
+#error "No hardware version on comms with channels"
+#endif
         
         sprintf(dummy_str, "new antenna ch%d\r\n", channel + 1);
         RpiSend(dummy_str);
