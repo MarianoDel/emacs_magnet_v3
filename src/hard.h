@@ -26,7 +26,8 @@
 
 
 //--- Software ------------------//
-#define SOFTWARE_VERSION_1_1    // fixt 50% on square signal, fast up on antennas
+#define SOFTWARE_VERSION_1_2    // buzzer long for stop with errors in all channels
+// #define SOFTWARE_VERSION_1_1    // fixt 50% on square signal, fast up on antennas
 // #define SOFTWARE_VERSION_1_0    // init version
 
 
@@ -39,6 +40,7 @@
 //-------- Type of Program and Features ----------------
 #define USE_NO_TREATMENT_DETECT    //cuando esta en tratamiento revisa si las potencias tambien
 #define USE_BUZZER_ON_START
+#define USE_BUZZER_ON_ERROR_STOP
 
 
 //-------- Kind of Reports Sended ----------------
@@ -99,6 +101,9 @@
 #endif
 #ifdef HARDWARE_VERSION_1_0
 #define HARD "Hardware Version: 1.0"
+#endif
+#ifdef SOFTWARE_VERSION_1_2
+#define SOFT "Software Version: 1.2"
 #endif
 #ifdef SOFTWARE_VERSION_1_1
 #define SOFT "Software Version: 1.1"
@@ -349,8 +354,8 @@ typedef enum
 #define TIM_BIP_SHORT_WAIT	500
 #define TIM_BIP_HALF		600
 #define TIM_BIP_HALF_WAIT	800
-#define TIM_BIP_LONG		2000
-#define TIM_BIP_LONG_WAIT	2000
+#define TIM_BIP_LONG    3000
+#define TIM_BIP_LONG_WAIT    2000
 
 //--- Tiempos (TIMEOUT) de salidas
 #define TIMER_OUT4_IN_ON       100

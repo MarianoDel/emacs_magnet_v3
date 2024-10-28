@@ -38,6 +38,9 @@ typedef enum {
     TREATMENT_RUNNING,
     TREATMENT_PAUSED,
     TREATMENT_WITH_ERRORS,
+    TREATMENT_WITH_ERRORS_1,
+    TREATMENT_WITH_ERRORS_2,
+    TREATMENT_WITH_ERRORS_3,    
     TREATMENT_STOPPING
 
 } treatment_t;
@@ -65,6 +68,8 @@ volatile unsigned short secs_in_treatment = 0;
 volatile unsigned short millis = 0;
 unsigned short secs_end_treatment = 0;
 unsigned short secs_elapsed_up_to_now = 0;
+volatile unsigned short treatment_standby_timer = 0;
+
 
 #define RPI_Flush_Comms (comms_messages_rpi &= ~COMM_RPI_ALL_MSG_MASK)
 
@@ -258,12 +263,16 @@ void Treatment_Manager (void)
             treat_state = TREATMENT_STOPPING;
         }
 
-        // checks channels for errors
+        // checks errors on each channel
         Treatment_Check_Channels_Loop ();
-        resp = Treatment_Check_All_Errors ();
 
+	// check errors in all channels
+        resp = Treatment_Check_All_Errors ();
         if (resp == resp_error)
+	{
             treat_state = TREATMENT_WITH_ERRORS;
+	    treatment_standby_timer = 1000;
+	}
         
         RPI_Flush_Comms;
         break;
@@ -310,22 +319,46 @@ void Treatment_Manager (void)
         break;
 
     case TREATMENT_WITH_ERRORS:
-        Wait_ms(1000);
-
+	if (treatment_standby_timer)
+	    break;
+	
         for (int i = 0; i < 4; i++)
             AntennaEndTreatment(i);
-        
+
+#ifdef USE_BUZZER_ON_ERROR_STOP	
+        BuzzerCommands(BUZZER_LONG_CMD, 1);
+#endif	
         RPI_Send("STOP\r\n");
-        Wait_ms(1000);
+	treat_state = TREATMENT_WITH_ERRORS_1;
+	treatment_standby_timer = 1000;
+        break;
+
+    case TREATMENT_WITH_ERRORS_1:
+	if (treatment_standby_timer)
+	    break;
+
         RPI_Send("STOP\r\n");
-        Wait_ms(1000);
+	treat_state = TREATMENT_WITH_ERRORS_2;
+	treatment_standby_timer = 1000;
+        break;
+
+    case TREATMENT_WITH_ERRORS_2:
+	if (treatment_standby_timer)
+	    break;
+
         RPI_Send("Flushing errors\r\n");
-        Wait_ms(1000);
+	treat_state = TREATMENT_WITH_ERRORS_3;
+	treatment_standby_timer = 1000;
+        break;
+	
+    case TREATMENT_WITH_ERRORS_3:
+	if (treatment_standby_timer)
+	    break;
         
         treat_state = TREATMENT_STANDBY;
         ChangeLed(LED_TREATMENT_STANDBY);
         break;
-
+	
     default:
         treat_state = TREATMENT_STANDBY;
         break;
@@ -680,7 +713,10 @@ void Treatment_Timeouts (void)
             secs_in_treatment++;
             millis = 0;
         }
-    }    
+    }
+
+    if (treatment_standby_timer)
+	treatment_standby_timer--;
 }
 
 
