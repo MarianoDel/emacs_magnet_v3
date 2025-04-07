@@ -166,24 +166,36 @@ static void Raspberry_Messages (char * msg)
     {
         char to_send [64];
         float fcalc = 1.0;
-        short volt_int, volt_dec;
+        short volt_inta, volt_deca, volt_intb, volt_decb;
 
         fcalc = Sense_200V;
         fcalc = fcalc * K_200V;
-        volt_int = (short) fcalc;
-        fcalc = fcalc - volt_int;
+        volt_inta = (short) fcalc;
+        fcalc = fcalc - volt_inta;
         fcalc = fcalc * 10;
-        volt_dec = (short) fcalc;
-        sprintf(to_send, "High Supply: %3d.%01dV\r\n", volt_int, volt_dec);
+        volt_deca = (short) fcalc;
+        sprintf(to_send, "High Supply: %3d.%01dV\r\n", volt_inta, volt_deca);
         RpiSend(to_send);
+
+        fcalc = Sense_12V;
+        fcalc = fcalc * K_12V;
+        volt_inta = (short) fcalc;
+        fcalc = fcalc - volt_inta;
+        fcalc = fcalc * 10;
+        volt_deca = (short) fcalc;
 
         fcalc = Sense_15V;
         fcalc = fcalc * K_15V;
-        volt_int = (short) fcalc;
-        fcalc = fcalc - volt_int;
+        volt_intb = (short) fcalc;
+        fcalc = fcalc - volt_intb;
         fcalc = fcalc * 10;
-        volt_dec = (short) fcalc;        
-        sprintf(to_send, "Low Supply: %3d.%01dV\r\n", volt_int, volt_dec);
+        volt_decb = (short) fcalc;        
+	
+        sprintf(to_send, "Low Supply: %3d.%01dV and %3d.%01dV\r\n",
+		volt_inta,
+		volt_deca,
+		volt_intb,
+		volt_decb);
         RpiSend(to_send);
         
     }

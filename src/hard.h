@@ -15,18 +15,19 @@
 //----------- Defines For Configuration -------------
 
 //-------- Type of Board and Program  ---------------
-// #define MAGNET_INFINITY    // with sync and tamper
+#define MAGNET_INFINITY    // with sync and tamper
 // #define MAGNET_GAUSSTEK    // basic board
-#define MAGNET_GAUSSTEK_MT250    // small 2ch less power board
+// #define MAGNET_GAUSSTEK_MT250    // small 2ch less power board
 
 //----- Board Configuration -------------------//
 //--- Hardware ------------------//
-// #define HARDWARE_VERSION_3_0    // this board gets the better of stretcher and magnet
-#define HARDWARE_VERSION_1_0    // small 2ch less power board
+#define HARDWARE_VERSION_3_0    // this board gets the better of stretcher and magnet
+// #define HARDWARE_VERSION_1_0    // small 2ch less power board
 
 
 //--- Software ------------------//
-#define SOFTWARE_VERSION_1_2    // buzzer long for stop with errors in all channels
+#define SOFTWARE_VERSION_1_3    // wait 40ms before start treat, wait for protection relay brd
+// #define SOFTWARE_VERSION_1_2    // buzzer long for stop with errors in all channels
 // #define SOFTWARE_VERSION_1_1    // fixt 50% on square signal, fast up on antennas
 // #define SOFTWARE_VERSION_1_0    // init version
 
@@ -47,14 +48,14 @@
 
 //-------- Others Configurations depending on the formers ------------
 #ifdef HARDWARE_VERSION_3_0
-// #define K_200V    0.0957    //con diodo z prot de 3.1V da error
 #define K_200V    0.0806    //con diodo z 5.1V
-// #define K_15V    0.00804    //con z 3.1V
+#define K_12V    0.00619    //con z 5.1V
 #define K_15V    0.00619    //con z 5.1V
 #endif
 
 #ifdef HARDWARE_VERSION_1_0
 #define K_200V    0.0396    //con diodo z 5.1V
+#define K_12V    0.00619    //con z 5.1V
 #define K_15V    0.00619    //con z 5.1V
 #endif
 
@@ -101,6 +102,9 @@
 #endif
 #ifdef HARDWARE_VERSION_1_0
 #define HARD "Hardware Version: 1.0"
+#endif
+#ifdef SOFTWARE_VERSION_1_3
+#define SOFT "Software Version: 1.3"
 #endif
 #ifdef SOFTWARE_VERSION_1_2
 #define SOFT "Software Version: 1.2"

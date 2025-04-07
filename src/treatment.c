@@ -33,6 +33,7 @@
 
 typedef enum {
     TREATMENT_STANDBY = 0,
+    TREATMENT_CHECK_ANTENNAS_DELAYED,
     TREATMENT_CHECK_ANTENNAS_CONNECTED,
     TREATMENT_STARTING,    
     TREATMENT_RUNNING,
@@ -117,12 +118,20 @@ void Treatment_Manager (void)
 #endif
                 
                 RPI_Send("OK\r\n");                
-                treat_state = TREATMENT_CHECK_ANTENNAS_CONNECTED;
+                // treat_state = TREATMENT_CHECK_ANTENNAS_CONNECTED;
+		treat_state = TREATMENT_CHECK_ANTENNAS_DELAYED;
+		treatment_standby_timer = 40;
             }
         }
         RPI_Flush_Comms;
         break;
 
+    case TREATMENT_CHECK_ANTENNAS_DELAYED:
+	if (!treatment_standby_timer)
+	    treat_state = TREATMENT_CHECK_ANTENNAS_CONNECTED;
+	
+	break;
+	
     case TREATMENT_CHECK_ANTENNAS_CONNECTED:
         strcpy(buff, "treat start, ");
         
