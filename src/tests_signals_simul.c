@@ -854,15 +854,15 @@ extern const unsigned short square_table_inphase[];
 extern const unsigned short triangular_table_inphase[];
 void Test_Single_Signal_Single_Antenna_Single_Freq_OpenLoop (void)
 {
-    unsigned char antenna_index = 0;    //check tests_know_antennas.c
+    unsigned char antenna_index = 8;    //check tests_know_antennas.c
 
     // unsigned char antenna_signal = TRIANGULAR_SIGNAL;
     unsigned char antenna_signal = SQUARE_SIGNAL;
     // unsigned char antenna_signal = SINUSOIDAL_SIGNAL;
 
-    // float my_freq = 0.9;
+    float my_freq = 0.9;
     // float my_freq = 5.0;    
-    float my_freq = 11.5;
+    // float my_freq = 11.5;
     // float my_freq = 23.5;
     // float my_freq = 44.0;
     // float my_freq = 67.0;
@@ -934,12 +934,12 @@ void Test_Single_Signal_Single_Antenna_Single_Freq_OpenLoop (void)
     // float La = 0.142;
     // float Ra = 11.0;    
     antenna_st my_ant;
-    my_ant.resistance_int = 12;
-    my_ant.resistance_dec = 27;
-    my_ant.inductance_int = 87;
-    my_ant.inductance_dec = 9;
-    my_ant.current_limit_int = 1;
-    my_ant.current_limit_dec = 80;
+    my_ant.resistance_int = 10;
+    my_ant.resistance_dec = 40;
+    my_ant.inductance_int = 138;
+    my_ant.inductance_dec = 0;
+    my_ant.current_limit_int = 3;
+    my_ant.current_limit_dec = 50;
     my_ant.temp_max_int = 65;
     my_ant.temp_max_dec = 5;
 

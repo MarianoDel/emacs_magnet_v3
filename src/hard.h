@@ -26,7 +26,8 @@
 
 
 //--- Software ------------------//
-#define SOFTWARE_VERSION_1_3    // wait 40ms before start treat, wait for protection relay brd
+#define SOFTWARE_VERSION_1_4    // send overcurrent on ch1, edge current reduced on square
+// #define SOFTWARE_VERSION_1_3    // wait 40ms before start treat, wait for protection relay brd
 // #define SOFTWARE_VERSION_1_2    // buzzer long for stop with errors in all channels
 // #define SOFTWARE_VERSION_1_1    // fixt 50% on square signal, fast up on antennas
 // #define SOFTWARE_VERSION_1_0    // init version
@@ -102,6 +103,9 @@
 #endif
 #ifdef HARDWARE_VERSION_1_0
 #define HARD "Hardware Version: 1.0"
+#endif
+#ifdef SOFTWARE_VERSION_1_4
+#define SOFT "Software Version: 1.4"
 #endif
 #ifdef SOFTWARE_VERSION_1_3
 #define SOFT "Software Version: 1.3"

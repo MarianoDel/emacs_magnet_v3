@@ -743,6 +743,13 @@ void Signals_Generate_All_Channels (void)
             Signals_Stop_Single_Channel(CH1);
             global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
             Error_SetStatus(ERROR_SOFT_OVERCURRENT, CH1);
+	    // changes 9-4-2025
+	    char buff_err [50] = { 0 };
+	    sprintf(buff_err,"over: %d thres: %d sample: %d\r\n",
+		    filter_c,
+		    signal_ovcp_threshold_ch1,
+		    IS_CH1);
+	    RPI_Send(buff_err);
         }
     }
 
@@ -1500,6 +1507,13 @@ void Signals_Generate_All_Channels_Open_Loop (void)
             Signals_Stop_Single_Channel(CH1);
             global_signals.treat_in_ch1 = CHANNEL_DISCONNECT;
             Error_SetStatus(ERROR_SOFT_OVERCURRENT, CH1);
+	    // changes 9-4-2025
+	    char buff_err [50] = { 0 };
+	    sprintf(buff_err,"over: %d thres: %d sample: %d\r\n",
+		    filter_c,
+		    signal_ovcp_threshold_ch1,
+		    IS_CH1);
+	    RPI_Send(buff_err);
         }
     }
 
@@ -1836,8 +1850,10 @@ void Signals_Set_Channel_Table_Open_Loop (unsigned char which_channel, antenna_s
 
 void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, antenna_st * ant)
 {
-#ifdef HARDWARE_VERSION_3_0    
-    float Vin = 192.0;
+#ifdef HARDWARE_VERSION_3_0
+    // modif 9-4-2025 Vin = 200
+    // float Vin = 192.0;
+    float Vin = 200.0;    
     float fsampling = 7200.0;
     float Rsense = 0.055;
     float Ao = 13.0;    // gain of opamp
@@ -1928,7 +1944,9 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
         // power reduction
         max_curr_reduced = max_antenna_current_fe * i / 100.0;
 
-        t = max_curr_reduced * La / (0.95 * Vin - max_curr_reduced * Ra);
+	// 9-4-2025 VRa mean
+        // t = max_curr_reduced * La / (0.95 * Vin - max_curr_reduced * Ra);
+	t = max_curr_reduced * La / (0.95 * Vin - max_curr_reduced * Ra/2.);
         fsampling = global_signals.freq_int + global_signals.freq_dec / 100.0;
         fsampling = fsampling * 256.;
         pts = fsampling * t;
@@ -2014,7 +2032,7 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
         for (int i = 0; i < (short) pts; i++)
             *(dst_table + i) = 950;
 
-        for (int i = (short) pts; i < 127; i++)
+        for (int i = (short) pts; i <= 127; i++)
             *(dst_table + i) = max_duty;
 
         for (int i = 128; i < 255; i++)
@@ -2026,10 +2044,10 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
         for (int i = 128; i < (128 + (short) pts); i++)
             *(dst_table + i) = 950;
 
-        for (int i = 128 + (short) pts; i < 255; i++)
+        for (int i = 128 + (short) pts; i <= 255; i++)
             *(dst_table + i) = max_duty;
 
-        for (int i = 0; i < 127; i++)
+        for (int i = 0; i <= 127; i++)
             *(dst_table + i) = 0;
         
     }
@@ -2040,10 +2058,10 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
         for (int i = 0; i < (short) pts; i++)
             *(dst_table + i) = 950;
 
-        for (int i = (short) pts; i < 127; i++)
+        for (int i = (short) pts; i <= 127; i++)
             *(dst_table + i) = max_duty;
 
-        for (int i = 128; i < 255; i++)
+        for (int i = 128; i <= 255; i++)
             *(dst_table + i) = 0;
         
     }
@@ -2052,10 +2070,10 @@ void Signals_Set_Channel_Table_Open_Loop_Square (unsigned char which_channel, an
         for (int i = 128; i < (128 + (short) pts); i++)
             *(dst_table + i) = 950;
 
-        for (int i = 128 + (short) pts; i < 255; i++)
+        for (int i = 128 + (short) pts; i <= 255; i++)
             *(dst_table + i) = max_duty;
 
-        for (int i = 0; i < 127; i++)
+        for (int i = 0; i <= 127; i++)
             *(dst_table + i) = 0;
         
     }

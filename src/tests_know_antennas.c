@@ -165,11 +165,11 @@ int TSP_Get_Know_Antennas (antenna_st * p)
     case 8:
         // const char s_antena [] = { "ant4,010.10,128.10,003.50,065.00\r\n" };
         // const char s_name [] = { "name:Tunnel 10 inches\r\n" };
-        printf("\nname:Tunnel 10 inches in index: %d\n", know_antenna);
+        printf("\nname:Head Tunnel in index: %d\n", know_antenna);
         p->resistance_int = 10;
-        p->resistance_dec = 10;
-        p->inductance_int = 128;
-        p->inductance_dec = 10;
+        p->resistance_dec = 40;
+        p->inductance_int = 138;
+        p->inductance_dec = 0;
         p->current_limit_int = 3;
         p->current_limit_dec = 50;
         p->temp_max_int = 65;
