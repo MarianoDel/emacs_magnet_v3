@@ -109,6 +109,7 @@ void Test_Comms_From_Channel1 (void)
     else
         PrintERR();
 
+    
     cb_usart_value = 0;    
     Usart2FillRxBuffer("temp,055.55\r\n");
     Comms_Channel1 ();
@@ -119,6 +120,18 @@ void Test_Comms_From_Channel1 (void)
     else
         PrintERR();
 
+    
+    cb_usart_value = 0;
+    antenna_answered = 0;
+    Usart2FillRxBuffer("tamp*055.55\r\n");
+    Comms_Channel1 ();
+    
+    printf("Test antenna temp answer with noise: ");
+    if (antenna_answered)
+        PrintOK();
+    else
+        PrintERR();
+    
     cb_usart_value = 0;
     antenna_answered = 0;    
     Usart2FillRxBuffer("ok\r\n");

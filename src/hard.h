@@ -15,8 +15,8 @@
 //----------- Defines For Configuration -------------
 
 //-------- Type of Board and Program  ---------------
-#define MAGNET_INFINITY    // with sync and tamper
-// #define MAGNET_GAUSSTEK    // basic board
+// #define MAGNET_INFINITY    // with sync and tamper
+#define MAGNET_GAUSSTEK    // basic board
 // #define MAGNET_GAUSSTEK_MT250    // small 2ch less power board
 
 //----- Board Configuration -------------------//
@@ -26,7 +26,8 @@
 
 
 //--- Software ------------------//
-#define SOFTWARE_VERSION_1_4    // send overcurrent on ch1, edge current reduced on square
+#define SOFTWARE_VERSION_1_5    // filters in int for avoid 0x11 false shoot
+// #define SOFTWARE_VERSION_1_4    // send overcurrent on ch1, edge current reduced on square
 // #define SOFTWARE_VERSION_1_3    // wait 40ms before start treat, wait for protection relay brd
 // #define SOFTWARE_VERSION_1_2    // buzzer long for stop with errors in all channels
 // #define SOFTWARE_VERSION_1_1    // fixt 50% on square signal, fast up on antennas
@@ -103,6 +104,9 @@
 #endif
 #ifdef HARDWARE_VERSION_1_0
 #define HARD "Hardware Version: 1.0"
+#endif
+#ifdef SOFTWARE_VERSION_1_5
+#define SOFT "Software Version: 1.5"
 #endif
 #ifdef SOFTWARE_VERSION_1_4
 #define SOFT "Software Version: 1.4"

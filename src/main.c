@@ -76,6 +76,8 @@ parameters_typedef mem_conf;
 // Module Private Functions ----------------------------------------------------
 void TimingDelay_Decrement(void);
 void SysTickError (void);
+unsigned char CheckIntFiltered (unsigned char channel);
+
 
 #define RPI_Flush_Comms (comms_messages_rpi &= ~COMM_RPI_ALL_MSG_MASK)
 
@@ -239,14 +241,26 @@ int main (void)
 
 
 // Other Module Functions ------------------------------------------------------
+#define USE_PROT_INT_WITH_FILTER    // pone un filtro input en el pin prot
 extern void TF_Prot_Int_Handler (unsigned char ch);
 void EXTI2_IRQHandler (void)
 {
     if(EXTI->PR & EXTI_PR_PR2)    //Line2
     {
+#ifdef USE_PROT_INT_WITH_FILTER
+	// new filter
+	if (CheckIntFiltered(CH3))
+	    Signals_Overcurrent_Handler (CH3);
+
+	EXTI->PR |= EXTI_PR_PR2;
+	// end of new filter
+#else
+	// old version, no filter
         Signals_Overcurrent_Handler (CH3);
         // TF_Prot_Int_Handler (3);    // PROT_CH3 for tests
         EXTI->PR |= EXTI_PR_PR2;
+	// end of old version
+#endif
     }
 }
 
@@ -255,9 +269,20 @@ void EXTI4_IRQHandler (void)
 {
     if(EXTI->PR & EXTI_PR_PR4)    //Line4
     {
+#ifdef USE_PROT_INT_WITH_FILTER	
+	// new filter
+	if (CheckIntFiltered(CH4))
+	    Signals_Overcurrent_Handler (CH4);
+
+	EXTI->PR |= EXTI_PR_PR4;
+	// end of new filter
+#else
+	// old version, no filter	
         Signals_Overcurrent_Handler (CH4);        
         // TF_Prot_Int_Handler (4);    // PROT_CH4 for tests
         EXTI->PR |= EXTI_PR_PR4;
+	// end of old version
+#endif
     }
 }
 
@@ -266,15 +291,37 @@ void EXTI15_10_IRQHandler (void)
 {
     if(EXTI->PR & EXTI_PR_PR13)    //Line13
     {
+#ifdef USE_PROT_INT_WITH_FILTER
+	// new filter
+	if (CheckIntFiltered(CH2))
+	    Signals_Overcurrent_Handler (CH2);
+
+	EXTI->PR |= EXTI_PR_PR13;
+	// end of new filter
+#else
+        // old version, no filter		
         Signals_Overcurrent_Handler (CH2);
         // TF_Prot_Int_Handler (2);    // PROT_CH2 for tests
         EXTI->PR |= EXTI_PR_PR13;
+        // end of old version
+#endif	
     }
     else if (EXTI->PR & EXTI_PR_PR15)    //Line15
     {
+#ifdef USE_PROT_INT_WITH_FILTER	
+	// new filter
+	if (CheckIntFiltered(CH1))
+	    Signals_Overcurrent_Handler (CH1);
+
+	EXTI->PR |= EXTI_PR_PR15;
+	// end of new filter
+#else
+	// old version, no filter
         Signals_Overcurrent_Handler (CH1);        
         // TF_Prot_Int_Handler (1);    // PROT_CH1 for tests
         EXTI->PR |= EXTI_PR_PR15;
+        // end of old version
+#endif
     }
 }
 
@@ -313,6 +360,54 @@ void SysTickError (void)
                  "nop \n\t" );
         }
     }
+}
+
+
+unsigned char CheckIntFiltered (unsigned char channel)
+{
+    unsigned char cnt = 0;
+
+    for (int i = 0; i < 4; i++)
+    {
+	switch (channel)
+	{
+	case CH1:
+	    if (PROT_CH1)
+		cnt++;
+	    break;
+
+	case CH2:
+	    if (PROT_CH2)
+		cnt++;
+	    break;
+
+	case CH3:
+	    if (PROT_CH3)
+		cnt++;
+	    break;
+
+	case CH4:
+	    if (PROT_CH4)
+		cnt++;
+	    break;
+	}
+	    
+	// asm delay
+	// asm ("nop \n\t"
+	//      "nop \n\t"
+	//      "nop \n\t"	     
+	//      "nop \n\t" );
+
+	// asm delay short
+	asm ("nop \n\t"
+	     "nop \n\t" );
+	
+    }
+    
+    if (cnt >= 3)
+	return 1;
+
+    return 0;
 }
 
 //--- end of file ---//

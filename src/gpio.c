@@ -16,6 +16,9 @@
 
 // Module Private Types Constants and Macros -----------------------------------
 #define USE_EXTI_LINES
+// #define USE_PROT_WITH_PULLUP
+#define USE_PROT_WITH_PULLDWN
+
 
 
 #define RCC_GPIOA_CLK    (RCC->APB2ENR & 0x00000004)
@@ -155,15 +158,24 @@ void GpioInit (void)
     GPIOA->CRH = temp;
 
     //--- GPIOA Pull-Up Pull-Dwn ------------------//
-    temp = GPIOA->ODR;    //PA3 pull-up PA4 pull-down
-    temp &= 0xFFE7;
-    temp |= 0x0008;
+    temp = GPIOA->ODR;
+#if (defined USE_PROT_WITH_PULLUP)
+    temp &= 0xFFE7;    // PA3 pull-up PA4 pull-down
+    temp |= 0x0008;    
+#elif (defined USE_PROT_WITH_PULLDWN)
+    temp &= 0xFFE7;    // PA3 pulldwn PA4 pull-down
+    temp |= 0x0000;    
+#else
+    temp &= 0xFFEF;    // PA4 pull-down
+    temp |= 0x0000;    
+#endif
+
     GPIOA->ODR = temp;
 
     //--- GPIOB Low Side -------------------//
     //PB0 NC
     //PB1 NC
-    //PB2 PROT_CH3 input
+    //PB2 PROT_CH3 input pullup
     //PB3 NC
     //PB4 NC
     //PB5 SW_RX_TX    RS485
@@ -171,7 +183,7 @@ void GpioInit (void)
     //PB7 alternative TIM4_CH2
     temp = GPIOB->CRL;
     temp &= 0x0F0FF0FF;
-    temp |= 0xA0200400;
+    temp |= 0xA0200800;
     GPIOB->CRL = temp;
 
     //--- GPIOB High Side -------------------//
@@ -180,14 +192,28 @@ void GpioInit (void)
     //PB10 alternative Tx Usart3
     //PB11 alternative Rx Usart3
     //PB12 NC
-    //PB13 PROT_CH2 input
+    //PB13 PROT_CH2 input pullup
     //PB14 check tamper_funcs module
-    //PB15 PROT_CH1 input
+    //PB15 PROT_CH1 input pullup
     temp = GPIOB->CRH;
     temp &= 0x0F0F00F0;
-    temp |= 0x40408B0A;
+    temp |= 0x80808B0A;
     GPIOB->CRH = temp;    
     
+    //--- GPIOB Pull-Up Pull-Dwn ------------------//
+    temp = GPIOB->ODR;
+#if (defined USE_PROT_WITH_PULLUP)
+    temp &= 0x5FFB;    //PB15 PB13 PB2 pull-up
+    temp |= 0xA004;
+#elif (defined USE_PROT_WITH_PULLDWN)
+    temp &= 0x5FFB;    //PB15 PB13 PB2 pulldwn
+    temp |= 0x0000;
+#else
+    temp &= 0xFFFF;
+    temp |= 0x0000;
+#endif
+    GPIOB->ODR = temp;
+
     //--- GPIOC Low Side -------------------//
     //PC0 LED1
     //PC1 LED2

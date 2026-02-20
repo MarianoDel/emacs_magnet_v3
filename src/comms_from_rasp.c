@@ -445,99 +445,99 @@ static void Raspberry_Messages (char * msg)
 
 //reporta las errores y los limpia
 //TODO: o limpiar en otra funcion???
-void Raspberry_Report_Errors (unsigned char ch, unsigned short * errors)
-{
-    //reporta errores como "ERROR(0xNN)\r\n"
-    //0x1N antena desconectada
-    //0x2N antena perdida
-    //0x4N sobre temperatura
-    //0x5N sobre corriente
-    //N num de canal 1-4
+// void Raspberry_Report_Errors (unsigned char ch, unsigned short * errors)
+// {
+//     //reporta errores como "ERROR(0xNN)\r\n"
+//     //0x1N antena desconectada
+//     //0x2N antena perdida
+//     //0x4N sobre temperatura
+//     //0x5N sobre corriente
+//     //N num de canal 1-4
 
-    if (*errors & COMM_ERROR_NO_COMM)
-    {
-        if (ch == CH1)
-            RpiSend("ERROR(0x11)\r\n");
+//     if (*errors & COMM_ERROR_NO_COMM)
+//     {
+//         if (ch == CH1)
+//             RpiSend("ERROR(0x11)\r\n");
 
-        if (ch == CH2)
-            RpiSend("ERROR(0x12)\r\n");
+//         if (ch == CH2)
+//             RpiSend("ERROR(0x12)\r\n");
 
-        if (ch == CH3)
-            RpiSend("ERROR(0x13)\r\n");
+//         if (ch == CH3)
+//             RpiSend("ERROR(0x13)\r\n");
 
-        *errors &= ~COMM_ERROR_NO_COMM;
-    }
+//         *errors &= ~COMM_ERROR_NO_COMM;
+//     }
 
-    if (*errors & COMM_ERROR_NO_CURRENT)
-    {
-        if (ch == CH1)
-            RpiSend("ERROR(0x21)\r\n");
+//     if (*errors & COMM_ERROR_NO_CURRENT)
+//     {
+//         if (ch == CH1)
+//             RpiSend("ERROR(0x21)\r\n");
 
-        if (ch == CH2)
-            RpiSend("ERROR(0x22)\r\n");
+//         if (ch == CH2)
+//             RpiSend("ERROR(0x22)\r\n");
 
-        if (ch == CH3)
-            RpiSend("ERROR(0x23)\r\n");
+//         if (ch == CH3)
+//             RpiSend("ERROR(0x23)\r\n");
 
-        *errors &= ~COMM_ERROR_NO_CURRENT;
-    }
+//         *errors &= ~COMM_ERROR_NO_CURRENT;
+//     }
 
-    if (*errors & COMM_ERROR_OVERTEMP)
-    {
-        if (ch == CH1)
-            RpiSend("ERROR(0x41)\r\n");
+//     if (*errors & COMM_ERROR_OVERTEMP)
+//     {
+//         if (ch == CH1)
+//             RpiSend("ERROR(0x41)\r\n");
 
-        if (ch == CH2)
-            RpiSend("ERROR(0x42)\r\n");
+//         if (ch == CH2)
+//             RpiSend("ERROR(0x42)\r\n");
 
-        if (ch == CH3)
-            RpiSend("ERROR(0x43)\r\n");
+//         if (ch == CH3)
+//             RpiSend("ERROR(0x43)\r\n");
 
-        *errors &= ~COMM_ERROR_OVERTEMP;
-    }
+//         *errors &= ~COMM_ERROR_OVERTEMP;
+//     }
     
-    if (*errors & COMM_ERROR_OVERCURRENT)
-    {
-        if (ch == CH1)
-            RpiSend("ERROR(0x51)\r\n");
+//     if (*errors & COMM_ERROR_OVERCURRENT)
+//     {
+//         if (ch == CH1)
+//             RpiSend("ERROR(0x51)\r\n");
 
-        if (ch == CH2)
-            RpiSend("ERROR(0x52)\r\n");
+//         if (ch == CH2)
+//             RpiSend("ERROR(0x52)\r\n");
 
-        if (ch == CH3)
-            RpiSend("ERROR(0x53)\r\n");
+//         if (ch == CH3)
+//             RpiSend("ERROR(0x53)\r\n");
 
-        *errors &= ~COMM_ERROR_OVERCURRENT;
-    }
+//         *errors &= ~COMM_ERROR_OVERCURRENT;
+//     }
 
-    if (*errors & COMM_ERROR_SOFT_OVERCURRENT)
-    {
-        if (ch == CH1)
-            RpiSend("ERROR(0x61)\r\n");
+//     if (*errors & COMM_ERROR_SOFT_OVERCURRENT)
+//     {
+//         if (ch == CH1)
+//             RpiSend("ERROR(0x61)\r\n");
 
-        if (ch == CH2)
-            RpiSend("ERROR(0x62)\r\n");
+//         if (ch == CH2)
+//             RpiSend("ERROR(0x62)\r\n");
 
-        if (ch == CH3)
-            RpiSend("ERROR(0x63)\r\n");
+//         if (ch == CH3)
+//             RpiSend("ERROR(0x63)\r\n");
 
-        *errors &= ~COMM_ERROR_SOFT_OVERCURRENT;
-    }
+//         *errors &= ~COMM_ERROR_SOFT_OVERCURRENT;
+//     }
 
-    if (*errors & COMM_ERROR_NO_TREATMENT)
-    {
-        if (ch == CH1)
-            RpiSend("ERROR(0x71)\r\n");
+//     if (*errors & COMM_ERROR_NO_TREATMENT)
+//     {
+//         if (ch == CH1)
+//             RpiSend("ERROR(0x71)\r\n");
 
-        if (ch == CH2)
-            RpiSend("ERROR(0x72)\r\n");
+//         if (ch == CH2)
+//             RpiSend("ERROR(0x72)\r\n");
 
-        if (ch == CH3)
-            RpiSend("ERROR(0x73)\r\n");
+//         if (ch == CH3)
+//             RpiSend("ERROR(0x73)\r\n");
 
-        *errors &= ~COMM_ERROR_NO_TREATMENT;
-    }
-}
+//         *errors &= ~COMM_ERROR_NO_TREATMENT;
+//     }
+// }
 
 static void SendAllConf (void)
 {

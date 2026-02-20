@@ -132,6 +132,11 @@ resp_e ParseCommsWithChannels (char * str, unsigned char channel)
             }
         }
     }
+    // // on treat try to correlate temp,
+    // else if (StringCorrelate("temp,", str) >= 3)
+    // {
+    // 	AntennaIsAnswering (channel);
+    // }
 
     //ant0,012.27,087.90,001.80,065.00\r\n.
     else if (!strncmp(str, (const char *)"ant", (sizeof("ant") - 1)))

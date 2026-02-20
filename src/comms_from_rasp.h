@@ -43,7 +43,7 @@
 
 //--- Exported functions ---//
 void UpdateRaspberryMessages (void);
-void Raspberry_Report_Errors (unsigned char, unsigned short *);
+// void Raspberry_Report_Errors (unsigned char, unsigned short *);
 
 
 #endif

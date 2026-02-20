@@ -1,5 +1,4 @@
 //---------------------------------------------
-// ##
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags
 // ## @TAGS:   Global
@@ -7,17 +6,23 @@
 // #### UTILS.C ###############################
 //---------------------------------------------
 
-/* Includes ------------------------------------------------------------------*/
+// Includes --------------------------------------------------------------------
 #include "utils.h"
 
+#include <string.h>
 #include <stdlib.h>
 
-//--- VARIABLES EXTERNAS ---//
 
-//--- VARIABLES GLOBALES ---//
+// Externals -------------------------------------------------------------------
 
 
-//--- FUNCIONES DEL MODULO ---//
+// Globals ---------------------------------------------------------------------
+
+
+// Module Private Functions ----------------------------------------------------
+
+
+// Module Functions ------------------------------------------------------------
 //devuelve los numeros de un string, en la posicion number
 //devuele la cantidad de cifras leidas
 unsigned char StringIsANumber (char * pn, unsigned short * number)
@@ -99,4 +104,17 @@ unsigned char StringCheckNumbers (char * str, unsigned char len)
 }
 
 
+unsigned char StringCorrelate (char * str_orig, char * str_cmp)
+{
+    unsigned char cnt = 0;
+    unsigned char len = strlen(str_orig);
+
+    for (int i = 0; i < len; i++)
+    {
+	if (*(str_orig + i) == *(str_cmp + i))
+	    cnt++;
+    }
+
+    return cnt;
+}
 //--- end of file ---//
