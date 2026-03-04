@@ -241,7 +241,16 @@ int main (void)
 
 
 // Other Module Functions ------------------------------------------------------
+#ifdef SOFTWARE_VERSION_1_5
 #define USE_PROT_INT_WITH_FILTER    // pone un filtro input en el pin prot
+#endif
+
+#ifdef USE_PROT_INT_WITH_FILTER
+#pragma message "INT with soft prot filters on main.c"
+#else
+#pragma message "INT without noise filters! main.c"
+#endif
+
 extern void TF_Prot_Int_Handler (unsigned char ch);
 void EXTI2_IRQHandler (void)
 {
